@@ -1,2 +1,12 @@
-node_modules/
-*.log
+# Per-project, per-user plugin settings. See "Project settings" in README.md.
+.claude/*.local.md
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor noise
+.idea/
+*.swp
+*~
