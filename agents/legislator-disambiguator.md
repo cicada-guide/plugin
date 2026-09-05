@@ -66,9 +66,16 @@ call is being made. Never put a person's contact details or any personal data in
 - Never merge two candidates into one answer because they share a party or a plausible district.
 - `search_people` returns no `total`; do not state a candidate count as exact unless you paginated
   to exhaustion.
-- Failed calls return a text block beginning with `Error:` rather than throwing. Retry once, then
+- Failed calls come back as results in two shapes, never exceptions: a text block beginning with
+  `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. Retry once, then
   report the candidate as unverified instead of dropping them.
+- Identical `legiscan.people_id` across candidates means one person stored on several rows, not an
+  ambiguity. Collapse them and return RESOLVED; only one row usually carries votes, so prefer the
+  row `get_person_votes` returns records for. An empty duplicate would misreport a real legislator
+  as having never voted.
 - U.S. state legislators only. Members of Congress are not in this dataset.
+- When a parameter, constraint, or response field is unclear, read
+  `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 
 ## Output format
 

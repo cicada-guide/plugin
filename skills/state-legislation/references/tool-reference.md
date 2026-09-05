@@ -4,7 +4,11 @@ Verified against server `cicada-guide-mcp-server` 1.2.0, MCP protocol revision `
 2026-09-05. The endpoint is unversioned, so re-check this document against a live `tools/list` if
 tool behavior appears to disagree with it.
 
-13 tools over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
+Re-confirmed live on 2026-09-05: `list_states` returns 51 divisions (50 states + DC, no
+territories); `search_people.ids` carries `minItems: 1, maxItems: 100`; `show_bill` declares only
+`id` and `context`, with no `response_format`.
+
+15 tools over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
 never modify it. Every invocation emits an analytics event, which is why the descriptors carry
 `readOnlyHint: false` alongside `destructiveHint: false`, `idempotentHint: true`,
 `openWorldHint: false`.
@@ -15,16 +19,31 @@ Every input schema is strict — an unknown parameter is rejected before the han
 
 | Parameter | Type | Default | Constraints |
 | --- | --- | --- | --- |
-| `context` | string | — | Accepted by every tool. 15-25 words, third person, no personal data. Advertised as required; not enforced by the server. |
+| `context` | string | — | Accepted by every tool. 15-25 words, third person, no personal data. See the note below — it is not a declared parameter. |
 | `limit` | integer | `20` | 1-100 |
 | `offset` | integer | `0` | >= 0. Absent on `get_votes` and `get_person_votes`. |
 | `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`. |
 
+**`context` is injected, not declared.** No tool schema on the server declares `context` — the
+analytics wrapper adds it to the published schema and strips it before the strict validation runs.
+That is why the published schema marks it required while a call without it still succeeds. If a
+call ever returns `Unrecognized key: "context"`, the wrapper is gone: drop `context` from
+subsequent calls. Every other shared parameter is genuinely declared and unaffected.
+
 Every tool returns a `content` array of text blocks. List tools also return `structuredContent`
 holding the typed envelope. Text truncates at 25,000 characters with a pagination hint.
 
-Errors never throw: a failed tool returns one text block beginning with `Error:` and no
-`structuredContent`.
+### Errors arrive as results, in two shapes
+
+Neither shape throws. Both carry `isError: true` and no `structuredContent`.
+
+| Shape | Looks like | Raised by |
+| --- | --- | --- |
+| Handler-level | Text block beginning `Error:` | The handler, after validation passed — e.g. `get_votes` with no entity filter |
+| Schema-level | `MCP error -32602: Input validation error:` naming the offending key | Strict schema validation, before the handler runs — e.g. an unrecognized parameter |
+
+The distinction matters when recovering: a schema-level failure means the *argument set* is wrong
+and must change, while a handler-level failure often means a required filter is merely missing.
 
 ### The offset envelope
 
@@ -67,6 +86,9 @@ descending, nulls last.
 Items carry `id`, `bill`, `title`, `synopsis`, `status`, `type`, `date`, `subjects`, `headline`,
 `session_id`, `division_id`, `sponsors`, `count_documents`, `documents`.
 
+**`count_documents` is unreliable.** Verified 2026-09-05: Alabama HB94 reports `count_documents: 0`
+while `get_documents` returns `total: 2`. Trust `get_documents` / `get_latest_bill_document`.
+
 **Bill-number matching is loose by design.** The pattern splits the alpha prefix from the digits
 and joins with `%`, so `"HB 314"` matches both `HB 314` and `HB314` — and, because of the trailing
 wildcard, also `HB 3140`. Confirm the `bill` field on each result.
@@ -92,8 +114,8 @@ A missing id is not an error: returns the text `No bill found with id=<id>.` and
 
 `id` (UUID, required). The only tool with no `response_format`.
 
-Renders an interactive card in hosts supporting MCP Apps, via the registered resource
-`ui://cicada-guide/bill-card-v2.html`. `content` still holds a markdown summary, so calling it in
+Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
+via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling it in
 a host without card support is always safe. `structuredContent` adds `_display.divisionName` and
 `_display.sessionName`.
 
@@ -121,6 +143,12 @@ binary content types yield `null`.
 `date` descending, nulls last. Items carry `id`, `bill_id`, `status`, `date`, `url`, `type`,
 `format`, `summarization`, `legiscan`.
 
+### `get_bill_dossier`
+
+`bill_id` (UUID, required). Returns normalized bill, jurisdiction, session, sponsor, document, and
+roll-call data for the detailed workspace. It omits raw source blobs, contact details, and full
+document text. Related sections are best effort; inspect `partial` and `warnings`.
+
 ---
 
 ## People
@@ -129,7 +157,7 @@ binary content types yield `null`.
 
 | Parameter | Type | Notes |
 | --- | --- | --- |
-| `ids` | UUID array, 1-100 | Resolve a batch of person ids in one call |
+| `ids` | UUID array, **1-100** | Resolve a batch of person ids in one call. Hard cap — split larger sets across calls |
 | `name` | string | Partial match across `full_name`, `first_name`, `last_name` |
 | `party` | string | Partial, case-insensitive: `"D"`, `"R"`, `"Democratic"` |
 
@@ -140,6 +168,28 @@ Ordered by `last_name`. Returns `id`, `full_name`, `first_name`, `middle_name`, 
 a common surname matches legislators nationwide and the result cannot separate them. To
 disambiguate, call `get_person` on each candidate and read role and district out of the `legiscan`
 JSONB, or check which candidate has votes in the expected jurisdiction via `get_person_votes`.
+
+**100 is a hard cap, and chambers are bigger than that.** Verified 2026-09-05: an ordinary
+Alabama House roll call returned **103** distinct legislators, and passing all 103 to `ids` in one
+call fails with `Too big: expected array to have <=100 items at ids`. Georgia's House seats 180 and
+Texas's 150. Chunk the id list into batches of up to 100 and check `unresolved_ids` on each batch.
+A bill's `sponsors` array is small enough that one call is normally sufficient; a chamber's voters
+are not.
+
+**Same-name matches are usually one person duplicated, not two people.** Newer server builds
+collapse these on a `name` or `party` search and list the discarded ids on `duplicate_ids`; an
+explicit `ids` batch is never collapsed, so resolving vote records still answers every id. Verified
+2026-09-05:
+`search_people` for "Rex Reynolds" returns two rows whose `get_person` records carry the *same*
+`legiscan.people_id` (19618), role and district — one legislator stored twice. Compare
+`legiscan.people_id` before treating candidates as distinct; when it matches, collapse them and do
+not ask the user to choose.
+
+**Among duplicate rows, usually only one holds the data.** Of those two Rex Reynolds rows, one
+returns 100+ votes from `get_person_votes` and the other returns zero. Probe each candidate and use
+the row that returns records — reporting from the empty row states that a sitting legislator has no
+voting history. Sponsor arrays duplicate the same way: Alabama HB94 lists two `sponsors` UUIDs that
+both resolve to Troy Stubbs, so a naive count reports two sponsors for one.
 
 **`ids` is how vote records become names.** When `ids` is present the effective page size widens to
 `max(limit, ids.length)`, so one call returns the whole batch instead of silently paginating. The
@@ -167,7 +217,28 @@ as `**Yea**`, `**Nay**`, `**Absent**`, `**Passed**` lines; JSON leaves them nest
 
 A bill with no recorded floor vote returns explanatory text, not an error.
 
+**Rows duplicate per real roll call, and only one duplicate carries votes.** Verified 2026-09-05
+on Alabama HB94: `get_rollcalls` returned `total: 18`, which collapsed to **6** distinct
+`legiscan.roll_call_id` values — each present as **3** rows with different dataset `id`s. Of the
+three rows sharing one `roll_call_id`, exactly one returned vote rows from `get_votes`; the other
+two returned `No votes found`. The vote-bearing row was **last** in the default ordering, so
+"take the newest" or "take the first" picks a voteless duplicate two times in three.
+
+Newer server builds collapse this server-side: they return one item per floor vote, pick the
+sibling that owns the votes, and list the discarded ids on **`duplicate_ids`**. When that field is
+present, trust the chosen id and use `duplicate_ids` only if `get_votes` still comes back empty.
+
+When it is absent, the server has not collapsed anything: group results by `legiscan.roll_call_id`
+yourself, treat the group — not the row — as the roll call, and remember `total` counts rows, so it
+overstates how many floor votes occurred.
+
 Start here for "how was this bill voted on", then pass a rollcall `id` to `get_votes`.
+
+### `get_rollcall_breakdown`
+
+`rollcall_id` (UUID, required). Returns aggregate category counts in `structuredContent` and up to
+500 named member rows in result `_meta.members` for UI hydration. `partial=true` means the member
+cap was reached. Prefer this over manually paging and hydrating `get_votes` for one roll call.
 
 ### `get_votes`
 
@@ -192,6 +263,18 @@ pages. The handler fetches `limit + 1` rows to set `has_more` without a `COUNT` 
 the envelope has no `total`.
 
 Items carry `id`, `category`, `people_id`, `rollcall_id`, `bill_id` — no names.
+
+**`No votes found` has two different causes — check the cheap one first.**
+
+1. **A voteless duplicate row.** Most common. The siblings are on `duplicate_ids` when the server
+   collapsed them, and otherwise share the row's `legiscan.roll_call_id`. Retry `get_votes` with
+   each sibling `id` before concluding anything. Verified 2026-09-05 on Alabama HB94.
+2. **A genuine coverage gap.** No sibling row has votes either. `votes` coverage is per-state and
+   lags `rollcalls`. Verified 2026-09-05: Georgia HB327's House rollcall reports 180 recorded votes
+   via `get_rollcalls` — it has no duplicate rows, and `get_votes` returns nothing for it.
+
+Only after exhausting the siblings should the breakdown be reported as unavailable. Never present
+either case as nobody having voted.
 
 ### `get_person_votes`
 
@@ -224,6 +307,11 @@ Prefer this over `get_votes` with `people_id` — it needs no follow-up enrichme
 `name` (string, optional, partial case-insensitive match). Filters divisions to `type = "State"`,
 ordered by `name`.
 
+**Returns exactly 51 divisions: the 50 states plus the District of Columbia.** No territories —
+Puerto Rico, Guam, the U.S. Virgin Islands, American Samoa and the Northern Mariana Islands are not
+in the dataset. DC is the one non-state division, and its `geoidfq` is `null` where states carry a
+two-digit Census code. Verified against the live server 2026-09-05.
+
 Does not paginate: `offset` is always `0`, `has_more` always `false`, `next_offset` always absent.
 Items carry `id`, `name`, `geoidfq`. Use a returned `id` as `division_id`.
 
@@ -250,6 +338,10 @@ Streams a PDF in base64 chunks using HTTP Range requests.
 ```json
 { "bytes": "JVBERi0xLjQK...", "offset": 0, "byteCount": 750000, "totalBytes": 2400000, "hasMore": true }
 ```
+
+**The next offset is `offset + byteCount`, not `byteCount`.** The two are equal only for the first
+chunk, where `offset` is 0; treating `byteCount` as the next offset re-reads chunk 2 forever on any
+document past 1.5 MB. Accumulate: chunk 3 of the 2.4 MB example above starts at 1,500,000.
 
 `totalBytes` comes from the `Content-Range` header and is `undefined` when the server omits it;
 `hasMore` then falls back to "the chunk came back full".

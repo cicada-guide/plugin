@@ -38,6 +38,8 @@ result rather than resolving it by guessing.
 - `list_states` (optionally with `name`) → `division_id`.
 - `list_sessions` with `division_id` when a year was given → `session_id`.
 - `search_bills` with `bill` plus `division_id`, or with `query` plus `division_id` for a topic.
+  Full-text resolves at most 50 distinct bills and uses only the first 8 terms, with no signal in
+  the response — a thin topic result is not proof of absence.
 
 Bill-number matching splits the alpha prefix from the digits and joins with `%`, so `HB 314` also
 matches `HB314` **and** `HB 3140`. Read the `bill` field on every candidate. If several bills remain
@@ -52,16 +54,22 @@ plausible, stop and return the candidate list — do not pick one.
   On `null`, report the text as unavailable and cite `item.url`. Never treat an empty string as the
   bill's contents.
 - `get_documents` with `bill_id` when an earlier version matters. For a large PDF, stream it with
-  `read_pdf_bytes` — `offset` there is a byte offset, and the next call resumes at the returned
-  `byteCount`.
+  `read_pdf_bytes` — `offset` there is a byte offset, and the next call resumes at
+  `offset + byteCount`. Those are equal only for the first chunk; treating `byteCount` alone as the
+  next offset re-reads the same chunk forever.
 - `search_people` with `ids` to resolve the `sponsors` UUID array in one call. Never loop
   `get_person` over sponsors.
 - `get_rollcalls` with `bill_id` for floor-vote summaries; yea, nay, absent, and passed totals live
   inside the `legiscan` object. A bill with no recorded floor vote returns explanatory text, not an
   error — report that it has not been voted on.
+- `get_rollcalls` rows duplicate — several rows share one `legiscan.roll_call_id`, and usually
+  only one of them carries votes. Group by that id, and on `No votes found` try the group's other
+  `id`s before reporting no breakdown.
 - `get_votes` with `rollcall_id` and `limit: 100` for individual positions, paging with `cursor`
   (there is no `offset` on this tool, and passing one is rejected). Then `search_people` with `ids`
-  to turn the returned `people_id` UUIDs into names and parties. This step is not optional —
+  **in batches of at most 100** — the cap is schema-enforced and large chambers exceed it — to turn
+  the returned `people_id` UUIDs into names and parties. Check `unresolved_ids` on each batch.
+  This step is not optional —
   `get_votes` returns no names. Join party to vote category for the breakdown rather than making
   further calls, and account for anything in `unresolved_ids`.
 
@@ -71,16 +79,18 @@ call is being made. Never put personal data or first-person phrasing in it.
 ## Quality standards
 
 - Schemas are strict; an invented parameter is rejected outright. When a parameter or response field
-  is unclear, read `../skills/cicada-guide/references/tool-reference.md`.
+  is unclear, read `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 - Separate the bill's operative text from its synopsis, headline, or `summarization`, and label
   which one you are quoting.
 - `search_bills` and `get_votes` carry no `total`. Report counts as "at least N" unless you
   paginated to exhaustion.
 - Text output truncates at 25,000 characters. A response ending mid-sentence is a paging signal, not
   the end of the record.
-- Failed calls return a text block beginning with `Error:` and no `structuredContent`; they do not
-  throw. A valid UUID with no row returns `No bill found with id=...`, which means re-derive the id
-  from `search_bills`, not that the tool failed.
+- Failed calls come back as results, never exceptions, in two shapes: a text block beginning with
+  `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. The second means the
+  argument set is wrong, not merely incomplete. A valid UUID with no row returns
+  `No bill found with id=...`, which means re-derive the id from `search_bills`, not that the tool
+  failed.
 - U.S. state legislatures only — no federal bills, municipal ordinances, or ballot measures.
 
 ## Output format

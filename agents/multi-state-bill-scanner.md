@@ -55,7 +55,8 @@ the conversation that asked for it. You absorb that traffic and return one conso
    and the fetch failed — report that and cite `item.url` rather than treating an empty string as
    the bill's contents.
 7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id`, then `get_votes` with
-   `rollcall_id` and `search_people` with `ids` to turn UUIDs into names.
+   `rollcall_id` and `search_people` with `ids` — in batches of at most 100, since that cap is
+   schema-enforced and large chambers exceed it — to turn UUIDs into names.
 
 Supply the optional `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.
@@ -63,12 +64,14 @@ call is being made. Never put personal data or first-person phrasing in it.
 ## Quality standards
 
 - Schemas are strict. An unknown parameter is rejected outright, not ignored. Pass only documented
-  parameters; when unsure, read `../skills/cicada-guide/references/tool-reference.md`.
+  parameters; when unsure, read
+  `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 - `search_bills` returns no `total`. Report counts as "at least N", or paginate to exhaustion and
   say that you did.
 - Never assert a state has no legislation on a topic from one narrow query. Say which query ran.
 - Report zero-result jurisdictions as rows, not omissions. A silent gap reads as a finding.
-- Failed calls return a text block beginning with `Error:`; they do not throw. Retry once with
+- Failed calls come back as results in two shapes, never exceptions: a text block beginning with
+  `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. Retry once with
   narrowed parameters, then record the failure for that jurisdiction.
 - U.S. state legislatures only. No federal bills, municipal ordinances, or ballot measures.
 

@@ -1,6 +1,6 @@
 {
   "name": "cicada-guide",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Research U.S. state legislation in Claude: search bills, read bill text, look up legislators, and trace roll-call and individual voting records.",
   "author": {
     "name": "Cicada Guide",

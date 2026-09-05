@@ -17,7 +17,8 @@ default_session: 2025 Regular Session
 # no names, no credentials, no personal data.
 context_prefix: Constituent research desk
 
-# markdown | json — used when a request implies neither.
+# markdown | json — used when a request implies neither. Never sent to show_bill,
+# the one tool that has no response_format parameter.
 response_format: markdown
 ---
 

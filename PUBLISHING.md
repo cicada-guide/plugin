@@ -14,19 +14,14 @@ every release.
 | MCP endpoint | `https://public.cicada.guide/mcp` | Cloudflare Custom Domain on the Worker, rather than the `workers.dev` hostname. |
 | MCP server key | `guide-public` | Tools surface as `mcp__plugin_cicada-guide_guide-public__search_bills`. The `<server>` segment is mandatory — `mcp__plugin_cicada-guide__search_bills` is not reachable by any configuration. |
 | Contact email | Omitted | `author` and `owner` carry a name and URL only. Issues route through the repo rather than a published inbox. |
-
-## Known cosmetic leftover
-
-The always-on skill is still named `cicada-guide` inside a plugin named `cicada-guide`, so its
-slash form is `/cicada-guide:cicada-guide`. Harmless in practice — the skill is model-invoked, and
-nobody types it — but it is the one piece of name repetition that survived. Changeable later at the
-cost of a version bump.
+| Always-on skill name | `state-legislation` | Renamed from `cicada-guide` in 0.2.0, which had produced `/cicada-guide:cicada-guide`. Done in the same pass that converted cross-component links to `${CLAUDE_PLUGIN_ROOT}`, since both touch the same sites. |
+| Cross-component links | `${CLAUDE_PLUGIN_ROOT}/skills/...` | Skills and agents reference shared files by plugin root, never by a relative path. A subagent's working directory is the user's project, so `../skills/...` resolves to nothing. |
 
 ## Before each release
 
 - **Reconcile the tool reference against the live server.** Run `tools/list` against
   `https://public.cicada.guide/mcp` and diff it against
-  `skills/cicada-guide/references/tool-reference.md`, which records the server version it was
+  `skills/state-legislation/references/tool-reference.md`, which records the server version it was
   verified against. The endpoint is unversioned, so nothing else signals drift.
 - **Bump `version` in both manifests together** — `.claude-plugin/plugin.json` and the
   `plugins[0].version` entry in `.claude-plugin/marketplace.json`. They are independent fields and
@@ -45,7 +40,7 @@ Locally, from a checkout:
 claude --plugin-dir /path/to/plugin
 ```
 
-Then `/mcp` should list `guide-public` as connected with 13 tools, and `/help` should show
+Then `/mcp` should list `guide-public` as connected with 15 tools, and `/help` should show
 `/cicada-guide:bill-research` and `/cicada-guide:voting-record`.
 
 End to end, the way a stranger gets it:

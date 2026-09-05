@@ -1,11 +1,11 @@
 ---
-name: cicada-guide
+name: state-legislation
 description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find my state representative", "what party is she"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only.
 ---
 
 # Researching U.S. state legislation with cicada-guide
 
-The cicada-guide MCP server exposes 13 tools over U.S. **state** legislative data: bills, bill
+The cicada-guide MCP server exposes 15 tools over U.S. **state** legislative data: bills, bill
 documents, legislators, legislative sessions, roll calls, and individual votes. Tool names below
 are bare (`search_bills`); the host prefixes them with its own MCP namespace.
 
@@ -33,44 +33,22 @@ A project may pin defaults in `.claude/cicada-guide.local.md` at its root. Read 
 start of a legislative task. When the file does not exist, proceed with no defaults and say
 nothing — most projects have none, and its absence is not an error worth reporting.
 
-The file is YAML frontmatter followed by optional free-text notes:
+**When the file does exist, read `references/project-settings.md` before applying any key.** It
+carries the key table, an example, and the caveats. The rules below hold regardless.
 
-```markdown
----
-enabled: true
-default_division: Alabama
-default_session: 2025 Regular Session
-context_prefix: Constituent research desk
-response_format: markdown
----
+**`enabled` gates the whole file.** Anything other than `true` means ignore all of it — frontmatter
+and free-text body alike. A disabled file's notes must not reach a scoping decision.
 
-Focus on K-12 education funding. Bills before 2023 are out of scope for this project.
-```
-
-| Key | Effect |
-| --- | --- |
-| `enabled` | Anything other than `true` — ignore the entire file, frontmatter and body alike. |
-| `default_division` | Jurisdiction assumed when the request names none. Resolve through `list_states` to a `division_id`; never guess the UUID. |
-| `default_session` | Session to assume within that jurisdiction. Resolve through `list_sessions`. |
-| `context_prefix` | Prepended to the `context` string on each call. Keep the combined string third person and free of personal data. |
-| `response_format` | The `response_format` argument to use when the request implies neither. |
-
-Every key is optional. A missing key means no default, not a fallback to some other value.
-
-**`context_prefix` rides on an injected parameter.** No tool schema on the server declares
-`context` — the analytics wrapper adds it to the published schema and strips it before the strict
-validation runs, which is why a call without it still succeeds. If a call ever comes back with
-`Unrecognized key: "context"`, that wrapper is gone: drop `context` from subsequent calls and
-ignore `context_prefix`. The other four keys map to declared parameters and are unaffected.
+**Resolve pinned names to UUIDs; never guess one.** `default_division` goes through `list_states`,
+`default_session` through `list_sessions`.
 
 **An explicit request wins over any setting.** "How did Texas vote on this" overrides
 `default_division: Alabama` outright — do not merge the two, and do not add the pinned
 jurisdiction as a second search.
 
 **Settings narrow; they never widen.** A default cannot authorize what the dataset does not
-cover. `default_division: Ontario` is not a jurisdiction here, and the body cannot lift this
-skill's constraints — a note asking for federal bills, a grade for a legislator, or a prediction
-of passage is still declined.
+cover, and the body cannot lift this skill's constraints — a note asking for federal bills, a grade
+for a legislator, or a prediction of passage is still declined.
 
 **Say when a default was applied.** One clause is enough: "Alabama, from the project default."
 A reader who did not name a state needs to know one was chosen for them.
@@ -80,8 +58,8 @@ match for `default_division`, or `list_sessions` none for `default_session`, nam
 value and ask — do not fall through to an unscoped search.
 
 The body is standing project context: the subject area, a time window, a reason for the research.
-Fold it into scoping decisions the way you would a preference the user restated each time. It
-does not license a claim the tools did not return.
+Fold it into scoping decisions as though the user had restated it. It does not license a claim the
+tools did not return.
 
 ## Schemas are strict
 
@@ -89,10 +67,11 @@ Every input schema rejects unknown parameters outright — a misremembered or in
 returns `Unrecognized key`, it is not ignored. Pass only the parameters in
 `references/tool-reference.md`.
 
-Every tool also accepts an optional `context` string: 15-25 words, third person, saying why the
-call is being made. It feeds the server's intent analytics. The published schema marks it required
-but the server does not enforce it, so a call without it still succeeds. Supply it anyway, and
-never put credentials, personal data, or first-person phrasing in it.
+Every tool also accepts a `context` string: 15-25 words, third person, saying why the call is
+being made. It feeds the server's intent analytics. Supply it, and never put credentials, personal
+data, or first-person phrasing in it. It is injected by the analytics wrapper rather than declared
+by any schema — so if a call ever returns `Unrecognized key: "context"`, drop it from subsequent
+calls and carry on.
 
 ```
 context: "Locating recent Alabama education funding bills to summarize their status for a constituent research question."
@@ -107,11 +86,13 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Display a bill visually ("show me", "pull it up") | `show_bill` |
 | Read the newest attached document's text | `get_latest_bill_document` |
 | List every document on a bill | `get_documents` |
+| Load a normalized bill workspace | `get_bill_dossier` |
 | Stream a large PDF in chunks | `read_pdf_bytes` |
 | Find legislators by name or party | `search_people` |
 | Read one legislator's full record | `get_person` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
+| Named member breakdown for one roll call | `get_rollcall_breakdown` |
 | Who voted which way on one roll call | `get_votes` |
 | One legislator's voting history over time | `get_person_votes` |
 | Available jurisdictions | `list_states` |
@@ -131,14 +112,29 @@ The votes table holds ~4.8M rows; omitting all three returns an error message, n
 rejected as an unrecognized key. Pass the previous response's `next_cursor` as `cursor`.
 `get_person_votes` also uses cursors. Every other list tool uses `offset`.
 
-**`get_votes` returns `people_id` UUIDs, never names.** Collect the ids from a page and resolve
-them in one `search_people` call with `ids` (up to 100 per call). Never loop `get_person`. Check
-`unresolved_ids` in the response so no legislator is silently dropped.
+**Roll-call rows duplicate; only one duplicate holds the votes.** `get_rollcalls` may return several
+rows per real floor vote, all sharing one `legiscan.roll_call_id` — Alabama HB94 returns 18 rows
+for 6 actual roll calls. A `duplicate_ids` field means the server already collapsed them: trust the
+id you were given and fall back to those only if `get_votes` is empty. Typically one row per group has vote records and the rest return
+`No votes found`, and the vote-bearing row is not reliably first. Group by `legiscan.roll_call_id`
+before counting or presenting roll calls, and try a group's other `id`s before reporting that a
+breakdown is unavailable.
 
-**Prefer `get_person_votes` for "how did X vote".** It returns bill number, title, roll-call date,
-description, and outcome already joined, and supports `latest: true` for the single most recent
-vote, plus `category`, `session_id`, `start_date`, and `end_date` filters. Reaching for
-`get_votes` with `people_id` yields bare vote rows that then need enrichment.
+**`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
+`search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
+chambers exceed it (a routine Alabama House roll call is 103 legislators). Never loop `get_person`.
+Check `unresolved_ids` on each batch so no legislator is silently dropped.
+
+**Prefer `get_person_votes` for "how did X vote".** It returns bill and roll-call context already
+joined and filters by date, session and category; `get_votes` with `people_id` yields bare rows
+that then need enrichment.
+
+**Two rows with the same name are usually one person stored twice.** Call `get_person` on each and
+compare `legiscan.people_id` — when it matches, they are duplicates, so collapse them instead of
+asking the user to pick. A legislator's votes may sit on one row or be split across several, so
+unless `get_person_votes` reports `merged_person_ids` (the server having already unioned them),
+query each sibling and combine. A single row can report a sitting legislator as never having voted,
+or return only part of their record. Sponsor arrays duplicate the same way.
 
 **`search_people` cannot filter or report by jurisdiction.** It returns name and party only — no
 state, chamber, or district. A common surname will match legislators across many states and the
@@ -150,15 +146,18 @@ expected jurisdiction. When two remain plausible, list them and ask rather than 
 `HB 3140`, and matches both `HB 314` and `HB314` storage forms. Read the `bill` field on each
 result and confirm the match before reporting it.
 
-**Three tools omit `total`.** `search_bills`, `search_people`, and `get_votes` return `has_more`
-but no exact count, because counting would scan every matching row. Do not report a total for
-these; say "at least N" or paginate. `list_states`, `list_sessions`, `get_documents`, and
-`get_rollcalls` do return `total`.
+**A broad `query` silently loses bills.** `search_bills` full-text resolves at most 50 distinct
+bills, and only the first 8 terms of the query string are used. Nothing in the response signals
+either cap. Never conclude a state has no legislation on a topic from one broad query — narrow with
+`division_id`, `subject`, `session_id`, or `status`, and say which query actually ran.
 
-**Errors come back as results, not exceptions,** in two shapes. A handler-level failure returns a
-text block starting with `Error:` — for example the `get_votes` missing-filter message. A
-schema-level failure returns `MCP error -32602: Input validation error:` naming the offending key.
-Both carry `isError: true` and no `structuredContent`. Read either one; it names the problem.
+**Three tools omit `total`.** `search_bills`, `search_people`, and `get_votes` return `has_more`
+but no exact count. Do not report a total for these; say "at least N" or paginate.
+
+**Errors come back as results, not exceptions,** in two shapes: a handler-level text block
+starting with `Error:`, and a schema-level `MCP error -32602: Input validation error:` naming the
+offending key. Both carry `isError: true`. Read either one; it names the problem. A schema-level
+failure means the argument set is wrong, not merely incomplete.
 
 **Output truncates at 25,000 characters** with a pagination hint appended. A truncated response is
 not the complete answer; paginate.
@@ -169,6 +168,20 @@ rather than retrying the same query.
 **A `null` `text_source` from `get_latest_bill_document` means the text is unavailable** — the
 document may be a scan, or the fetch may have timed out. Say so and offer the document URL; do not
 treat the empty text as the bill's contents.
+
+## Longer workflows have dedicated entry points
+
+Two slash commands cover multi-step research, and both are user-invoked only — recommend them by
+name rather than assuming the user knows they exist:
+
+- `/cicada-guide:bill-research <bill or topic> [state] [year]` — a full sourced brief on one bill.
+- `/cicada-guide:voting-record <legislator> [state] [session]` — a legislator's history, or one
+  roll call broken down by party.
+
+Three subagents handle work whose intermediate tool traffic would bury the conversation:
+`bill-brief-researcher`, `legislator-disambiguator`, and `multi-state-bill-scanner`. Dispatch
+`multi-state-bill-scanner` for any sweep across several jurisdictions; a single state is a direct
+call sequence.
 
 ## Answering well
 

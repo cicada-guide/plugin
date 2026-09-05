@@ -1,0 +1,34 @@
+{
+  "name": "cicada-guide",
+  "version": "0.2.0",
+  "description": "Research U.S. state legislation: search bills, read bill text, find legislators, and trace roll-call and individual voting records.",
+  "author": {
+    "name": "Cicada Guide",
+    "email": "forrest@cicada.guide",
+    "url": "https://cicada.guide"
+  },
+  "homepage": "https://cicada.guide",
+  "repository": "https://github.com/cicada-guide/plugin",
+  "license": "Apache-2.0",
+  "keywords": ["legislation", "government", "civics", "policy", "state-legislature", "voting-records"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Cicada Guide",
+    "shortDescription": "Research state bills, legislators, and votes",
+    "longDescription": "Search U.S. state legislation, inspect bill text and sponsors, explore roll calls, and trace individual legislators' recorded votes using Cicada Guide's public legislative database.",
+    "developerName": "Cicada Guide",
+    "category": "Education",
+    "capabilities": ["Read"],
+    "websiteURL": "https://cicada.guide",
+    "privacyPolicyURL": "https://cicada.guide/privacy-policy",
+    "termsOfServiceURL": "https://cicada.guide/terms-and-conditions",
+    "defaultPrompt": [
+      "Find recent Alabama bills about public education",
+      "Show me the sponsors and floor votes for this bill",
+      "What is the latest recorded vote by this legislator?"
+    ],
+    "brandColor": "#C9A227",
+    "logo": "./assets/logo.svg"
+  }
+}

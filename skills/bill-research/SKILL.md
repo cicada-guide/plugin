@@ -1,6 +1,6 @@
 ---
 name: bill-research
-description: Produces a sourced brief on one U.S. state bill — identification, status, sponsors, bill text, roll calls, and how members voted. Invoked as /cicada-guide:bill-research.
+description: Produces a sourced brief on one U.S. state bill — identification, status, sponsors, bill text, roll calls, and how members voted.
 argument-hint: "<bill number or topic> [state] [year]"
 disable-model-invocation: true
 ---
@@ -12,7 +12,7 @@ optionally a state and year.
 
 Supply the optional `context` string (15-25 words, third person) on each tool call, prefixed with
 `context_prefix` when the project sets one. When a parameter or response shape is unclear, read
-`../cicada-guide/references/tool-reference.md`.
+`${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 
 ## 1. Identify the bill
 
@@ -21,13 +21,16 @@ Resolve the jurisdiction first when a state is named or implied — `list_states
 across states and sessions, so an unscoped search is ambiguous.
 
 When the request names no state, check `.claude/cicada-guide.local.md` for a `default_division`
-and scope to it — see **Project settings** in `../cicada-guide/SKILL.md`. Note in the brief that
-the jurisdiction came from the project default rather than from the request.
+and scope to it — see **Project settings** in
+`${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/SKILL.md`. Note in the brief that the jurisdiction
+came from the project default rather than from the request.
 
 Then search:
 
 - A bill number → `search_bills` with `bill` plus `division_id`.
-- A topic → `search_bills` with `query` plus `division_id`.
+- A topic → `search_bills` with `query` plus `division_id`. Full-text resolves at most 50
+  distinct bills and uses only the first 8 terms, silently — a thin result is not proof the topic
+  is unlegislated. Narrow by `subject` or `session_id` and say which query ran.
 
 Bill-number matching carries a trailing wildcard, so `HB 314` also matches `HB 3140`. Read the
 `bill` field on every candidate.
@@ -47,10 +50,16 @@ Call in this order, skipping what the request does not need:
 2. `search_people` with `ids` set to the `sponsors` array — one call, not a loop. Skip this when
    `sponsors` is null or empty; `ids` requires at least one entry and rejects an empty array.
 3. `get_latest_bill_document` — the operative text. Check `text_source`; a `null` means the text
-   is unavailable, not empty.
+   is unavailable, not empty. For a large PDF, stream it with `read_pdf_bytes` — see the streaming
+   sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
+   offset there is `offset + byteCount`, not `byteCount`.
 4. `get_rollcalls` — floor votes, with yea/nay/absent totals inside `legiscan`.
-5. `get_votes` with the newest `rollcall_id` — only when the request asks who voted how. Page with
-   `cursor`, then resolve `people_id` values through one `search_people` `ids` call.
+5. `get_votes` — only when the request asks who voted how. First group the `get_rollcalls` items
+   by `legiscan.roll_call_id`: rows duplicate, and typically only one duplicate in a group carries
+   votes. If `get_votes` returns `No votes found`, try the other `id`s in that group before
+   reporting that the breakdown is unavailable. Then page with `cursor` to exhaustion and resolve
+   `people_id` values through `search_people` `ids` **in batches of up to 100** — the cap is
+   enforced, and a large chamber needs several calls. Check `unresolved_ids` on each batch.
 
 ## 3. Write the brief
 

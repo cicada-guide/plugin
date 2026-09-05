@@ -1,9 +1,9 @@
 # Cicada Guide
 
-Research U.S. state legislation in Claude: search bills, read bill text, look up legislators, and
+Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look up legislators, and
 trace roll-call and individual voting records.
 
-The plugin connects Claude to the hosted cicada-guide MCP server at
+The plugin connects compatible AI hosts to the hosted cicada-guide MCP server at
 `https://public.cicada.guide/mcp`, which serves state legislative data — bills, documents,
 legislators, sessions, roll calls, and ~4.8M individual vote records.
 
@@ -23,7 +23,7 @@ claude --plugin-dir /path/to/plugin
 No API key, no account, no OAuth flow. The server is open to anonymous callers, so the tools work
 as soon as the plugin is enabled.
 
-To verify, run `/mcp` and confirm the `guide-public` server is connected. It serves 13 tools as of
+To verify, inspect the connected MCP tools and confirm the `guide-public` server is connected. It serves 15 tools as of
 server version 1.2.0; the count grows as tools are added.
 
 ## What it does
@@ -37,7 +37,7 @@ Ask in plain language:
 - "Show me how the chamber split on that roll call"
 - "Which states are in the data?"
 
-Two slash commands drive longer workflows:
+Two packaged skills drive longer workflows:
 
 | Command | Purpose |
 | --- | --- |
@@ -61,7 +61,7 @@ contains one **Vote** per legislator who was recorded.
 
 | Term | Meaning |
 | --- | --- |
-| **Division** | A U.S. state or territory — the top-level jurisdiction legislation belongs to. "State" is the everyday synonym; Division is the modelled term because the set also covers non-state jurisdictions. |
+| **Division** | The top-level jurisdiction legislation belongs to. `list_states` returns exactly 51: the 50 states plus the District of Columbia. "State" is the everyday synonym; Division is the modelled term because DC is not a state. No territories. |
 | **Session** | A bounded sitting of a Division's legislature, with dates it convenes and adjourns. A Bill belongs to exactly one Session. |
 | **Bill** | One piece of proposed legislation within one Session. |
 | **Document** | A text artifact attached to a Bill — introduced, engrossed, an amendment. "The bill text" means the most recent Document, not a fixed one. |
@@ -104,17 +104,15 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `default_division` | Jurisdiction assumed when a question names no state |
 | `default_session` | Session assumed within that jurisdiction |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
-| `response_format` | `markdown` or `json`, when a question implies neither |
+| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, the one tool without the parameter |
 
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.
 
-One caveat on `context_prefix`. The `context` parameter it extends is not declared by any tool
-schema on the server — the PostHog analytics wrapper injects it into the published schema and
-strips it before the strict validation runs. That is why the schema marks it required while a call
-without it still succeeds. If that instrumentation is ever removed, `context` becomes an
-unrecognized key and `context_prefix` stops working. The other four keys map to real declared
-parameters and do not share the dependency.
+One caveat on `context_prefix`: the `context` parameter it extends is injected by the analytics
+wrapper rather than declared by any tool schema, so it stops working if that instrumentation is
+removed. The full contract, including how Claude recovers from that, is in
+[`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md).
 
 Two things it deliberately cannot do. A default never overrides an explicit request — asking
 about Texas gets Texas, whatever `default_division` says — and the file cannot widen scope or
@@ -145,14 +143,14 @@ change when you make one.
 | `list_states` | Available jurisdictions |
 | `list_sessions` | Legislative sessions within a jurisdiction |
 
-Full parameter reference: [`skills/cicada-guide/references/tool-reference.md`](skills/cicada-guide/references/tool-reference.md).
+Full parameter reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md).
 
 ## Skills
 
-- **`cicada-guide`** — loads automatically on any state-legislation question. Carries tool
-  selection, the votes-table filter rule, cursor-versus-offset pagination, the limits of legislator
-  search, how to turn vote records into legislator names, and the `.claude/cicada-guide.local.md`
-  settings contract.
+- **`state-legislation`** — loads automatically on any state-legislation question. Carries tool
+  selection, the votes-table filter rule, cursor-versus-offset pagination, the silent recall caps on
+  topic search, the limits of legislator search, how to turn vote records into legislator names, and
+  the `.claude/cicada-guide.local.md` settings contract.
 - **`bill-research`** — the `/cicada-guide:bill-research` workflow. User-invoked only.
 - **`voting-record`** — the `/cicada-guide:voting-record` workflow. User-invoked only.
 
@@ -189,8 +187,9 @@ research support, not as an authoritative legal record.
 ## Links
 
 - Issues and plugin source: <https://github.com/cicada-guide/plugin>
-- Tool reference: [`skills/cicada-guide/references/tool-reference.md`](skills/cicada-guide/references/tool-reference.md)
-- Call sequences for multi-step research: [`skills/cicada-guide/references/workflows.md`](skills/cicada-guide/references/workflows.md)
+- Tool reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md)
+- Call sequences for multi-step research: [`skills/state-legislation/references/workflows.md`](skills/state-legislation/references/workflows.md)
+- Project settings contract: [`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md)
 
 ## License
 

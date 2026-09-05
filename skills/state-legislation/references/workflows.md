@@ -31,6 +31,11 @@ Read the `bill` field on every result before reporting. `"HB 314"` also matches 
 result sets. Skip `division_id` for a nationwide sweep. There is no `total` on this envelope — use
 `has_more` and `next_offset`, and describe counts as "at least N".
 
+**A broad `query` silently loses bills.** Full-text resolves at most 50 distinct bills, and only the
+first 8 terms of the string are used — and neither cap shows up in the response. A `limit: 50` that
+comes back short is not evidence the state has no such legislation. Narrow by `division_id`,
+`subject`, or `session_id` and say which query ran, rather than lengthening the query string.
+
 To narrow further, add `status` (partial match, e.g. `"Passed"`), `subject` (exact match against
 the `subjects` array), or `sponsor_id`.
 
@@ -50,8 +55,9 @@ For a specific version rather than the newest:
 { "tool": "get_documents", "arguments": { "bill_id": "<bill uuid>" } }
 // pick an item, then stream it if it is a large PDF
 { "tool": "read_pdf_bytes", "arguments": { "url": "<item url>", "response_format": "json" } }
-// continue with the returned byteCount as the next offset
+// next offset = previous offset + byteCount (equal to byteCount only on the first chunk)
 { "tool": "read_pdf_bytes", "arguments": { "url": "<item url>", "offset": 750000, "response_format": "json" } }
+// ...and chunk 3 starts at 1500000, not at 750000 again
 ```
 
 ## How did the legislature vote on this bill
@@ -67,12 +73,13 @@ For a specific version rather than the newest:
 // 3. next page — cursor, never offset
 { "tool": "get_votes", "arguments": { "rollcall_id": "<rollcall uuid>", "limit": 100, "cursor": "<next_cursor>" } }
 
-// 4. turn people_id values into names, one call for up to 100
+// 4. turn people_id values into names, in batches of up to 100 (hard schema cap)
 { "tool": "search_people", "arguments": { "ids": ["<people_id>", "<people_id>", "..."] } }
 ```
 
-Step 4 is not optional — `get_votes` returns UUIDs only. Batch them; never loop `get_person`.
-Check `unresolved_ids` on the response and account for anyone it lists.
+Step 4 is not optional — `get_votes` returns UUIDs only. Batch them in groups of at most 100 and
+repeat step 4 per batch; a 400-member chamber needs four calls. Never loop `get_person`. Check
+`unresolved_ids` on each response and account for anyone it lists.
 
 For a party-line breakdown, the `party` field arrives with the `search_people` batch; join it to
 the vote categories from step 2 rather than making further calls.
@@ -129,10 +136,16 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `Error: Provide at least one of rollcall_id, bill_id, or people_id...` | `get_votes` with no entity filter, or `category` alone | Add `rollcall_id`, `bill_id`, or `people_id` |
-| `Unrecognized key` validation error | An invented or misremembered parameter, e.g. `offset` passed to `get_votes` / `get_person_votes` | Schemas are strict; use `cursor`, and check the parameter list |
+| `MCP error -32602: Input validation error:` naming a key | An invented or misremembered parameter, e.g. `offset` passed to `get_votes` / `get_person_votes`, or `response_format` passed to `show_bill` | Schemas are strict; drop or correct the named key — see the two error shapes in `tool-reference.md` |
 | Wrong legislator | `search_people` returns no state or chamber, so a common surname is ambiguous | Check `legiscan` via `get_person`, or confirm jurisdiction through `get_person_votes`; ask when still tied |
+| Two identical-looking candidates | One person stored on duplicate rows | Compare `legiscan.people_id` via `get_person`; if equal, collapse — do not ask the user to choose |
+| A sitting legislator appears to have no votes | The chosen row is the empty duplicate | Try the sibling row with the same `legiscan.people_id` |
 | Right bill number, wrong bill | Trailing-wildcard match (`HB 314` → `HB 3140`) | Read the `bill` field; scope by `division_id` and `session_id` |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Batch-resolve with `search_people` `ids` |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` have no `total` | Report "at least N", or paginate to exhaustion |
+| A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills and 8 terms, silently | Narrow by `division_id` / `subject`; do not report absence from one broad query |
+| `ids` rejected on a big roll call | `search_people` `ids` caps at 100; large chambers exceed it | Chunk into batches of 100 |
 | Response ends mid-sentence | 25,000-character truncation | Paginate; do not treat it as the full answer |
 | `No bill found with id=...` | Valid UUID, no row | Not an error — re-derive the id from `search_bills` |
+| `No votes found` on a rollcall whose totals are non-zero | Rollcall rows duplicate; usually only one duplicate holds the votes | Group `get_rollcalls` by `legiscan.roll_call_id` and retry each sibling `id` before reporting no breakdown |
+| More roll calls than the bill plausibly had | `get_rollcalls` `total` counts rows, and rows duplicate ~3x | Collapse by `legiscan.roll_call_id` and report the group count |

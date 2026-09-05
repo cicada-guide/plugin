@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Cicada Guide</title>
+  <rect width="256" height="256" rx="52" fill="#171713"/>
+  <path d="M128 55c-22 0-39 22-39 49v43c0 31 17 54 39 54s39-23 39-54v-43c0-27-17-49-39-49Z" fill="#C9A227"/>
+  <path d="M92 91C54 67 34 87 45 119c9 27 30 38 48 41M164 91c38-24 58-4 47 28-9 27-30 38-48 41" fill="none" stroke="#F4E8AD" stroke-width="13" stroke-linecap="round"/>
+  <path d="M109 47 91 27M147 47l18-20M103 112h50M99 145h58" fill="none" stroke="#F4E8AD" stroke-width="9" stroke-linecap="round"/>
+</svg>
