@@ -1,0 +1,34 @@
+---
+# Copy to `.claude/cicada-guide.local.md` in your project root and edit.
+# Every key is optional; delete the ones you do not want. Keep `enabled: true`.
+#
+# This file is per-project and per-user. Add `.claude/*.local.md` to .gitignore.
+
+enabled: true
+
+# Jurisdiction to assume when a request names no state. Must be one of the
+# divisions `list_states` returns — the 50 states plus DC, not territories.
+default_division: Alabama
+
+# Session to assume within that jurisdiction. Resolved through `list_sessions`.
+default_session: 2025 Regular Session
+
+# Prepended to the `context` analytics string on every tool call. Third person,
+# no names, no credentials, no personal data.
+context_prefix: Constituent research desk
+
+# markdown | json — used when a request implies neither.
+response_format: markdown
+---
+
+# Project context
+
+Free text below the frontmatter is standing background for legislative research in this
+project — the subject area, a time window, why the research is being done. It is folded
+into scoping decisions the way a preference you restate each session would be.
+
+It cannot lift the plugin's constraints. Federal bills, municipal ordinances, and ballot
+measures are still out of the dataset; legislators are still not graded, scored, or
+predicted; claims still come only from what the tools returned.
+
+Replace this section with your own notes, or delete it.
