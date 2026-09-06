@@ -1,14 +1,21 @@
 # cicada-guide tool reference
 
 Verified against server `cicada-guide-mcp-server` 1.2.0, MCP protocol revision `2025-06-18`, on
-2026-09-05. The endpoint is unversioned, so re-check this document against a live `tools/list` if
+2026-09-06. The endpoint is unversioned, so re-check this document against a live `tools/list` if
 tool behavior appears to disagree with it.
 
-Re-confirmed live on 2026-09-05: `list_states` returns 51 divisions (50 states + DC, no
-territories); `search_people.ids` carries `minItems: 1, maxItems: 100`; `show_bill` declares only
-`id` and `context`, with no `response_format`.
+The tools below are the complete `tools/list` as of that date. A tool absent from this file is
+absent from the server — never call one this document does not describe.
 
-15 tools over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
+Re-confirmed live on 2026-09-06 against Alabama, Georgia and Texas records: `list_states` returns 51
+divisions (50 states + DC, no territories); `search_people.ids` carries `minItems: 1, maxItems: 100`;
+`show_bill` declares only `id` and `context`, with no `response_format`; `get_votes` has `cursor` and
+no `offset`, and its cursor is a UUID while `get_person_votes` takes a 512-character string.
+
+No response envelope observed on any tool carries a `duplicate_ids` or `merged_person_ids` field. Do
+not write logic that waits for one.
+
+Served over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
 never modify it. Every invocation emits an analytics event, which is why the descriptors carry
 `readOnlyHint: false` alongside `destructiveHint: false`, `idempotentHint: true`,
 `openWorldHint: false`.
@@ -89,9 +96,16 @@ Items carry `id`, `bill`, `title`, `synopsis`, `status`, `type`, `date`, `subjec
 **`count_documents` is unreliable.** Verified 2026-09-05: Alabama HB94 reports `count_documents: 0`
 while `get_documents` returns `total: 2`. Trust `get_documents` / `get_latest_bill_document`.
 
-**Bill-number matching is loose by design.** The pattern splits the alpha prefix from the digits
-and joins with `%`, so `"HB 314"` matches both `HB 314` and `HB314` — and, because of the trailing
-wildcard, also `HB 3140`. Confirm the `bill` field on each result.
+**Bill-number matching is loose by design, and the wildcard is interior.** The pattern splits the
+alpha prefix from the digits, joins them with `%`, and appends a trailing `%` — `"HB 314"` becomes
+`HB%314%`. Because that first wildcard sits **between** the prefix and the digits, this is not merely
+a longer-number match: `"HB 314"` matches `HB 314` and `HB314`, but also `HB 3140` **and** `HB 5314`,
+`HB 1314`, `HB 2314`.
+
+Verified 2026-09-06: `bill: "HB94"` scoped to Alabama returned 21 rows — HB194, HB294, HB394, HB494,
+HB594, and only three genuine HB94s. Results order by `date` descending, so the nine most recent rows
+were all the wrong bill and the exact match landed tenth. Confirm the `bill` field on every result,
+and do not assume the exact match is on the first page.
 
 **`query` runs two searches and ORs them.** Document text is searched with PostgreSQL `websearch`
 full-text search, capped at 200 document rows resolving to at most 50 distinct bills. Separately
@@ -112,7 +126,7 @@ A missing id is not an error: returns the text `No bill found with id=<id>.` and
 
 ### `show_bill`
 
-`id` (UUID, required). The only tool with no `response_format`.
+`id` (UUID, required). Like the two other app display tools, it has no `response_format`.
 
 Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
 via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling it in
@@ -121,6 +135,12 @@ a host without card support is always safe. `structuredContent` adds `_display.d
 
 Use `show_bill` when the user wants to look at a bill; `get_bill` when they want its contents read
 back.
+
+### `open_research_desk`
+
+No parameters beyond optional analytics `context`. Opens
+`ui://cicada-guide/research-desk-v1.html`, whose state/session controls and search results call the
+existing list, search, `show_bill`, and `show_person_record` tools through the MCP Apps bridge.
 
 ### `get_latest_bill_document`
 
@@ -142,12 +162,6 @@ binary content types yield `null`.
 `bill_id` (UUID, required), plus `limit` / `offset`. Metadata only — no document text. Ordered by
 `date` descending, nulls last. Items carry `id`, `bill_id`, `status`, `date`, `url`, `type`,
 `format`, `summarization`, `legiscan`.
-
-### `get_bill_dossier`
-
-`bill_id` (UUID, required). Returns normalized bill, jurisdiction, session, sponsor, document, and
-roll-call data for the detailed workspace. It omits raw source blobs, contact details, and full
-document text. Related sections are best effort; inspect `partial` and `warnings`.
 
 ---
 
@@ -176,20 +190,20 @@ Texas's 150. Chunk the id list into batches of up to 100 and check `unresolved_i
 A bill's `sponsors` array is small enough that one call is normally sufficient; a chamber's voters
 are not.
 
-**Same-name matches are usually one person duplicated, not two people.** Newer server builds
-collapse these on a `name` or `party` search and list the discarded ids on `duplicate_ids`; an
-explicit `ids` batch is never collapsed, so resolving vote records still answers every id. Verified
-2026-09-05:
-`search_people` for "Rex Reynolds" returns two rows whose `get_person` records carry the *same*
-`legiscan.people_id` (19618), role and district — one legislator stored twice. Compare
-`legiscan.people_id` before treating candidates as distinct; when it matches, collapse them and do
-not ask the user to choose.
+**Two rows with one name may be one person stored twice.** Compare `legiscan.people_id` via
+`get_person` before treating candidates as distinct people: when it matches, they are duplicates —
+collapse them rather than asking the user to choose. Sponsor arrays can duplicate the same way, so
+the length of `sponsors` can overstate how many legislators sponsored a bill.
 
-**Among duplicate rows, usually only one holds the data.** Of those two Rex Reynolds rows, one
-returns 100+ votes from `get_person_votes` and the other returns zero. Probe each candidate and use
-the row that returns records — reporting from the empty row states that a sitting legislator has no
-voting history. Sponsor arrays duplicate the same way: Alabama HB94 lists two `sponsors` UUIDs that
-both resolve to Troy Stubbs, so a naive count reports two sponsors for one.
+Duplication is not the default reading, and the dataset is not uniformly duplicated. Verified
+2026-09-06: `search_people` for "Rex Reynolds" returns a single row, and a `name` search for "Smith"
+returned 23 rows that were all distinct people. Check `legiscan.people_id` to decide; do not assume a
+split.
+
+**When rows do duplicate, the votes may sit on one of them or be spread across several.** Probe each
+sibling with `get_person_votes` and union the results, rather than reporting from whichever row came
+first — an empty duplicate would state that a sitting legislator has never voted. Union them; never
+add counts across siblings.
 
 **`ids` is how vote records become names.** When `ids` is present the effective page size widens to
 `max(limit, ids.length)`, so one call returns the whole batch instead of silently paginating. The
@@ -202,6 +216,12 @@ the tool returns explanatory text instead of an empty envelope.
 `id` (UUID, required). Full row including `contact_details` and `legiscan` JSONB. A missing id
 returns `No person found with id=<id>.` Prefer `search_people` with `ids` for more than one
 person.
+
+### `show_person_record`
+
+`id` (UUID, required). Opens `ui://cicada-guide/legislator-record-v1.html` with the resolved
+person record, then loads `get_person_votes` inside the app. Use only after resolving duplicate or
+ambiguous people; the visual workspace is not a substitute for identification.
 
 ---
 
@@ -217,28 +237,38 @@ as `**Yea**`, `**Nay**`, `**Absent**`, `**Passed**` lines; JSON leaves them nest
 
 A bill with no recorded floor vote returns explanatory text, not an error.
 
-**Rows duplicate per real roll call, and only one duplicate carries votes.** Verified 2026-09-05
-on Alabama HB94: `get_rollcalls` returned `total: 18`, which collapsed to **6** distinct
-`legiscan.roll_call_id` values — each present as **3** rows with different dataset `id`s. Of the
-three rows sharing one `roll_call_id`, exactly one returned vote rows from `get_votes`; the other
-two returned `No votes found`. The vote-bearing row was **last** in the default ordering, so
-"take the newest" or "take the first" picks a voteless duplicate two times in three.
+**Rows can duplicate per real floor vote, and `legiscan.roll_call_id` does not identify the
+duplicates.** Verified 2026-09-06 on Texas SB8: `get_rollcalls` returned `total: 21`, including three
+rows with identical `date`, `chamber`, `description` ("Senate concurs in House amendment(s)") and
+identical yea/nay/absent tallies — but **three different** `legiscan.roll_call_id` values (1601684,
+1602015, 1601038). Grouping by `legiscan.roll_call_id` reports 21 distinct floor votes for a bill
+that had 19.
 
-Newer server builds collapse this server-side: they return one item per floor vote, pick the
-sibling that owns the votes, and list the discarded ids on **`duplicate_ids`**. When that field is
-present, trust the chosen id and use `duplicate_ids` only if `get_votes` still comes back empty.
+**Deduplicate on the (date, chamber, description, tallies) tuple, not on an id.** Treat rows matching
+on all four as one floor vote. `total` counts rows, so it overstates how many floor votes occurred
+wherever duplicates are present.
 
-When it is absent, the server has not collapsed anything: group results by `legiscan.roll_call_id`
-yourself, treat the group — not the row — as the roll call, and remember `total` counts rows, so it
-overstates how many floor votes occurred.
+**Do not accumulate votes across duplicate rows.** Verified 2026-09-06: two of the three Texas
+siblings were probed and each returned vote records rather than `No votes found` — this is not the
+one-populated-row-and-two-empty shape. Since the siblings report identical tallies, treat each as
+carrying its own copy of the same floor vote: pick a single row and report from it alone. Iterating
+siblings and summing would double- or triple-count the chamber.
+
+Duplication is not universal. Alabama HB94 (2025 session) returns 4 rows for 4 distinct floor votes,
+and Georgia HB327 returns 2 for 2. Detect the repeated tuple rather than assuming either shape.
 
 Start here for "how was this bill voted on", then pass a rollcall `id` to `get_votes`.
 
-### `get_rollcall_breakdown`
+**The nested `legiscan` object is not schema-stable across states.** Two variations, both verified
+2026-09-06:
 
-`rollcall_id` (UUID, required). Returns aggregate category counts in `structuredContent` and up to
-500 named member rows in result `_meta.members` for UI hydration. `partial=true` means the member
-cap was reached. Prefer this over manually paging and hydrating `get_votes` for one roll call.
+| Variation | Alabama | Georgia / Texas |
+| --- | --- | --- |
+| Date key | `"date"` | the key itself is double-quoted, so `legiscan.date` misses |
+| Tally values | strings — `"yea": "34"` | numbers — `"yea": 49` |
+
+Prefer the row's own top-level `date` column over `legiscan.date`, and coerce tally values before any
+comparison or arithmetic — a sum across states otherwise mixes strings and numbers.
 
 ### `get_votes`
 
@@ -266,12 +296,13 @@ Items carry `id`, `category`, `people_id`, `rollcall_id`, `bill_id` — no names
 
 **`No votes found` has two different causes — check the cheap one first.**
 
-1. **A voteless duplicate row.** Most common. The siblings are on `duplicate_ids` when the server
-   collapsed them, and otherwise share the row's `legiscan.roll_call_id`. Retry `get_votes` with
-   each sibling `id` before concluding anything. Verified 2026-09-05 on Alabama HB94.
+1. **A voteless duplicate row.** Identify siblings by the matching (date, chamber, description,
+   tallies) tuple, then retry `get_votes` with each sibling `id`. Stop at the first row that returns
+   records and report from that row alone — siblings often each carry a full copy of the votes, so
+   continuing to accumulate over-counts the chamber.
 2. **A genuine coverage gap.** No sibling row has votes either. `votes` coverage is per-state and
-   lags `rollcalls`. Verified 2026-09-05: Georgia HB327's House rollcall reports 180 recorded votes
-   via `get_rollcalls` — it has no duplicate rows, and `get_votes` returns nothing for it.
+   lags `rollcalls`. Verified 2026-09-06: Georgia HB327's House vote #129 reports `total: 180` via
+   `get_rollcalls` — it has no duplicate rows, and `get_votes` returns nothing for it.
 
 Only after exhausting the siblings should the breakdown be reported as unavailable. Never present
 either case as nobody having voted.

@@ -2,7 +2,7 @@
 name: bill-research
 description: Produces a sourced brief on one U.S. state bill — identification, status, sponsors, bill text, roll calls, and how members voted.
 argument-hint: "<bill number or topic> [state] [year]"
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Research one state bill
@@ -10,7 +10,7 @@ disable-model-invocation: true
 Produce a sourced brief on a single U.S. state bill. Arguments name a bill number or topic, and
 optionally a state and year.
 
-Supply the optional `context` string (15-25 words, third person) on each tool call, prefixed with
+Supply the `context` string (15-25 words, third person) on each tool call, prefixed with
 `context_prefix` when the project sets one. When a parameter or response shape is unclear, read
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 
@@ -32,8 +32,9 @@ Then search:
   distinct bills and uses only the first 8 terms, silently — a thin result is not proof the topic
   is unlegislated. Narrow by `subject` or `session_id` and say which query ran.
 
-Bill-number matching carries a trailing wildcard, so `HB 314` also matches `HB 3140`. Read the
-`bill` field on every candidate.
+Bill-number matching carries an interior wildcard, so `HB 314` matches `HB 3140` and also `HB 5314`,
+`HB 1314`. Read the `bill` field on every candidate, and do not assume the exact match is on the
+first page — results order by date descending.
 
 Stop and ask when the search returns several plausible bills and nothing in the request
 distinguishes them. List the candidates with number, title, session, and status rather than
@@ -54,11 +55,13 @@ Call in this order, skipping what the request does not need:
    sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
    offset there is `offset + byteCount`, not `byteCount`.
 4. `get_rollcalls` — floor votes, with yea/nay/absent totals inside `legiscan`.
-5. `get_votes` — only when the request asks who voted how. First group the `get_rollcalls` items
-   by `legiscan.roll_call_id`: rows duplicate, and typically only one duplicate in a group carries
-   votes. If `get_votes` returns `No votes found`, try the other `id`s in that group before
-   reporting that the breakdown is unavailable. Then page with `cursor` to exhaustion and resolve
-   `people_id` values through `search_people` `ids` **in batches of up to 100** — the cap is
+5. `get_votes` — only when the request asks who voted how. First deduplicate the `get_rollcalls`
+   items on the (date, chamber, description, tallies) tuple, not on `legiscan.roll_call_id`, which
+   differs between duplicates. Report from one row per floor vote: siblings often each carry a full
+   copy of the votes, so accumulating across them over-counts the chamber. If `get_votes` returns
+   `No votes found`, try the other rows in the tuple and stop at the first that returns records,
+   before reporting that the breakdown is unavailable. Then page with `cursor` to exhaustion and
+   resolve `people_id` values through `search_people` `ids` **in batches of up to 100** — the cap is
    enforced, and a large chamber needs several calls. Check `unresolved_ids` on each batch.
 
 ## 3. Write the brief
@@ -80,6 +83,10 @@ brief is exhaustive.
 
 Offer `show_bill` at the end when the host renders cards and the user may want to look at the bill
 directly.
+
+When the user wants to continue exploring related bills or legislators rather than stop at the
+brief, offer `open_research_desk`; it preserves the hosted MCP workflow and links selections back
+into `show_bill` and `show_person_record`.
 
 ## Constraints
 

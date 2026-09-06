@@ -29,7 +29,8 @@ Every key is optional. A missing key means no default, not a fallback to some ot
 
 ## `response_format` must not reach `show_bill`
 
-`show_bill` is the one tool with no `response_format` parameter, and every schema is strict. Passing
+The app display tools `show_bill`, `open_research_desk`, and `show_person_record` have no
+`response_format` parameter, and every schema is strict. Passing
 a pinned `response_format` to it returns `MCP error -32602: Input validation error:` rather than
 being ignored. When a pinned `response_format` is in effect, omit it from `show_bill` calls and pass
 it to everything else as normal.

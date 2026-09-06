@@ -5,9 +5,9 @@ description: This skill should be used for questions about U.S. STATE legislatio
 
 # Researching U.S. state legislation with cicada-guide
 
-The cicada-guide MCP server exposes 15 tools over U.S. **state** legislative data: bills, bill
-documents, legislators, legislative sessions, roll calls, and individual votes. Tool names below
-are bare (`search_bills`); the host prefixes them with its own MCP namespace.
+The cicada-guide MCP server exposes read-only tools over U.S. **state** legislative data: bills,
+bill documents, legislators, legislative sessions, roll calls, and individual votes. Tool names
+below are bare (`search_bills`); the host prefixes them with its own MCP namespace.
 
 The tools only retrieve data and cannot change anything. Their descriptors nonetheless carry
 `readOnlyHint: false`, because every call emits an analytics event — so a host may still show an
@@ -82,19 +82,19 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Goal | Tool |
 | --- | --- |
 | Find bills by number, topic, subject, status, sponsor | `search_bills` |
+| Explore bills, legislators, and votes interactively | `open_research_desk` |
 | Read one bill's full record | `get_bill` |
 | Display a bill visually ("show me", "pull it up") | `show_bill` |
 | Read the newest attached document's text | `get_latest_bill_document` |
 | List every document on a bill | `get_documents` |
-| Load a normalized bill workspace | `get_bill_dossier` |
 | Stream a large PDF in chunks | `read_pdf_bytes` |
 | Find legislators by name or party | `search_people` |
 | Read one legislator's full record | `get_person` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
-| Named member breakdown for one roll call | `get_rollcall_breakdown` |
 | Who voted which way on one roll call | `get_votes` |
 | One legislator's voting history over time | `get_person_votes` |
+| Display a resolved legislator and voting history visually | `show_person_record` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
 
@@ -112,13 +112,16 @@ The votes table holds ~4.8M rows; omitting all three returns an error message, n
 rejected as an unrecognized key. Pass the previous response's `next_cursor` as `cursor`.
 `get_person_votes` also uses cursors. Every other list tool uses `offset`.
 
-**Roll-call rows duplicate; only one duplicate holds the votes.** `get_rollcalls` may return several
-rows per real floor vote, all sharing one `legiscan.roll_call_id` — Alabama HB94 returns 18 rows
-for 6 actual roll calls. A `duplicate_ids` field means the server already collapsed them: trust the
-id you were given and fall back to those only if `get_votes` is empty. Typically one row per group has vote records and the rest return
-`No votes found`, and the vote-bearing row is not reliably first. Group by `legiscan.roll_call_id`
-before counting or presenting roll calls, and try a group's other `id`s before reporting that a
-breakdown is unavailable.
+**Roll-call rows can duplicate, and the ids do not identify the duplicates.** `get_rollcalls` may
+return several rows for one real floor vote — Texas SB8 returns three rows with the same date,
+chamber, description and tallies but three *different* `legiscan.roll_call_id` values. Deduplicate on
+that (date, chamber, description, tallies) tuple, never on an id. `total` counts rows, so it
+overstates the number of floor votes whenever duplicates are present.
+
+**Never accumulate votes across duplicate rows.** Siblings often each carry a full copy of the votes,
+so summing them double- or triple-counts the chamber. Pick one row per floor vote and report from it
+alone. On `No votes found`, try the other rows in the tuple and stop at the first that returns
+records.
 
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
@@ -129,12 +132,13 @@ Check `unresolved_ids` on each batch so no legislator is silently dropped.
 joined and filters by date, session and category; `get_votes` with `people_id` yields bare rows
 that then need enrichment.
 
-**Two rows with the same name are usually one person stored twice.** Call `get_person` on each and
-compare `legiscan.people_id` — when it matches, they are duplicates, so collapse them instead of
-asking the user to pick. A legislator's votes may sit on one row or be split across several, so
-unless `get_person_votes` reports `merged_person_ids` (the server having already unioned them),
-query each sibling and combine. A single row can report a sitting legislator as never having voted,
-or return only part of their record. Sponsor arrays duplicate the same way.
+**Two rows with the same name may be one person stored twice.** Call `get_person` on each and compare
+`legiscan.people_id` — when it matches, they are duplicates, so collapse them instead of asking the
+user to pick. Do not assume a split, though: most names resolve to one row. When rows genuinely do
+duplicate, a legislator's votes may sit on one or be spread across several, so query each sibling and
+union the results — a single row can report a sitting legislator as never having voted, or return
+only part of their record. Union them; never add counts across siblings. Sponsor arrays can duplicate
+the same way.
 
 **`search_people` cannot filter or report by jurisdiction.** It returns name and party only — no
 state, chamber, or district. A common surname will match legislators across many states and the
@@ -142,8 +146,11 @@ result alone cannot separate them. Narrow by calling `get_person` on each candid
 role and district out of the `legiscan` object, or by checking which candidate has votes in the
 expected jurisdiction. When two remain plausible, list them and ask rather than picking one.
 
-**Bill-number matching is deliberately loose.** `search_bills` with `bill: "HB 314"` also matches
-`HB 3140`, and matches both `HB 314` and `HB314` storage forms. Read the `bill` field on each
+**Bill-number matching is deliberately loose, and the wildcard is interior.** `search_bills` with
+`bill: "HB 314"` matches both `HB 314` and `HB314` storage forms, and also `HB 3140` **and**
+`HB 5314`, `HB 1314` — the wildcard sits between the letter prefix and the digits, not only after
+them. Alabama `bill: "HB94"` returns 21 rows of which three are actually HB94, and because results
+order by date descending the exact match may not be on the first page. Read the `bill` field on each
 result and confirm the match before reporting it.
 
 **A broad `query` silently loses bills.** `search_bills` full-text resolves at most 50 distinct
@@ -171,8 +178,9 @@ treat the empty text as the bill's contents.
 
 ## Longer workflows have dedicated entry points
 
-Two slash commands cover multi-step research, and both are user-invoked only — recommend them by
-name rather than assuming the user knows they exist:
+Two slash commands cover multi-step research. Either can be invoked by name or reached for on your
+own when a request matches one. Name the command either way — a user who does not know it exists
+cannot ask for it next time:
 
 - `/cicada-guide:bill-research <bill or topic> [state] [year]` — a full sourced brief on one bill.
 - `/cicada-guide:voting-record <legislator> [state] [session]` — a legislator's history, or one

@@ -47,9 +47,9 @@ the conversation that asked for it. You absorb that traffic and return one conso
    lengthening the query.
 4. **Sweep.** One `search_bills` per jurisdiction, `limit: 50`. Page with `offset` / `next_offset`
    while `has_more` is true and the extra pages still matter.
-5. **Verify every hit.** Read `bill`, `title`, and `synopsis`. Bill-number matching carries a
-   trailing wildcard, and `query` matches document text, so off-topic results are normal. Drop them
-   explicitly rather than padding the table.
+5. **Verify every hit.** Read `bill`, `title`, and `synopsis`. Bill-number matching carries an
+   interior wildcard — `HB 314` matches `HB 3140` and `HB 5314` alike — and `query` matches document
+   text, so off-topic results are normal. Drop them explicitly rather than padding the table.
 6. **Deepen selectively.** For the one to three bills that most decide the answer, call
    `get_latest_bill_document` and read `text`. When `text_source` is `null` there is no stored text
    and the fetch failed — report that and cite `item.url` rather than treating an empty string as
@@ -58,7 +58,7 @@ the conversation that asked for it. You absorb that traffic and return one conso
    `rollcall_id` and `search_people` with `ids` — in batches of at most 100, since that cap is
    schema-enforced and large chambers exceed it — to turn UUIDs into names.
 
-Supply the optional `context` string on every call: 15-25 words, third person, describing why the
+Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.
 
 ## Quality standards

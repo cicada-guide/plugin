@@ -23,8 +23,8 @@ claude --plugin-dir /path/to/plugin
 No API key, no account, no OAuth flow. The server is open to anonymous callers, so the tools work
 as soon as the plugin is enabled.
 
-To verify, inspect the connected MCP tools and confirm the `guide-public` server is connected. It serves 15 tools as of
-server version 1.2.0; the count grows as tools are added.
+To verify, inspect the connected MCP tools and confirm the `guide-public` server is connected. It
+serves the tools listed under [Tools](#tools) below; that set grows as tools are added.
 
 ## What it does
 
@@ -104,7 +104,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `default_division` | Jurisdiction assumed when a question names no state |
 | `default_session` | Session assumed within that jurisdiction |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
-| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, the one tool without the parameter |
+| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to the three app display tools: `show_bill`, `open_research_desk`, and `show_person_record` |
 
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.
@@ -132,6 +132,7 @@ change when you make one.
 | `search_bills` | Search bills by number, topic, subject, status, sponsor, session, or state |
 | `get_bill` | Full record for one bill |
 | `show_bill` | Render a bill as an interactive card |
+| `open_research_desk` | Open an interactive bill, legislator, and voting-record search workspace |
 | `get_latest_bill_document` | Newest attached document, with its text |
 | `get_documents` | All documents attached to a bill |
 | `read_pdf_bytes` | Stream a large legislative PDF in chunks |
@@ -140,6 +141,7 @@ change when you make one.
 | `get_rollcalls` | Floor-vote summaries for a bill |
 | `get_votes` | Individual positions on a roll call |
 | `get_person_votes` | One legislator's voting history, with bill context joined |
+| `show_person_record` | Render a resolved legislator and recorded votes interactively |
 | `list_states` | Available jurisdictions |
 | `list_sessions` | Legislative sessions within a jurisdiction |
 
@@ -151,8 +153,10 @@ Full parameter reference: [`skills/state-legislation/references/tool-reference.m
   selection, the votes-table filter rule, cursor-versus-offset pagination, the silent recall caps on
   topic search, the limits of legislator search, how to turn vote records into legislator names, and
   the `.claude/cicada-guide.local.md` settings contract.
-- **`bill-research`** — the `/cicada-guide:bill-research` workflow. User-invoked only.
-- **`voting-record`** — the `/cicada-guide:voting-record` workflow. User-invoked only.
+- **`bill-research`** — the `/cicada-guide:bill-research` workflow. Invoke it by name, or let
+  Claude reach for it when a request calls for a full brief.
+- **`voting-record`** — the `/cicada-guide:voting-record` workflow. Invoke it by name, or let
+  Claude reach for it when a request calls for a voting record.
 
 ## Agents
 

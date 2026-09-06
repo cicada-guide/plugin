@@ -16,16 +16,24 @@ every release.
 | Contact email | Omitted | `author` and `owner` carry a name and URL only. Issues route through the repo rather than a published inbox. |
 | Always-on skill name | `state-legislation` | Renamed from `cicada-guide` in 0.2.0, which had produced `/cicada-guide:cicada-guide`. Done in the same pass that converted cross-component links to `${CLAUDE_PLUGIN_ROOT}`, since both touch the same sites. |
 | Cross-component links | `${CLAUDE_PLUGIN_ROOT}/skills/...` | Skills and agents reference shared files by plugin root, never by a relative path. A subagent's working directory is the user's project, so `../skills/...` resolves to nothing. |
+| Codex manifest | `.codex-plugin/plugin.json`, kept in step | A separate manifest with its own `interface` block, description text, and `logo` pointing at `assets/logo.svg`. It carries its own `version`, which is why the bump below is four fields rather than two. |
 
 ## Before each release
 
 - **Reconcile the tool reference against the live server.** Run `tools/list` against
   `https://public.cicada.guide/mcp` and diff it against
   `skills/state-legislation/references/tool-reference.md`, which records the server version it was
-  verified against. The endpoint is unversioned, so nothing else signals drift.
-- **Bump `version` in both manifests together** — `.claude-plugin/plugin.json` and the
-  `plugins[0].version` entry in `.claude-plugin/marketplace.json`. They are independent fields and
-  drift silently if one is missed.
+  verified against. The endpoint is unversioned, so nothing else signals drift. A bare `tools/list`
+  POST returns 400 — the transport requires a session, so `initialize` first, echo the
+  `mcp-session-id` response header on the next call, and send `notifications/initialized` between
+  the two. Reconcile against the server, never against the other copies: the count and tool names
+  are repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three agreeing
+  with each other is exactly the state drift leaves behind.
+- **Bump all four `version` fields together.** They live in three files:
+  `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and *both* `metadata.version` and
+  `plugins[0].version` in `.claude-plugin/marketplace.json`. They are independent fields and drift
+  silently if one is missed. Verify with `grep -rn '"version"' .claude-plugin .codex-plugin` and
+  confirm four matching values before committing.
 - **Confirm the server is healthy.** `curl https://public.cicada.guide/health` returns
   `{"status":"ok"}`.
 - **Land on `main` before announcing.** The marketplace resolver reads the default branch, not a
@@ -40,7 +48,7 @@ Locally, from a checkout:
 claude --plugin-dir /path/to/plugin
 ```
 
-Then `/mcp` should list `guide-public` as connected with 15 tools, and `/help` should show
+Then `/mcp` should list `guide-public` as connected, and `/help` should show
 `/cicada-guide:bill-research` and `/cicada-guide:voting-record`.
 
 End to end, the way a stranger gets it:

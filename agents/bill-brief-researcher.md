@@ -41,9 +41,10 @@ result rather than resolving it by guessing.
   Full-text resolves at most 50 distinct bills and uses only the first 8 terms, with no signal in
   the response — a thin topic result is not proof of absence.
 
-Bill-number matching splits the alpha prefix from the digits and joins with `%`, so `HB 314` also
-matches `HB314` **and** `HB 3140`. Read the `bill` field on every candidate. If several bills remain
-plausible, stop and return the candidate list — do not pick one.
+Bill-number matching splits the alpha prefix from the digits and joins with `%`, so the wildcard is
+interior: `HB 314` matches `HB314` **and** `HB 3140` **and** `HB 5314`, `HB 1314`. Results order by
+date descending, so the exact match may not be on the first page. Read the `bill` field on every
+candidate. If several bills remain plausible, stop and return the candidate list — do not pick one.
 
 **2. Gather.** In this order, skipping what the request does not need:
 
@@ -62,9 +63,12 @@ plausible, stop and return the candidate list — do not pick one.
 - `get_rollcalls` with `bill_id` for floor-vote summaries; yea, nay, absent, and passed totals live
   inside the `legiscan` object. A bill with no recorded floor vote returns explanatory text, not an
   error — report that it has not been voted on.
-- `get_rollcalls` rows duplicate — several rows share one `legiscan.roll_call_id`, and usually
-  only one of them carries votes. Group by that id, and on `No votes found` try the group's other
-  `id`s before reporting no breakdown.
+- `get_rollcalls` rows can duplicate, and `legiscan.roll_call_id` does **not** identify the
+  duplicates — Texas SB8 returns three rows with the same date, chamber, description and tallies but
+  three different `roll_call_id` values. Deduplicate on that tuple instead. Report from one row per
+  floor vote: siblings often each carry a full copy of the votes, so combining them over-counts the
+  chamber. On `No votes found`, try the tuple's other `id`s and stop at the first that returns
+  records.
 - `get_votes` with `rollcall_id` and `limit: 100` for individual positions, paging with `cursor`
   (there is no `offset` on this tool, and passing one is rejected). Then `search_people` with `ids`
   **in batches of at most 100** — the cap is schema-enforced and large chambers exceed it — to turn
@@ -73,7 +77,7 @@ plausible, stop and return the candidate list — do not pick one.
   `get_votes` returns no names. Join party to vote category for the breakdown rather than making
   further calls, and account for anything in `unresolved_ids`.
 
-Supply the optional `context` string on every call: 15-25 words, third person, describing why the
+Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.
 
 ## Quality standards

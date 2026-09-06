@@ -55,7 +55,7 @@ a vote to the wrong legislator is the worst failure this dataset can produce.
    widens to cover the batch, so one call returns all of them. Read `unresolved_ids` on the response
    and list every id it names. Never loop `get_person` over a batch.
 
-Supply the optional `context` string on every call: 15-25 words, third person, describing why the
+Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put a person's contact details or any personal data in it.
 
 ## Quality standards
@@ -70,9 +70,10 @@ call is being made. Never put a person's contact details or any personal data in
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. Retry once, then
   report the candidate as unverified instead of dropping them.
 - Identical `legiscan.people_id` across candidates means one person stored on several rows, not an
-  ambiguity. Collapse them and return RESOLVED; only one row usually carries votes, so prefer the
-  row `get_person_votes` returns records for. An empty duplicate would misreport a real legislator
-  as having never voted.
+  ambiguity. Collapse them and return RESOLVED, preferring the row `get_person_votes` returns records
+  for — an empty duplicate would misreport a real legislator as having never voted. Where several
+  siblings carry records, union them rather than adding counts. Do not assume a split in the first
+  place: most names resolve to a single row.
 - U.S. state legislators only. Members of Congress are not in this dataset.
 - When a parameter, constraint, or response field is unclear, read
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
