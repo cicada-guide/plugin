@@ -33,8 +33,9 @@ Then search:
   is unlegislated. Narrow by `subject` or `session_id` and say which query ran.
 
 Bill-number matching carries an interior wildcard, so `HB 314` matches `HB 3140` and also `HB 5314`,
-`HB 1314`. Read the `bill` field on every candidate, and do not assume the exact match is on the
-first page — results order by date descending.
+`HB 1314`. Read the `bill` field on every candidate. For a numbered-bill lookup, page with
+`next_offset` while `has_more` is true until the normalized exact bill number is found or every
+page is exhausted — results order by date descending, so an exact match may not be on page one.
 
 Stop and ask when the search returns several plausible bills and nothing in the request
 distinguishes them. List the candidates with number, title, session, and status rather than
@@ -55,14 +56,14 @@ Call in this order, skipping what the request does not need:
    sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
    offset there is `offset + byteCount`, not `byteCount`.
 4. `get_rollcalls` — floor votes, with yea/nay/absent totals inside `legiscan`.
-5. `get_votes` — only when the request asks who voted how. First deduplicate the `get_rollcalls`
-   items on the (date, chamber, description, tallies) tuple, not on `legiscan.roll_call_id`, which
-   differs between duplicates. Report from one row per floor vote: siblings often each carry a full
-   copy of the votes, so accumulating across them over-counts the chamber. If `get_votes` returns
-   `No votes found`, try the other rows in the tuple and stop at the first that returns records,
-   before reporting that the breakdown is unavailable. Then page with `cursor` to exhaustion and
-   resolve `people_id` values through `search_people` `ids` **in batches of up to 100** — the cap is
-   enforced, and a large chamber needs several calls. Check `unresolved_ids` on each batch.
+5. `get_votes` — only when the request asks who voted how. Treat matching (date, chamber,
+   description, tallies) values as a duplicate signal, not proof: corroborate with source metadata
+   or identical fully paginated member votes before collapsing rows. Distinct or unverified rows
+   remain separate and are labeled as possible duplicates. For a corroborated group, page each
+   candidate with `cursor` and choose a single row only when its category totals reconcile with the
+   aggregate roll-call tallies. Never add sibling counts. If no row reconciles, report the
+   discrepancy and do not present a complete member breakdown. Resolve `people_id` values through
+   `search_people` `ids` **in batches of up to 100** and check every batch's `unresolved_ids`.
 
 ## 3. Write the brief
 
@@ -83,10 +84,6 @@ brief is exhaustive.
 
 Offer `show_bill` at the end when the host renders cards and the user may want to look at the bill
 directly.
-
-When the user wants to continue exploring related bills or legislators rather than stop at the
-brief, offer `open_research_desk`; it preserves the hosted MCP workflow and links selections back
-into `show_bill` and `show_person_record`.
 
 ## Constraints
 

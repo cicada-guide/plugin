@@ -20,8 +20,8 @@ Bill numbers repeat across states and sessions, so scope the search before trust
 ```
 
 Read the `bill` field on every result before reporting. The wildcard is interior, so `"HB 314"` also
-matches `HB 3140` **and** `HB 5314`, `HB 1314`. Results order by date descending, so the exact match
-may not be on the first page.
+matches `HB 3140` **and** `HB 5314`, `HB 1314`. Page with `next_offset` while `has_more` is true until
+the normalized exact number is found or every page is exhausted; results order by date descending.
 
 ## Research a topic
 
@@ -149,7 +149,7 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | `ids` rejected on a big roll call | `search_people` `ids` caps at 100; large chambers exceed it | Chunk into batches of 100 |
 | Response ends mid-sentence | 25,000-character truncation | Paginate; do not treat it as the full answer |
 | `No bill found with id=...` | Valid UUID, no row | Not an error — re-derive the id from `search_bills` |
-| `No votes found` on a rollcall whose totals are non-zero | A voteless duplicate row, or a genuine per-state coverage gap | Retry each sibling matching on (date, chamber, description, tallies); stop at the first that returns records |
-| More roll calls than the bill plausibly had | `get_rollcalls` `total` counts rows, and rows can duplicate | Collapse on the (date, chamber, description, tallies) tuple — **not** `legiscan.roll_call_id`, which differs between duplicates |
+| `No votes found` on a rollcall whose totals are non-zero | A voteless duplicate row, or a genuine per-state coverage gap | Page possible siblings fully and accept one only when its categories reconcile with aggregate tallies |
+| More roll calls than the bill plausibly had | `get_rollcalls` `total` counts rows, and rows can duplicate | Treat the (date, chamber, description, tallies) tuple as a signal; corroborate before collapsing |
 | A chamber's vote total comes out 2-3x too high | Votes were accumulated across duplicate rows that each carry a full copy | Report from one row per floor vote, never a sum across siblings |
 | `legiscan.date` is missing, or tallies will not compare | The `legiscan` object is not schema-stable: some states double-quote the `date` key and return tallies as strings | Use the row's top-level `date`; coerce tally values before arithmetic |

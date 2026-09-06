@@ -104,8 +104,8 @@ a longer-number match: `"HB 314"` matches `HB 314` and `HB314`, but also `HB 314
 
 Verified 2026-09-06: `bill: "HB94"` scoped to Alabama returned 21 rows — HB194, HB294, HB394, HB494,
 HB594, and only three genuine HB94s. Results order by `date` descending, so the nine most recent rows
-were all the wrong bill and the exact match landed tenth. Confirm the `bill` field on every result,
-and do not assume the exact match is on the first page.
+were all the wrong bill and the exact match landed tenth. Confirm every `bill` field and page with
+`next_offset` while `has_more` is true until the normalized exact number is found or pages end.
 
 **`query` runs two searches and ORs them.** Document text is searched with PostgreSQL `websearch`
 full-text search, capped at 200 document rows resolving to at most 50 distinct bills. Separately
@@ -135,12 +135,6 @@ a host without card support is always safe. `structuredContent` adds `_display.d
 
 Use `show_bill` when the user wants to look at a bill; `get_bill` when they want its contents read
 back.
-
-### `open_research_desk`
-
-No parameters beyond optional analytics `context`. Opens
-`ui://cicada-guide/research-desk-v1.html`, whose state/session controls and search results call the
-existing list, search, `show_bill`, and `show_person_record` tools through the MCP Apps bridge.
 
 ### `get_latest_bill_document`
 
@@ -217,12 +211,6 @@ the tool returns explanatory text instead of an empty envelope.
 returns `No person found with id=<id>.` Prefer `search_people` with `ids` for more than one
 person.
 
-### `show_person_record`
-
-`id` (UUID, required). Opens `ui://cicada-guide/legislator-record-v1.html` with the resolved
-person record, then loads `get_person_votes` inside the app. Use only after resolving duplicate or
-ambiguous people; the visual workspace is not a substitute for identification.
-
 ---
 
 ## Votes
@@ -244,18 +232,18 @@ identical yea/nay/absent tallies — but **three different** `legiscan.roll_call
 1602015, 1601038). Grouping by `legiscan.roll_call_id` reports 21 distinct floor votes for a bill
 that had 19.
 
-**Deduplicate on the (date, chamber, description, tallies) tuple, not on an id.** Treat rows matching
-on all four as one floor vote. `total` counts rows, so it overstates how many floor votes occurred
-wherever duplicates are present.
+**Treat the (date, chamber, description, tallies) tuple as a duplicate signal, not a unique key.**
+Corroborate matching rows with source metadata or identical fully paginated member votes before
+collapsing them. Preserve unverified rows and label them as possible duplicates. `total` counts rows,
+so it can overstate how many floor votes occurred.
 
-**Do not accumulate votes across duplicate rows.** Verified 2026-09-06: two of the three Texas
-siblings were probed and each returned vote records rather than `No votes found` — this is not the
-one-populated-row-and-two-empty shape. Since the siblings report identical tallies, treat each as
-carrying its own copy of the same floor vote: pick a single row and report from it alone. Iterating
-siblings and summing would double- or triple-count the chamber.
+**Do not accumulate votes across corroborated duplicate rows.** Verified 2026-09-06: two of the
+three Texas candidates each returned vote records rather than `No votes found`. Page candidates to
+completion and accept one only when its categories reconcile with aggregate tallies; iterating and
+summing siblings would double- or triple-count the chamber.
 
 Duplication is not universal. Alabama HB94 (2025 session) returns 4 rows for 4 distinct floor votes,
-and Georgia HB327 returns 2 for 2. Detect the repeated tuple rather than assuming either shape.
+and Georgia HB327 returns 2 for 2. Treat a repeated tuple as a prompt to corroborate, not proof.
 
 Start here for "how was this bill voted on", then pass a rollcall `id` to `get_votes`.
 
@@ -296,10 +284,9 @@ Items carry `id`, `category`, `people_id`, `rollcall_id`, `bill_id` — no names
 
 **`No votes found` has two different causes — check the cheap one first.**
 
-1. **A voteless duplicate row.** Identify siblings by the matching (date, chamber, description,
-   tallies) tuple, then retry `get_votes` with each sibling `id`. Stop at the first row that returns
-   records and report from that row alone — siblings often each carry a full copy of the votes, so
-   continuing to accumulate over-counts the chamber.
+1. **A voteless duplicate row.** Identify possible siblings by the matching tuple, page each
+   candidate fully, and accept one only when its category totals reconcile with the aggregate
+   roll-call tallies. Never add sibling counts. If no candidate reconciles, report the discrepancy.
 2. **A genuine coverage gap.** No sibling row has votes either. `votes` coverage is per-state and
    lags `rollcalls`. Verified 2026-09-06: Georgia HB327's House vote #129 reports `total: 180` via
    `get_rollcalls` — it has no duplicate rows, and `get_votes` returns nothing for it.

@@ -82,7 +82,6 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Goal | Tool |
 | --- | --- |
 | Find bills by number, topic, subject, status, sponsor | `search_bills` |
-| Explore bills, legislators, and votes interactively | `open_research_desk` |
 | Read one bill's full record | `get_bill` |
 | Display a bill visually ("show me", "pull it up") | `show_bill` |
 | Read the newest attached document's text | `get_latest_bill_document` |
@@ -94,7 +93,6 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Summarize floor votes on a bill | `get_rollcalls` |
 | Who voted which way on one roll call | `get_votes` |
 | One legislator's voting history over time | `get_person_votes` |
-| Display a resolved legislator and voting history visually | `show_person_record` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
 
@@ -114,14 +112,14 @@ rejected as an unrecognized key. Pass the previous response's `next_cursor` as `
 
 **Roll-call rows can duplicate, and the ids do not identify the duplicates.** `get_rollcalls` may
 return several rows for one real floor vote — Texas SB8 returns three rows with the same date,
-chamber, description and tallies but three *different* `legiscan.roll_call_id` values. Deduplicate on
-that (date, chamber, description, tallies) tuple, never on an id. `total` counts rows, so it
-overstates the number of floor votes whenever duplicates are present.
+chamber, description and tallies but three *different* `legiscan.roll_call_id` values. Treat that
+tuple as a duplicate signal, not a unique key: corroborate with source metadata or identical fully
+paginated member votes before collapsing. `total` counts rows, so it can overstate floor votes.
 
-**Never accumulate votes across duplicate rows.** Siblings often each carry a full copy of the votes,
-so summing them double- or triple-counts the chamber. Pick one row per floor vote and report from it
-alone. On `No votes found`, try the other rows in the tuple and stop at the first that returns
-records.
+**Never accumulate votes across duplicate rows.** Siblings often each carry a full copy of the
+votes, so summing them double- or triple-counts the chamber. Page each candidate to completion and
+accept one only when its category totals reconcile with the aggregate roll-call tallies. If none
+reconcile, report the discrepancy rather than presenting a complete member breakdown.
 
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
@@ -149,9 +147,9 @@ expected jurisdiction. When two remain plausible, list them and ask rather than 
 **Bill-number matching is deliberately loose, and the wildcard is interior.** `search_bills` with
 `bill: "HB 314"` matches both `HB 314` and `HB314` storage forms, and also `HB 3140` **and**
 `HB 5314`, `HB 1314` — the wildcard sits between the letter prefix and the digits, not only after
-them. Alabama `bill: "HB94"` returns 21 rows of which three are actually HB94, and because results
-order by date descending the exact match may not be on the first page. Read the `bill` field on each
-result and confirm the match before reporting it.
+them. Alabama `bill: "HB94"` returns 21 rows of which three are actually HB94. Page with
+`next_offset` while `has_more` is true until the normalized exact number is found or every page is
+exhausted; results order by date descending, so the match may not be on page one.
 
 **A broad `query` silently loses bills.** `search_bills` full-text resolves at most 50 distinct
 bills, and only the first 8 terms of the query string are used. Nothing in the response signals

@@ -64,10 +64,6 @@ Lead with the identification — full name, party, jurisdiction — so the reade
 the right person. Then the votes in reverse chronological order: date, bill number, bill title,
 the legislator's category, and whether the measure passed.
 
-After identification is resolved, use `show_person_record` when the user asks to see, open, or
-explore the record visually. Pass the selected person UUID; the workspace loads the enriched
-history through `get_person_votes` and keeps `ABSENT` and `NV` separate from yes/no positions.
-
 For a pattern question ("does she usually vote with her party"), state the sample size and the
 window covered before drawing any characterization, and keep it descriptive. `ABSENT` and `NV` are
 not positions — count them separately and do not fold them into a yes/no tally.
@@ -75,15 +71,14 @@ not positions — count them separately and do not fold them into a yes/no tally
 ## Path B — one roll call across the chamber
 
 1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`.
-2. Deduplicate the rows on the (date, chamber, description, tallies) tuple — **not** on
-   `legiscan.roll_call_id`, which differs between duplicates. Texas SB8 returns 21 rows for 19 floor
-   votes that way. Pick the roll call the user means; when several remain, name them by date and
-   description and confirm.
-3. `get_votes` with one `rollcall_id` from that tuple and `limit: 100`. Report from that single row —
-   siblings often each carry a full copy of the votes, so querying several and combining them
-   double-counts the chamber. On `No votes found`, try the tuple's other `id`s and stop at the first
-   that returns records. Page with `cursor` until `has_more` is false — a partial page gives a wrong
-   breakdown.
+2. Treat a shared (date, chamber, description, tallies) tuple as a duplicate signal, not a unique
+   key. Corroborate it with source metadata or identical fully paginated member votes before
+   collapsing rows; otherwise retain each row and label the possible duplication. Pick the roll
+   call the user means, and when several remain, name them by date and description and confirm.
+3. `get_votes` with each candidate `rollcall_id` and `limit: 100`, paging with `cursor` until
+   `has_more` is false. For a corroborated duplicate group, select one row only when its category
+   totals reconcile with the aggregate roll-call tallies; never add counts across siblings. If no
+   candidate reconciles, report the discrepancy instead of presenting a complete breakdown.
 4. Collect every `people_id` and resolve in batches of up to 100 through `search_people` `ids`.
    Check `unresolved_ids` and account for anyone listed.
 5. Join party from step 4 to category from step 3 for the breakdown.

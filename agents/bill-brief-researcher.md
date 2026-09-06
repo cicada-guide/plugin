@@ -44,7 +44,9 @@ result rather than resolving it by guessing.
 Bill-number matching splits the alpha prefix from the digits and joins with `%`, so the wildcard is
 interior: `HB 314` matches `HB314` **and** `HB 3140` **and** `HB 5314`, `HB 1314`. Results order by
 date descending, so the exact match may not be on the first page. Read the `bill` field on every
-candidate. If several bills remain plausible, stop and return the candidate list — do not pick one.
+candidate and page with `next_offset` while `has_more` is true until the normalized exact number is
+found or every page is exhausted. If several bills remain plausible, stop and return the candidate
+list — do not pick one.
 
 **2. Gather.** In this order, skipping what the request does not need:
 
@@ -64,11 +66,11 @@ candidate. If several bills remain plausible, stop and return the candidate list
   inside the `legiscan` object. A bill with no recorded floor vote returns explanatory text, not an
   error — report that it has not been voted on.
 - `get_rollcalls` rows can duplicate, and `legiscan.roll_call_id` does **not** identify the
-  duplicates — Texas SB8 returns three rows with the same date, chamber, description and tallies but
-  three different `roll_call_id` values. Deduplicate on that tuple instead. Report from one row per
-  floor vote: siblings often each carry a full copy of the votes, so combining them over-counts the
-  chamber. On `No votes found`, try the tuple's other `id`s and stop at the first that returns
-  records.
+  duplicates. Treat a shared (date, chamber, description, tallies) tuple as a signal only:
+  corroborate with source metadata or identical fully paginated member votes before collapsing.
+  For a corroborated group, accept one sibling only when its category totals reconcile with the
+  aggregate tallies; never add sibling counts. Preserve unverified rows as possible duplicates and
+  report a discrepancy when no sibling reconciles.
 - `get_votes` with `rollcall_id` and `limit: 100` for individual positions, paging with `cursor`
   (there is no `offset` on this tool, and passing one is rejected). Then `search_people` with `ids`
   **in batches of at most 100** — the cap is schema-enforced and large chambers exceed it — to turn
