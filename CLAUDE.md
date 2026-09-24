@@ -73,7 +73,7 @@ harmless doc error — it is a runtime failure for every user who follows it.
 
 **Dataset rules are restated in every entry point, not referenced.** Subagents never load the
 `state-legislation` skill, and a slash command can run without it, so each skill and agent carries
-its own copy of the rules that prevent wrong answers: `search_bills`' interior wildcard and query
+its own copy of whichever of these rules it relies on: `search_bills`' interior wildcard and query
 caps, `get_rollcalls` missing unlinked roll calls, duplicate roll-call rows, the 100-id
 `search_people` batch cap, the two error shapes, and 25,000-character truncation. When one changes,
 grep `skills/` and `agents/` for its other copies and update every one. A lagging copy gives only

@@ -28,17 +28,17 @@ never modify it. Every invocation emits an analytics event, which is why the des
 
 Every input schema is strict — an unknown parameter is rejected before the handler runs.
 
-## Parameters shared by most tools
+## Shared parameters
 
 | Parameter | Type | Default | Constraints |
 | --- | --- | --- | --- |
 | `context` | string | — | Declared and required by every published schema. 15-25 words, third person, no personal data. See the note below — the handler behind it does not declare it. |
 | `limit` | integer | `20` | 1-100. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, `get_rollcalls`, `get_votes`, and `get_person_votes`. |
 | `offset` | integer | `0` | >= 0. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, and `get_rollcalls`. `get_votes` and `get_person_votes` page by `cursor`; `read_pdf_bytes` takes a byte `offset` of its own. |
-
-Every other tool takes neither, `list_states` included. Verified 2026-09-24: `list_states` with
-`limit: 1` returns `Unrecognized key: "limit"`.
 | `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
+
+Every tool not listed in the `limit` and `offset` rows takes neither, `list_states` included.
+Verified 2026-09-24: `list_states` with `limit: 1` returns `Unrecognized key: "limit"`.
 
 **`context` is declared by the wrapper, not by the handler.** Every published schema does list
 `context` under `properties` and name it in `required` — so validate against it and always send one.
