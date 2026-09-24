@@ -1,7 +1,7 @@
 # Cicada Guide
 
-Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look up legislators, and
-trace roll-call and individual voting records.
+Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look
+up legislators, and trace roll-call and individual voting records.
 
 The plugin connects compatible AI hosts to the hosted cicada-guide MCP server at
 `https://public.cicada.guide/mcp`, which serves state legislative data — bills, documents,
@@ -109,7 +109,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `default_division` | Jurisdiction assumed when a question names no state |
 | `default_session` | Session assumed within that jurisdiction |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
-| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, the one tool without the parameter |
+| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to the display and workspace tools, which have no such parameter |
 
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.

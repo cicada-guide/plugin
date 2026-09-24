@@ -33,16 +33,18 @@ short text fallback. It has no `response_format`.
 
 | Parameter | Type | Default | Constraints |
 | --- | --- | --- | --- |
-| `context` | string | — | Accepted by every tool. 15-25 words, third person, no personal data. See the note below — it is not a declared parameter. |
+| `context` | string | — | Declared and required by every published schema. 15-25 words, third person, no personal data. See the note below — the handler behind it does not declare it. |
 | `limit` | integer | `20` | 1-100 |
 | `offset` | integer | `0` | >= 0. Absent on `get_votes` and `get_person_votes`. |
-| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on the four workspace/display tools and `get_rollcall_breakdown`. |
+| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
 
-**`context` is injected, not declared.** No tool schema on the server declares `context` — the
-analytics wrapper adds it to the published schema and strips it before the strict validation runs.
-That is why the published schema marks it required while a call without it still succeeds. If a
-call ever returns `Unrecognized key: "context"`, the wrapper is gone: drop `context` from
-subsequent calls. Every other shared parameter is genuinely declared and unaffected.
+**`context` is declared by the wrapper, not by the handler.** Every published schema does list
+`context` under `properties` and name it in `required` — so validate against it and always send one.
+What no handler declares is the parameter itself: the analytics wrapper adds it to the published
+schema and strips it before the strict validation runs. That is why a call omitting it still
+succeeds despite being marked required. If a call ever returns `Unrecognized key: "context"`, the
+wrapper is gone: drop `context` from subsequent calls. Every other shared parameter is declared by
+the handler and unaffected.
 
 Every tool returns a `content` array of text blocks. List tools also return `structuredContent`
 holding the typed envelope. Text truncates at 25,000 characters with a pagination hint.
@@ -136,16 +138,30 @@ A missing id is not an error: returns the text `No bill found with id=<id>.` and
 `bill_id` (UUID, required), from `search_bills` or `get_bill`. Returns normalized bill, jurisdiction,
 session, sponsors, document metadata, the first page of roll calls, and partial-data warnings for a
 bill workspace. It omits full document text and source blobs. Use `get_latest_bill_document` for
-the text and `get_rollcalls` with the next offset when more roll calls are available.
+the text, and `get_rollcalls` with `offset=100` when more roll calls are available — the dossier's
+roll-call page size is 100.
+
+**Its roll calls duplicate exactly as `get_rollcalls` does.** The dossier applies no extra
+collapsing. Verified 2026-09-24 on Texas SB8: `rollcalls.total` was 21 and included the same three
+rows with identical date, chamber, description and tallies differing only in
+`legiscan.roll_call_id`. Deduplicate on the (date, chamber, description, tallies) tuple here too,
+and never sum across the siblings — see `get_rollcalls` below.
+
+**Top-level `sponsors` is resolved; `bill.sponsors` is raw.** The two are different shapes: the
+top-level array holds resolved person records, while `bill.sponsors` carries the raw UUIDs. When
+resolution is degraded, the top-level array comes back empty with a warning while the raw UUIDs
+remain — verified 2026-09-24, where `sponsors` was `[]` and `warnings` reported sponsor details
+unavailable while `bill.sponsors` still held 81 ids. Check `partial` and `warnings` before treating
+an empty `sponsors` as a bill with no sponsors; the raw ids are the fallback.
 
 ### `show_bill`
 
 `id` (UUID, required). Like the other workspace/display tools, it has no `response_format`.
 
 Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
-via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling it in
-a host without card support is always safe. `structuredContent` adds `_display.divisionName` and
-`_display.sessionName`.
+via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling
+it in a host without card support is always safe. `structuredContent` adds `_display.divisionName`
+and `_display.sessionName`.
 
 Use `show_bill` when the user wants to look at a bill; `get_bill` when they want its contents read
 back.
