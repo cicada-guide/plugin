@@ -15,6 +15,12 @@ no `offset`, and its cursor is a UUID while `get_person_votes` takes a 512-chara
 No response envelope observed on any tool carries a `duplicate_ids` or `merged_person_ids` field. Do
 not write logic that waits for one.
 
+**Source `legiscan` objects are no longer returned.** Re-checked with live calls on 2026-09-24:
+`get_bill`, `get_person`, `get_documents`, and `get_rollcalls` carry no `legiscan` field. Roll-call
+tallies now arrive as a top-level `counts` object computed from recorded individual votes. No tool
+returns a legislator's chamber, district, or role, or an external source id for a person or roll
+call. Do not ask for `legiscan` fields or build logic on them.
+
 Served over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
 never modify it. Every invocation emits an analytics event, which is why the descriptors carry
 `readOnlyHint: false` alongside `destructiveHint: false`, `idempotentHint: true`,
@@ -36,7 +42,7 @@ short text fallback. It has no `response_format`.
 | `context` | string | — | Accepted by every tool. 15-25 words, third person, no personal data. See the note below — it is not a declared parameter. |
 | `limit` | integer | `20` | 1-100 |
 | `offset` | integer | `0` | >= 0. Absent on `get_votes` and `get_person_votes`. |
-| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on the four workspace/display tools and `get_rollcall_breakdown`. |
+| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
 
 **`context` is injected, not declared.** No tool schema on the server declares `context` — the
 analytics wrapper adds it to the published schema and strips it before the strict validation runs.
@@ -125,18 +131,25 @@ full-text ceiling, and a long one silently ignores terms past the eighth. Narrow
 
 ### `get_bill`
 
-`id` (UUID, required). `structuredContent` is the full row — including the `legiscan` and
-`openstates` JSONB columns that `search_bills` omits — not a pagination envelope.
+`id` (UUID, required). `structuredContent` is the full row — adding `created_at`, `modified_on`,
+and the `openstates` JSONB column (often `null`) to the `search_bills` fields — not a pagination
+envelope. There is no `legiscan` column.
 
 A missing id is not an error: returns the text `No bill found with id=<id>.` and no
 `structuredContent`.
 
 ### `get_bill_dossier`
 
-`bill_id` (UUID, required), from `search_bills` or `get_bill`. Returns normalized bill, jurisdiction,
-session, sponsors, document metadata, the first page of roll calls, and partial-data warnings for a
-bill workspace. It omits full document text and source blobs. Use `get_latest_bill_document` for
-the text and `get_rollcalls` with the next offset when more roll calls are available.
+`bill_id` (UUID, required), from `search_bills` or `get_bill`. Returns `bill`, `division`,
+`session`, resolved `sponsors` (name and party), `documents`, the first page of `rollcalls` (up to
+100), plus `warnings` and `partial`. It omits full document text and source blobs. Use
+`get_latest_bill_document` for the text and `get_rollcalls` with `offset: 100` when `rollcalls`
+reports `has_more`.
+
+Read `warnings` before trusting an empty or `null` section. Verified 2026-09-24 on Texas SB8:
+`division` came back `null` with `partial: true` and the warning `Jurisdiction details are
+temporarily unavailable.` — resolve the jurisdiction from `bill.division_id` through `list_states`
+instead.
 
 ### `show_bill`
 
@@ -169,7 +182,7 @@ binary content types yield `null`.
 
 `bill_id` (UUID, required), plus `limit` / `offset`. Metadata only — no document text. Ordered by
 `date` descending, nulls last. Items carry `id`, `bill_id`, `status`, `date`, `url`, `type`,
-`format`, `summarization`, `legiscan`.
+`format`, `summarization`.
 
 ---
 
@@ -187,9 +200,11 @@ Ordered by `last_name`. Returns `id`, `full_name`, `first_name`, `middle_name`, 
 `suffix`, `party`, `nickname`.
 
 **There is no jurisdiction, chamber, or district field, and no `division_id` filter.** A search for
-a common surname matches legislators nationwide and the result cannot separate them. To
-disambiguate, call `get_person` on each candidate and read role and district out of the `legiscan`
-JSONB, or check which candidate has votes in the expected jurisdiction via `get_person_votes`.
+a common surname matches legislators nationwide and the result cannot separate them, and
+`get_person` no longer helps: it returns no role, chamber, district, or jurisdiction either. The
+one jurisdiction signal left is vote history. Call `get_person_votes` on each candidate and read
+`bill.division_id` (and `bill.session_id`) off the returned items; resolve the division with
+`list_states`. Chamber and district cannot be confirmed from any tool, so do not claim them.
 
 **100 is a hard cap, and chambers are bigger than that.** Verified 2026-09-05: an ordinary
 Alabama House roll call returned **103** distinct legislators, and passing all 103 to `ids` in one
@@ -198,20 +213,26 @@ Texas's 150. Chunk the id list into batches of up to 100 and check `unresolved_i
 A bill's `sponsors` array is small enough that one call is normally sufficient; a chamber's voters
 are not.
 
-**Two rows with one name may be one person stored twice.** Compare `legiscan.people_id` via
-`get_person` before treating candidates as distinct people: when it matches, they are duplicates —
-collapse them rather than asking the user to choose. Sponsor arrays can duplicate the same way, so
-the length of `sponsors` can overstate how many legislators sponsored a bill.
+**Two rows with one name may be one person stored twice — or two people — and no tool can tell
+which.** With `legiscan.people_id` gone there is no shared source id to compare. Vote history can
+prove two rows are *different* people — both appearing on the same roll call (a shared
+`rollcall.id`), since a roll call holds one vote per legislator — but nothing proves two rows are
+the *same* person. Same name, party, and `bill.division_id` with no shared roll call is equally
+consistent with two legislators in different chambers or different years, and a partial page of
+votes cannot establish "no shared roll call" anyway.
 
-Duplication is not the default reading, and the dataset is not uniformly duplicated. Verified
-2026-09-06: `search_people` for "Rex Reynolds" returns a single row, and a `name` search for "Smith"
-returned 23 rows that were all distinct people. Check `legiscan.people_id` to decide; do not assume a
-split.
+Never merge rows on your own. List the candidates with the evidence found for each — party,
+jurisdiction, and the date range of their recorded votes — and ask. Merge only when the user
+confirms the rows are one person, and then union the records.
 
-**When rows do duplicate, the votes may sit on one of them or be spread across several.** Probe each
-sibling with `get_person_votes` and union the results, rather than reporting from whichever row came
-first — an empty duplicate would state that a sitting legislator has never voted. Union them; never
-add counts across siblings.
+Duplication is not the default reading. Verified 2026-09-24: `search_people` for "Reynolds" returns
+three distinct people, and a `name` search for "Smith" returns 24 rows — including two Charles
+Smiths, one `D` and one `R`, who are different legislators. Sponsor arrays can duplicate the same way
+as person rows, so the length of `sponsors` can overstate how many legislators sponsored a bill.
+
+**When the user confirms rows are one person, union the records; never add counts across
+siblings.** Until then, a candidate with no recorded votes is reported as such, not treated as proof
+that another same-name row is the same legislator.
 
 **`ids` is how vote records become names.** When `ids` is present the effective page size widens to
 `max(limit, ids.length)`, so one call returns the whole batch instead of silently paginating. The
@@ -221,9 +242,10 @@ the tool returns explanatory text instead of an empty envelope.
 
 ### `get_person`
 
-`id` (UUID, required). Full row including `contact_details` and `legiscan` JSONB. A missing id
-returns `No person found with id=<id>.` Prefer `search_people` with `ids` for more than one
-person.
+`id` (UUID, required). Returns `id`, `created_at`, the name fields, `party`, and `contact_details`
+(often `null`) — nothing about jurisdiction, chamber, district, or role, and no `legiscan` object. A
+missing id returns `No person found with id=<id>.` Prefer `search_people` with `ids` for more than
+one person. Call it only when contact details are wanted; it adds nothing to disambiguation.
 
 ### `show_person_record`
 
@@ -238,45 +260,60 @@ person as text. It has no `response_format`.
 ### `get_rollcalls`
 
 `bill_id` (UUID, required), plus `limit` / `offset`. Aggregate floor-vote summaries, ordered by
-`date` descending, nulls last. Items carry `id`, `bill_id`, `date`, `description`, `legiscan`.
+`date` descending, nulls last. Items carry `id`, `bill_id`, `date`, `description`, `counts`.
 
-Yea / nay / absent / passed totals live inside the `legiscan` JSONB. Markdown output surfaces them
-as `**Yea**`, `**Nay**`, `**Absent**`, `**Passed**` lines; JSON leaves them nested.
+```json
+{ "id": "...", "bill_id": "...", "date": "2025-05-06",
+  "description": "Motion to Read a Third Time and Pass - Roll Call 943",
+  "counts": { "yea": 34, "nay": 0, "absent": 0, "nv": 0, "total": 34 } }
+```
 
-A bill with no recorded floor vote returns explanatory text, not an error.
+**`counts` is tallied from the recorded individual votes, not from an official tally.** It is `null`
+when no individual votes are recorded for the roll call — common for older and voice votes — which
+means "not recorded", never a 0-0 vote. Tally values are numbers. Verified 2026-09-24.
 
-**Rows can duplicate per real floor vote, and `legiscan.roll_call_id` does not identify the
-duplicates.** Verified 2026-09-06 on Texas SB8: `get_rollcalls` returned `total: 21`, including three
-rows with identical `date`, `chamber`, `description` ("Senate concurs in House amendment(s)") and
-identical yea/nay/absent tallies — but **three different** `legiscan.roll_call_id` values (1601684,
-1602015, 1601038). Grouping by `legiscan.roll_call_id` reports 21 distinct floor votes for a bill
-that had 19.
-
-**Treat the (date, chamber, description, tallies) tuple as a duplicate signal, not a unique key.**
-Corroborate matching rows with source metadata or identical fully paginated member votes before
-collapsing them. Preserve unverified rows and label them as possible duplicates. `total` counts rows,
-so it can overstate how many floor votes occurred.
-
-**Do not accumulate votes across corroborated duplicate rows.** Verified 2026-09-06: two of the
-three Texas candidates each returned vote records rather than `No votes found`. Page candidates to
-completion and accept one only when its categories reconcile with aggregate tallies; iterating and
-summing siblings would double- or triple-count the chamber.
-
-Duplication is not universal. Alabama HB94 (2025 session) returns 4 rows for 4 distinct floor votes,
-and Georgia HB327 returns 2 for 2. Treat a repeated tuple as a prompt to corroborate, not proof.
+**No field says whether the measure passed, and no field names the chamber.** Do not derive
+passage from `yea > nay`: thresholds vary (supermajorities, majorities of members elected), and
+`counts` reflects only the votes the dataset recorded. Report the tallies, and state passage only
+when the `description` or the bill's `status` says it.
 
 Start here for "how was this bill voted on", then pass a rollcall `id` to `get_votes`.
 
-**The nested `legiscan` object is not schema-stable across states.** Two variations, both verified
-2026-09-06:
+**An empty result does not mean the bill had no recorded votes.** A roll call row can be stored
+without its `bill_id`, so `get_rollcalls` never returns it. Verified 2026-09-24 on Texas HB7 (89th
+Legislature 2nd Special Session): `get_rollcalls` returned nothing, while `get_votes` with the same
+`bill_id` returned votes on several roll calls, and `get_rollcall_breakdown` on one of those reported
+`bill_id: null` with 30 recorded votes.
 
-| Variation | Alabama | Georgia / Texas |
-| --- | --- | --- |
-| Date key | `"date"` | the key itself is double-quoted, so `legiscan.date` misses |
-| Tally values | strings — `"yea": "34"` | numbers — `"yea": 49` |
+**A bill can have some roll calls linked and others not**, so a non-empty `get_rollcalls` can also
+be incomplete. Whenever an answer presents a bill's roll calls as its full voting history — or
+says it has none — reconcile against the votes:
 
-Prefer the row's own top-level `date` column over `legiscan.date`, and coerce tally values before any
-comparison or arithmetic — a sum across states otherwise mixes strings and numbers.
+1. `get_votes` with `bill_id` and `limit: 100`, paging with `cursor` until `has_more` is false.
+   One page usually holds a single roll call's votes, so stopping early misses roll calls.
+2. Collect the distinct `rollcall_id` values and drop the ones `get_rollcalls` already returned.
+3. Describe each remaining id with `get_rollcall_breakdown` (date, description, counts).
+
+When paging would run past about 20 pages, stop, present what was found, and say the list may omit
+roll calls stored without their bill link. Roll calls with `counts: null` have no votes and can
+only appear through `get_rollcalls`.
+
+**Rows can duplicate per real floor vote.** Verified 2026-09-06 on Texas SB8 (regular session):
+three rows with identical date, description ("Senate concurs in House amendment(s)"), and tallies
+but different source roll-call ids, so a bill with 19 floor votes returned `total: 21`. The source
+id is no longer returned, and duplicates also surface in `get_person_votes` — on 2026-09-24 Texas
+HB7 showed two "Read 3rd time" roll calls on the same date with the same counts.
+
+**Treat the (date, description, counts) tuple as a duplicate signal, not a unique key.** Corroborate
+matching rows with identical fully paginated member votes before collapsing them. Preserve
+unverified rows and label them as possible duplicates. `total` counts rows, so it can overstate how
+many floor votes occurred.
+
+**Never accumulate votes across duplicate rows.** Each sibling with non-`null` `counts` carries its
+own full copy of the votes; summing them double- or triple-counts the chamber. Report from one row.
+
+Duplication is not universal. Alabama HB94 (2025 session) returns 4 rows for 4 distinct floor votes.
+Treat a repeated tuple as a prompt to corroborate, not proof.
 
 ### `get_votes`
 
@@ -285,7 +322,7 @@ One row per legislator per rollcall.
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `rollcall_id` | UUID | Preferred filter |
-| `bill_id` | UUID | Votes across every rollcall on a bill |
+| `bill_id` | UUID | Votes across every rollcall on a bill — including roll calls `get_rollcalls` misses. Page to the end before collecting roll-call ids |
 | `people_id` | UUID | One legislator's votes |
 | `category` | `YEA` \| `NAY` \| `ABSENT` \| `NV` | Not sufficient on its own |
 | `limit` | integer 1-100 | |
@@ -302,25 +339,27 @@ the envelope has no `total`.
 
 Items carry `id`, `category`, `people_id`, `rollcall_id`, `bill_id` — no names.
 
-**`No votes found` has two different causes — check the cheap one first.**
-
-1. **A voteless duplicate row.** Identify possible siblings by the matching tuple, page each
-   candidate fully, and accept one only when its category totals reconcile with the aggregate
-   roll-call tallies. Never add sibling counts. If no candidate reconciles, report the discrepancy.
-2. **A genuine coverage gap.** No sibling row has votes either. `votes` coverage is per-state and
-   lags `rollcalls`. Verified 2026-09-06: Georgia HB327's House vote #129 reports `total: 180` via
-   `get_rollcalls` — it has no duplicate rows, and `get_votes` returns nothing for it.
-
-Only after exhausting the siblings should the breakdown be reported as unavailable. Never present
-either case as nobody having voted.
+**`No votes found` on a roll call matches `counts: null`.** Because `counts` is tallied from these
+same rows, a roll call with `null` counts has no member votes to page. Check the roll call's
+possible duplicates first — a sibling row may carry the votes — and only then report the
+member-by-member breakdown as unavailable for that jurisdiction. Never present it as nobody having
+voted.
 
 ### `get_rollcall_breakdown`
 
-`rollcall_id` (UUID, required), from `get_rollcalls` or `get_bill_dossier`. Returns roll-call metadata
-and aggregate vote counts to the model; named member rows go to host-only metadata for the bill
-workspace UI. The member list is capped at 500 rows and reports `partial: true` at the cap. For a
-complete model-visible breakdown, page `get_votes` and resolve people IDs. It has no
-`response_format`.
+`rollcall_id` (UUID, required), from `get_rollcalls`, `get_bill_dossier`, or `get_votes`. It has no
+`response_format`. Returns roll-call metadata and aggregate counts to the model; named member rows go
+to host-only metadata for the bill workspace UI.
+
+```json
+{ "rollcall": { "id": "...", "bill_id": null, "date": "2025-09-03", "description": "Read 3rd time" },
+  "counts": { "YEA": 17, "NAY": 8, "ABSENT": 4, "NV": 1, "total": 30 },
+  "returned": 30, "unresolved_people": 0, "partial": false }
+```
+
+The `counts` keys are upper-case here and lower-case in `get_rollcalls`. The member list is capped at
+500 rows and reports `partial: true` at the cap. For a complete model-visible breakdown, page
+`get_votes` and resolve people ids.
 
 ### `get_person_votes`
 
@@ -329,18 +368,39 @@ already joined.
 
 | Parameter | Type | Notes |
 | --- | --- | --- |
-| `people_id` | UUID, **required** | From `search_people` / `get_person` |
+| `people_id` | UUID, **required** | From `search_people` |
 | `category` | `YEA` \| `NAY` \| `ABSENT` \| `NV` | |
-| `session_id` | UUID | |
+| `session_id` | UUID | Excludes votes whose roll call has no bill |
 | `start_date` | `YYYY-MM-DD` | Inclusive lower bound |
 | `end_date` | `YYYY-MM-DD` | Inclusive upper bound |
 | `latest` | boolean, default `false` | Return only the single most recent matching vote, no cursor |
 | `limit` | integer 1-100 | |
-| `cursor` | string | From the previous response |
+| `cursor` | string, max 512 | Opaque `next_cursor` from the previous response |
 
-Sorted by rollcall date descending, then same-day sequence descending, with deterministic
-tiebreakers. Each item includes bill title, bill number, status, session, rollcall date,
-description, outcome, chamber, passed status, and source URL.
+The envelope adds `retrieved_at`, `source_freshness`, `ordering`, and `active_filters` to `count`,
+`has_more`, `next_cursor`, and `items`. Each item is nested (verified 2026-09-24):
+
+```json
+{ "vote": { "id": "...", "category": "YEA" },
+  "person": { "id": "...", "name": "...", "party": "R" },
+  "rollcall": { "id": "...", "date": "2025-09-03", "description": "Read 3rd time",
+                "outcome": { "yea": 17, "nay": 8, "absent": 4, "nv": 1 } },
+  "bill": { "id": "...", "bill": "HB7", "title": "...", "status": "Engrossed",
+            "session_id": "...", "division_id": "...", "source_url": null, "type": "Bill" } }
+```
+
+- **`rollcall.outcome` is the roll call's recorded tallies, not a pass/fail result.** It is `null`
+  when the roll call has no recorded individual votes. There is no chamber and no passed field.
+- **`bill` is `null` for about 8% of votes** — roll calls attached to no bill, such as procedural
+  motions. Report those by roll-call description and date; do not attach a bill to them.
+- **`bill` carries ids, not names.** Resolve `division_id` through `list_states` and `session_id`
+  through `list_sessions` when the answer needs the state or session name. `bill.division_id` is
+  also the only jurisdiction evidence any tool returns for a legislator.
+- **Same-day order is not chronology.** `ordering` is `rollcall.date DESC`, `rollcall.id DESC`,
+  `vote.id DESC` — within one date, rows sort by UUID. `latest: true` therefore picks arbitrarily
+  among votes cast on the latest date. For a "most recent vote" question, fetch a page and keep
+  paging with `cursor` while `has_more` is true and the page's last item still carries the newest
+  `rollcall.date`; report every vote on that date unless a description establishes their order.
 
 Prefer this over `get_votes` with `people_id` — it needs no follow-up enrichment.
 

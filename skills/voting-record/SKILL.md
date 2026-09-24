@@ -21,35 +21,37 @@ Supply the `context` string (15-25 words, third person) on each tool call, prefi
 `search_people` with `name`. Narrow with `party` when given.
 
 **`search_people` returns name and party only — no state, chamber, or district, and it has no
-jurisdiction filter.** A common surname matches legislators nationwide, and the search result
-alone cannot separate them. To narrow: call `get_person` on each candidate and read role and
-district out of the `legiscan` object, or call `get_person_votes` on each and see which one has
-votes in the jurisdiction the request implies.
+jurisdiction filter.** `get_person` adds nothing on this front. A common surname matches legislators
+nationwide, and neither result can separate them. To narrow: call `get_person_votes` on each
+candidate and check whether `bill.division_id` on the returned items is the jurisdiction the request
+implies (resolve it with `list_states`). No tool returns chamber or district — do not state either.
 
 A `default_division` in `.claude/cicada-guide.local.md` is the jurisdiction to test candidates
 against when the request names none — see **Project settings** in
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/SKILL.md`. It narrows the candidate list; it does
 not on its own confirm an identification.
 
-**Before treating two candidates as two people, compare `legiscan.people_id` from `get_person`.**
-Identical ids mean one legislator stored on several rows — collapse them and do not ask the user to
-choose. Do not assume a split, though: most names resolve to a single row.
+**Never merge two same-name rows on your own.** There is no source id to compare, so nothing proves
+two rows are one legislator — matching name, party, and state fits two people in different chambers
+or years just as well. Both rows voting on the same roll call proves they are two people. Otherwise,
+list the candidates with party, state, and the date range of their recorded votes, and ask. When the
+user confirms the rows are one legislator, union their `get_person_votes` records, say the record
+was assembled that way, and never add counts across them. Most names resolve to a single row.
 
-When rows genuinely do duplicate, the votes may be spread across them rather than sitting on one.
-Call `get_person_votes` on each sibling and union the results, and say the record was assembled that
-way. Using a single row would either report a sitting legislator as having no voting history, or
-silently return part of one. Union the records; never add counts across siblings.
-
-When candidates have genuinely different `legiscan.people_id` values and both remain plausible, list
-them with party and whatever jurisdiction evidence was found, and ask. Never pick one silently —
-attributing a vote to the wrong person is the worst failure this skill can produce.
+Never pick one candidate silently — attributing a vote to the wrong person is the worst failure this
+skill can produce.
 
 ### 2. Pull the record
 
-Use `get_person_votes`, not `get_votes`. It returns bill number, title, status, session, rollcall
-date, description, outcome, chamber, and source URL already joined.
+Use `get_person_votes`, not `get_votes`. Each item nests `vote.category`, `rollcall` (date,
+description, and `outcome` — the roll call's recorded tallies, not pass/fail), and `bill` (number,
+title, status, `session_id`, `division_id`, `source_url`). `bill` is `null` for procedural roll
+calls attached to no bill; report those by description and date. Resolve `session_id` and
+`division_id` to names with `list_sessions` and `list_states` when the report needs them.
 
-- Latest vote only → `latest: true`.
+- Latest vote only → a page of about 10, then keep paging with `cursor` while `has_more` is true
+  and the page's last item still carries the newest `rollcall.date`. Report every item on that
+  date. `latest: true` returns just one of them.
 - A session → `session_id` from `list_sessions`.
 - A period → `start_date` and `end_date` as `YYYY-MM-DD`.
 - Only one side → `category` of `YEA`, `NAY`, `ABSENT`, or `NV`.
@@ -57,18 +59,23 @@ date, description, outcome, chamber, and source URL already joined.
 Page with `cursor`. There is no `offset`.
 
 For a latest-vote request, confirm jurisdiction before attributing the result, even when the name
-search has only one candidate. Compare returned roll-call dates across confirmed duplicate person
-rows; UUID order is not chronology. If dates tie and no time or sequence establishes the order,
-report the tied records rather than claiming one occurred last. Call it the latest recorded vote
-in the available data, and state any session, date, or category filter that limits that claim.
+search has only one candidate. Do not rely on `latest: true` alone: within one date the tool sorts
+by UUID, so it returns an arbitrary one of that day's votes. Page through the whole newest date as
+above, and compare roll-call dates across user-confirmed duplicate person rows; UUID order is not
+chronology. If dates tie
+and no description establishes the order, report the tied records rather than claiming one occurred
+last. Call it the latest recorded vote in the available data, and state any session, date, or
+category filter that limits that claim.
 
-Call `get_person` when the request also asks for contact details or biography.
+Call `get_person` only when the request also asks for contact details; it returns no biography,
+role, or jurisdiction.
 
 ### 3. Report
 
 Lead with the identification — full name, party, jurisdiction — so the reader can confirm it is
 the right person. Then the votes in reverse chronological order: date, bill number, bill title,
-the legislator's category, and whether the measure passed.
+the legislator's category, and the roll-call tallies. Say the measure passed or failed only when
+the roll-call description or bill status says so — the tools return no pass/fail field.
 
 For a pattern question ("does she usually vote with her party"), state the sample size and the
 window covered before drawing any characterization, and keep it descriptive. `ABSENT` and `NV` are
@@ -76,15 +83,17 @@ not positions — count them separately and do not fold them into a yes/no tally
 
 ## Path B — one roll call across the chamber
 
-1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`.
-2. Treat a shared (date, chamber, description, tallies) tuple as a duplicate signal, not a unique
-   key. Corroborate it with source metadata or identical fully paginated member votes before
-   collapsing rows; otherwise retain each row and label the possible duplication. Pick the roll
-   call the user means, and when several remain, name them by date and description and confirm.
-3. `get_votes` with each candidate `rollcall_id` and `limit: 100`, paging with `cursor` until
-   `has_more` is false. For a corroborated duplicate group, select one row only when its category
-   totals reconcile with the aggregate roll-call tallies; never add counts across siblings. If no
-   candidate reconciles, report the discrepancy instead of presenting a complete breakdown.
+1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. It can omit roll calls
+   stored without their bill link, whether it returns rows or none. When the roll call the user
+   means is not there, page `get_votes` with `bill_id` to the end with `cursor`, collect the
+   distinct `rollcall_id` values, and describe the extra ones with `get_rollcall_breakdown`.
+2. Treat a shared (date, description, counts) tuple as a duplicate signal, not a unique key.
+   Corroborate it with identical fully paginated member votes before collapsing rows; otherwise
+   retain each row and label the possible duplication. Pick the roll call the user means, and when
+   several remain, name them by date and description and confirm.
+3. `get_votes` with the chosen `rollcall_id` and `limit: 100`, paging with `cursor` until
+   `has_more` is false. For a corroborated duplicate group, use one row; never add counts across
+   siblings.
 4. Collect every `people_id` and resolve in batches of up to 100 through `search_people` `ids`.
    Check `unresolved_ids` and account for anyone listed.
 5. Join party from step 4 to category from step 3 for the breakdown.
@@ -93,13 +102,13 @@ Markdown output truncates at 25,000 characters with a pagination hint appended. 
 is not a complete page — keep paging rather than tallying what arrived, and prefer
 `response_format: "json"` so the structured envelope carries the full page.
 
-When no `id` in the tuple returns votes, the individual rows are genuinely absent for that
-jurisdiction — Georgia HB327's House vote reports 180 recorded votes and returns none. Report the
-aggregate outcome and say the member-by-member breakdown is unavailable. Do not present it as nobody
-having voted.
+A roll call with `counts: null` has no recorded member votes. When no row in its duplicate group
+has votes either, say the member-by-member breakdown is unavailable in this dataset. Do not present
+it as nobody having voted.
 
-Report the aggregate totals from `get_rollcalls` alongside the computed breakdown. When the two
-disagree, say so rather than picking one — the discrepancy is itself the finding.
+Report the `counts` from `get_rollcalls` alongside the computed breakdown. They are tallied from the
+same vote rows, so a disagreement means a page was missed or truncated — re-page before reporting,
+and say so if it persists.
 
 ## Constraints
 
