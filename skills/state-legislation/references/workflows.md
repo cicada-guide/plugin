@@ -70,7 +70,8 @@ For a specific version rather than the newest:
 ```jsonc
 // 1. the floor votes that happened
 { "tool": "get_rollcalls", "arguments": { "bill_id": "<bill uuid>" } }
-// → items carry date, description, and yea/nay/absent totals inside legiscan
+// → items carry date, description, and counts { yea, nay, absent, nv, total } — null when unrecorded
+// → empty? call get_votes with bill_id before saying no votes were recorded (see below)
 
 // 2. individual positions on one roll call
 { "tool": "get_votes", "arguments": { "rollcall_id": "<rollcall uuid>", "limit": 100 } }
@@ -89,30 +90,47 @@ repeat step 4 per batch; a 400-member chamber needs four calls. Never loop `get_
 For a party-line breakdown, the `party` field arrives with the `search_people` batch; join it to
 the vote categories from step 2 rather than making further calls.
 
+`counts` are the recorded votes, not a result — nothing returns pass/fail or the chamber. Say a
+measure passed only when the roll-call `description` or the bill's `status` says so.
+
+When `get_rollcalls` comes back empty, some roll calls may be stored without their `bill_id`:
+
+```jsonc
+{ "tool": "get_votes", "arguments": { "bill_id": "<bill uuid>", "limit": 100 } }
+// collect the distinct rollcall_id values, then for each:
+{ "tool": "get_rollcall_breakdown", "arguments": { "rollcall_id": "<rollcall uuid>" } }
+// → rollcall date and description, counts { YEA, NAY, ABSENT, NV, total }
+```
+
+Only when that also returns nothing is "no recorded floor votes in this dataset" the answer.
+
 ## How did one legislator vote
 
 ```jsonc
 // 1. find them
 { "tool": "search_people", "arguments": { "name": "Rex Reynolds" } }
 
-// 2. confirm jurisdiction and identity before attributing votes
-{ "tool": "get_person", "arguments": { "id": "<person uuid>" } }
+// 2. confirm jurisdiction from their votes before attributing anything —
+//    read bill.division_id off the items and match it against list_states
+{ "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "limit": 10 } }
 
-// 3. their most recent recorded vote, enriched
-{ "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "latest": true } }
+// 3. their most recent recorded votes: every item sharing the newest rollcall.date.
+//    latest: true returns one of them, chosen by UUID, not by time of day
 
 // 4. or a filtered history
 { "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "category": "NAY",
   "start_date": "2024-01-01", "end_date": "2024-12-31", "limit": 50 } }
 ```
 
-`get_person_votes` already joins bill number, title, status, session, rollcall date, description,
-outcome, chamber, and source URL — no enrichment step needed. Page with `cursor`.
+Each `get_person_votes` item nests `vote` (category), `rollcall` (date, description, and `outcome`
+— the recorded tallies, not pass/fail), and `bill` (number, title, status, `session_id`,
+`division_id`, `source_url`) — no enrichment step needed beyond resolving ids to names. `bill` is
+`null` for procedural roll calls attached to no bill. Page with `cursor`.
 
-`search_people` returns name and party only — no state, chamber, or district — so several matches
-for a common surname cannot be separated from the search result alone. Call `get_person` on each
-candidate and read role and district from the `legiscan` object, or check which candidate has
-votes in the expected jurisdiction. Ask rather than guessing when two remain equally plausible.
+`search_people` and `get_person` return name and party only — no state, chamber, or district — so
+several matches for a common surname cannot be separated from those results. Check which candidate
+has votes whose `bill.division_id` is the expected jurisdiction. Chamber and district cannot be
+confirmed from any tool. Ask rather than guessing when two remain equally plausible.
 
 ## Show a bill visually
 
@@ -144,10 +162,10 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `Error: Provide at least one of rollcall_id, bill_id, or people_id...` | `get_votes` with no entity filter, or `category` alone | Add `rollcall_id`, `bill_id`, or `people_id` |
-| `MCP error -32602: Input validation error:` naming a key | An invented or misremembered parameter, e.g. `offset` passed to `get_votes` / `get_person_votes`, or `response_format` passed to `show_bill` | Schemas are strict; drop or correct the named key — see the two error shapes in `tool-reference.md` |
-| Wrong legislator | `search_people` returns no state or chamber, so a common surname is ambiguous | Check `legiscan` via `get_person`, or confirm jurisdiction through `get_person_votes`; ask when still tied |
-| Two identical-looking candidates | One person stored on duplicate rows | Compare `legiscan.people_id` via `get_person`; if equal, collapse — do not ask the user to choose |
-| A sitting legislator appears to have no votes | The chosen row is the empty duplicate | Try the sibling row with the same `legiscan.people_id`; union records across siblings, never add counts |
+| `MCP error -32602: Input validation error:` naming a key | An invented or misremembered parameter, e.g. `offset` passed to `get_votes` / `get_person_votes`, or `response_format` passed to `show_bill`, `get_bill_dossier`, or another tool without it | Schemas are strict; drop or correct the named key — see the two error shapes in `tool-reference.md` |
+| Wrong legislator | `search_people` and `get_person` return no state or chamber, so a common surname is ambiguous | Confirm jurisdiction from `bill.division_id` in `get_person_votes`; ask when still tied |
+| Two identical-looking candidates | One person stored on duplicate rows, or two people | Shared roll call → two people. Same name, party, and division with no shared roll call → union the records; otherwise ask |
+| A sitting legislator appears to have no votes | The chosen row may be an empty duplicate | Check other rows with the same name, party, and division; union records across siblings, never add counts |
 | Right bill number, wrong bill | Interior-wildcard match (`HB 314` → `HB 3140`, `HB 5314`) | Read the `bill` field; scope by `division_id` and `session_id`; the exact match may not be on page one |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Batch-resolve with `search_people` `ids` |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` have no `total` | Report "at least N", or paginate to exhaustion |
@@ -155,7 +173,8 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | `ids` rejected on a big roll call | `search_people` `ids` caps at 100; large chambers exceed it | Chunk into batches of 100 |
 | Response ends mid-sentence | 25,000-character truncation | Paginate; do not treat it as the full answer |
 | `No bill found with id=...` | Valid UUID, no row | Not an error — re-derive the id from `search_bills` |
-| `No votes found` on a rollcall whose totals are non-zero | A voteless duplicate row, or a genuine per-state coverage gap | Page possible siblings fully and accept one only when its categories reconcile with aggregate tallies |
-| More roll calls than the bill plausibly had | `get_rollcalls` `total` counts rows, and rows can duplicate | Treat the (date, chamber, description, tallies) tuple as a signal; corroborate before collapsing |
+| `counts: null`, or `No votes found` on a roll call | No individual votes recorded for that row — a voteless duplicate or a per-state coverage gap | Check possible sibling rows; if none has votes, report the breakdown as unavailable, never as nobody voting |
+| `get_rollcalls` is empty for a bill that clearly had votes | Roll calls stored without their `bill_id` | `get_votes` with `bill_id`, then `get_rollcall_breakdown` per `rollcall_id` |
+| More roll calls than the bill plausibly had | `get_rollcalls` `total` counts rows, and rows can duplicate | Treat the (date, description, counts) tuple as a signal; corroborate before collapsing |
 | A chamber's vote total comes out 2-3x too high | Votes were accumulated across duplicate rows that each carry a full copy | Report from one row per floor vote, never a sum across siblings |
-| `legiscan.date` is missing, or tallies will not compare | The `legiscan` object is not schema-stable: some states double-quote the `date` key and return tallies as strings | Use the row's top-level `date`; coerce tally values before arithmetic |
+| Code reads `legiscan` and finds nothing | The server no longer returns `legiscan` objects (absent as of 2026-09-24) | Use `counts` on roll calls and `bill.division_id` from `get_person_votes` |

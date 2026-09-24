@@ -49,7 +49,8 @@ Two packaged skills drive longer workflows:
 Research briefs distinguish the latest available status from conflicting document labels: an
 enrolled document alone does not confirm enactment. Missing vote records are reported as coverage
 gaps. Latest-vote lookups confirm the legislator's jurisdiction and report the date, measure,
-recorded position, outcome, and source when available.
+recorded position, roll-call tallies, and source when available. Pass or fail is reported only
+where the record states it, since the tools return tallies rather than results.
 
 **U.S. state legislatures only.** The dataset holds no federal congressional bills, no municipal
 ordinances, and no ballot measures. Coverage varies by state and session — `list_states` reports
@@ -70,7 +71,7 @@ contains one **Vote** per legislator who was recorded.
 | **Session** | A bounded sitting of a Division's legislature, with dates it convenes and adjourns. A Bill belongs to exactly one Session. |
 | **Bill** | One piece of proposed legislation within one Session. |
 | **Document** | A text artifact attached to a Bill — introduced, engrossed, an amendment. "The bill text" means the most recent Document, not a fixed one. |
-| **Rollcall** | A single recorded floor vote on a Bill, carrying the **aggregate** outcome: yea, nay, and absent totals, and whether the measure carried. |
+| **Rollcall** | A single recorded floor vote on a Bill, carrying the **aggregate** yea, nay, absent, and not-voting counts tallied from its recorded Votes. The dataset does not record whether the measure carried. |
 | **Vote** | **One legislator's individual position** within a Rollcall. |
 
 Two distinctions do real work here:
@@ -109,7 +110,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `default_division` | Jurisdiction assumed when a question names no state |
 | `default_session` | Session assumed within that jurisdiction |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
-| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, the one tool without the parameter |
+| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, or `get_rollcall_breakdown`, which lack the parameter |
 
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.
@@ -145,7 +146,7 @@ change when you make one.
 | `get_person` | Full record for one legislator |
 | `show_person_record` | Display a resolved legislator and recorded votes |
 | `get_rollcalls` | Floor-vote summaries for a bill |
-| `get_rollcall_breakdown` | Aggregate counts for a roll call's bill workspace view |
+| `get_rollcall_breakdown` | Metadata and aggregate counts for one roll call; member rows go to the workspace view |
 | `get_votes` | Individual positions on a roll call |
 | `get_person_votes` | One legislator's voting history, with bill context joined |
 | `list_states` | Available jurisdictions |

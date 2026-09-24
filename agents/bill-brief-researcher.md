@@ -54,8 +54,8 @@ complete, or return a request for session clarification. Do not silently choose 
 
 **2. Gather.** In this order, skipping what the request does not need:
 
-- `get_bill` with `id` for the full row, including the `legiscan` and `openstates` columns that
-  `search_bills` omits.
+- `get_bill` with `id` for the full row, including the `openstates` column (often `null`) that
+  `search_bills` omits. There is no `legiscan` column.
 - `get_latest_bill_document` with `bill_id` for the newest text. Check `text_source`: `"clean_text"`,
   `"raw_text"`, and `"document_url"` are real text; `null` means nothing stored and the fetch failed.
   On `null`, report the text as unavailable and cite `item.url`. Never treat an empty string as the
@@ -66,15 +66,18 @@ complete, or return a request for session clarification. Do not silently choose 
   next offset re-reads the same chunk forever.
 - `search_people` with `ids` to resolve the `sponsors` UUID array in one call. Never loop
   `get_person` over sponsors.
-- `get_rollcalls` with `bill_id` for floor-vote summaries; yea, nay, absent, and passed totals live
-  inside the `legiscan` object. A bill with no recorded floor vote returns explanatory text, not an
-  error — report that no recorded floor votes are available in the dataset, not that no vote occurred.
-- `get_rollcalls` rows can duplicate, and `legiscan.roll_call_id` does **not** identify the
-  duplicates. Treat a shared (date, chamber, description, tallies) tuple as a signal only:
-  corroborate with source metadata or identical fully paginated member votes before collapsing.
-  For a corroborated group, accept one sibling only when its category totals reconcile with the
-  aggregate tallies; never add sibling counts. Preserve unverified rows as possible duplicates and
-  report a discrepancy when no sibling reconciles.
+- `get_rollcalls` with `bill_id` for floor-vote summaries, each with `counts` (yea, nay, absent,
+  nv, total) tallied from recorded votes. `null` counts mean no votes were recorded, not a 0-0 vote.
+  No field reports pass/fail or chamber; state passage only where the description or bill status
+  says it.
+- When `get_rollcalls` returns nothing, call `get_votes` with `bill_id` before concluding anything —
+  some roll calls are stored without their bill link. Describe each distinct `rollcall_id` it
+  returns with `get_rollcall_breakdown`. Only when both are empty, report that no recorded floor
+  votes are available in the dataset, not that no vote occurred.
+- `get_rollcalls` rows can duplicate. Treat a shared (date, description, counts) tuple as a signal
+  only: corroborate with identical fully paginated member votes before collapsing. For a
+  corroborated group, use one row; never add sibling counts. Preserve unverified rows as possible
+  duplicates.
 - `get_votes` with `rollcall_id` and `limit: 100` for individual positions, paging with `cursor`
   (there is no `offset` on this tool, and passing one is rejected). Then `search_people` with `ids`
   **in batches of at most 100** — the cap is schema-enforced and large chambers exceed it — to turn
@@ -117,7 +120,8 @@ Return one brief:
    the text was unavailable, say so and give the document URL instead of substituting the synopsis
    without a label.
 3. **Sponsors** — names and parties, resolved.
-4. **Roll calls** — one row per floor vote: date, chamber, description, yea / nay / absent, outcome.
+4. **Roll calls** — one row per floor vote: date, description, yea / nay / absent / NV. Add an
+   outcome only where the description or bill status states one.
 5. **Vote breakdown** — for the decisive roll call, the split by party, plus any notable crossings.
    Name the roll call `id`.
 6. **Gaps** — missing text, missing roll calls, unresolved person ids, truncated pages, errored
@@ -133,7 +137,7 @@ Cite the bill id and any roll call ids so the caller can re-fetch without repeat
   substitute an adjacent bill.
 - **Bill exists, no documents.** Report the record and status, and state plainly that no text is
   attached.
-- **Bill exists, no roll calls.** That is a real finding about the bill's progress — report it as
-  such, not as a missing data problem.
+- **Bill exists, no roll calls.** After `get_votes` with `bill_id` also comes back empty, that is a
+  real finding about the recorded data — report it as such, and do not infer that no vote occurred.
 - **Request is federal, municipal, or non-U.S.** Return immediately saying the dataset does not
   cover it.
