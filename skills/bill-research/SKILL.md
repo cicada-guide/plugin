@@ -60,15 +60,18 @@ Call in this order, skipping what the request does not need:
    is unavailable, not empty. For a large PDF, stream it with `read_pdf_bytes` — see the streaming
    sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
    offset there is `offset + byteCount`, not `byteCount`.
-4. `get_rollcalls` — floor votes, with yea/nay/absent totals inside `legiscan`.
-5. `get_votes` — only when the request asks who voted how. Treat matching (date, chamber,
-   description, tallies) values as a duplicate signal, not proof: corroborate with source metadata
-   or identical fully paginated member votes before collapsing rows. Distinct or unverified rows
-   remain separate and are labeled as possible duplicates. For a corroborated group, page each
-   candidate with `cursor` and choose a single row only when its category totals reconcile with the
-   aggregate roll-call tallies. Never add sibling counts. If no row reconciles, report the
-   discrepancy and do not present a complete member breakdown. Resolve `people_id` values through
-   `search_people` `ids` **in batches of up to 100** and check every batch's `unresolved_ids`.
+4. `get_rollcalls` — floor votes, each with `counts` (yea, nay, absent, nv, total) tallied from
+   recorded votes; `null` counts mean none were recorded. It can omit roll calls stored without
+   their bill link, whether it returns rows or none, and the brief presents the legislative history
+   as complete. So page `get_votes` with `bill_id` to the end with `cursor`, collect the distinct
+   `rollcall_id` values, and describe any `get_rollcalls` lacks with `get_rollcall_breakdown`. Past
+   about 20 pages, stop and note in the brief that the list may be incomplete.
+5. `get_votes` — only when the request asks who voted how. Treat matching (date, description,
+   counts) values as a duplicate signal, not proof: corroborate with identical fully paginated
+   member votes before collapsing rows. Distinct or unverified rows remain separate and are labeled
+   as possible duplicates. For a corroborated group, use one row and never add sibling counts.
+   Resolve `people_id` values through `search_people` `ids` **in batches of up to 100** and check
+   every batch's `unresolved_ids`.
 
 ## 3. Write the brief
 
@@ -77,7 +80,8 @@ document alone does not establish a governor's signature or enactment. If source
 each dated observation with its source and say what remains unconfirmed; do not invent a final
 status. Describe status as the latest available record, not a guarantee of the present legal state.
 
-If no roll calls are returned, say "No recorded floor votes are available in this dataset."
+If neither `get_rollcalls` nor fully paged `get_votes` with `bill_id` returns anything, say "No
+recorded floor votes are available in this dataset."
 Do not infer that no vote occurred. Check sponsor resolution for unresolved IDs and identify those
 gaps instead of guessing names.
 
@@ -87,7 +91,8 @@ Structure:
 - **What it does** — 2-4 sentences grounded in the bill text or synopsis. Quote sparingly and
   attribute; do not paraphrase a provision that was not read.
 - **Sponsors** — names and party from the resolved batch.
-- **Legislative history** — roll calls in date order with outcome and vote totals.
+- **Legislative history** — roll calls in date order with description and vote counts. State
+  passage only where the description or bill status says it; no tool returns pass/fail.
 - **How members voted** — only when asked. Give the party breakdown, then notable individual
   votes.
 - **Sources** — document URLs from `get_documents` or `get_latest_bill_document`.

@@ -89,26 +89,27 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | List every document on a bill | `get_documents` |
 | Stream a large PDF in chunks | `read_pdf_bytes` |
 | Find legislators by name or party | `search_people` |
-| Read one legislator's full record | `get_person` |
+| Read one legislator's contact details (no jurisdiction or role) | `get_person` |
 | Display a resolved legislator's voting record | `show_person_record` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
 | Who voted which way on one roll call | `get_votes` |
-| Get a roll call's aggregate counts for a bill workspace | `get_rollcall_breakdown` |
+| Describe one roll call by id — date, description, counts — including one `get_rollcalls` misses | `get_rollcall_breakdown` |
 | One legislator's voting history over time | `get_person_votes` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
 | Open an exploratory research workspace | `open_research_desk` |
 
-`get_bill_dossier` omits full document text and may include only the first roll-call page.
+`get_bill_dossier` omits full document text and includes only the first 100 roll calls; read its
+`warnings` before trusting a `null` section.
 `get_rollcall_breakdown` places named member rows in host-only metadata; use paginated `get_votes`
 and person resolution for a model-visible member breakdown. Resolve identity before
 `show_person_record`, and use `open_research_desk` for an exploration request rather than a known
 bill or person.
 
 UUIDs flow between tools. `list_states` yields `division_id`; `list_sessions` yields `session_id`;
-`search_bills` yields bill `id`; `search_people` yields person `id`; `get_rollcalls` yields
-`rollcall_id`. Do not invent a UUID — obtain it from the tool that produces it.
+`search_bills` yields bill `id`; `search_people` yields person `id`; `get_rollcalls` and `get_votes`
+yield `rollcall_id`. Do not invent a UUID — obtain it from the tool that produces it.
 
 ## Rules that prevent the common failures
 
@@ -120,16 +121,26 @@ The votes table holds ~4.8M rows; omitting all three returns an error message, n
 rejected as an unrecognized key. Pass the previous response's `next_cursor` as `cursor`.
 `get_person_votes` also uses cursors. Every other list tool uses `offset`.
 
-**Roll-call rows can duplicate, and the ids do not identify the duplicates.** `get_rollcalls` may
-return several rows for one real floor vote — Texas SB8 returns three rows with the same date,
-chamber, description and tallies but three *different* `legiscan.roll_call_id` values. Treat that
-tuple as a duplicate signal, not a unique key: corroborate with source metadata or identical fully
-paginated member votes before collapsing. `total` counts rows, so it can overstate floor votes.
+**Roll-call tallies are `counts`, and they are not a result.** `get_rollcalls` returns
+`counts: { yea, nay, absent, nv, total }` tallied from the recorded individual votes; `null` means
+none were recorded, not a 0-0 vote. No tool reports whether a measure passed or which chamber voted.
+State passage only when the roll-call `description` or the bill's `status` says so — never from
+`yea > nay`, since thresholds vary.
 
-**Never accumulate votes across duplicate rows.** Siblings often each carry a full copy of the
-votes, so summing them double- or triple-counts the chamber. Page each candidate to completion and
-accept one only when its category totals reconcile with the aggregate roll-call tallies. If none
-reconcile, report the discrepancy rather than presenting a complete member breakdown.
+**`get_rollcalls` can miss roll calls, whether it returns rows or none.** Some roll calls are stored
+without a `bill_id` and never appear there. Before presenting a bill's roll calls as complete, or
+saying it has none, page `get_votes` with `bill_id` to the end with `cursor`, collect the distinct
+`rollcall_id` values, and describe any `get_rollcalls` lacks with `get_rollcall_breakdown`. When
+that is too many pages to finish, say the list may be incomplete. The call sequence is in
+`references/tool-reference.md` under `get_rollcalls`.
+
+**Roll-call rows can duplicate.** `get_rollcalls` may return several rows for one real floor vote
+with the same date, description, and counts. Treat that tuple as a duplicate signal, not a unique
+key: corroborate with identical fully paginated member votes before collapsing. `total` counts rows,
+so it can overstate floor votes.
+
+**Never accumulate votes across duplicate rows.** Each sibling with non-`null` counts carries its own
+full copy of the votes, so summing them double- or triple-counts the chamber. Report from one row.
 
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
@@ -138,21 +149,24 @@ Check `unresolved_ids` on each batch so no legislator is silently dropped.
 
 **Prefer `get_person_votes` for "how did X vote".** It returns bill and roll-call context already
 joined and filters by date, session and category; `get_votes` with `people_id` yields bare rows
-that then need enrichment.
+that then need enrichment. Its items are nested — `vote`, `person`, `rollcall`, `bill` — and `bill`
+is `null` for procedural roll calls attached to no bill. Within one date, rows sort by UUID, so
+`latest: true` picks arbitrarily among same-day votes: page while the newest date continues and
+report every vote on it.
 
-**Two rows with the same name may be one person stored twice.** Call `get_person` on each and compare
-`legiscan.people_id` — when it matches, they are duplicates, so collapse them instead of asking the
-user to pick. Do not assume a split, though: most names resolve to one row. When rows genuinely do
-duplicate, a legislator's votes may sit on one or be spread across several, so query each sibling and
-union the results — a single row can report a sitting legislator as never having voted, or return
-only part of their record. Union them; never add counts across siblings. Sponsor arrays can duplicate
-the same way.
+**`search_people` cannot filter or report by jurisdiction, and neither can `get_person`.** Both
+return name and party only — no state, chamber, district, or role. A common surname will match
+legislators across many states. The only jurisdiction evidence is vote history: call
+`get_person_votes` on each candidate and read `bill.division_id`, resolved through `list_states`.
+Never state a legislator's chamber or district — no tool returns either. When two candidates remain
+plausible, list them and ask rather than picking one.
 
-**`search_people` cannot filter or report by jurisdiction.** It returns name and party only — no
-state, chamber, or district. A common surname will match legislators across many states and the
-result alone cannot separate them. Narrow by calling `get_person` on each candidate and reading
-role and district out of the `legiscan` object, or by checking which candidate has votes in the
-expected jurisdiction. When two remain plausible, list them and ask rather than picking one.
+**Never merge two same-name rows on your own.** There is no shared source id, so nothing can prove
+two rows are one person — matching name, party, and state fits two legislators in different
+chambers or years just as well. Both rows voting on the same roll call proves they are two people.
+Otherwise list the candidates with party, state, and vote date ranges, and ask; union their records
+only after the user confirms they are one person, and never add counts across them. Most names
+resolve to one row. Sponsor arrays can duplicate the same way.
 
 **Bill-number matching is deliberately loose, and the wildcard is interior.** `search_bills` with
 `bill: "HB 314"` matches both `HB 314` and `HB314` storage forms, and also `HB 3140` **and**

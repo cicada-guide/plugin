@@ -56,7 +56,10 @@ the conversation that asked for it. You absorb that traffic and return one conso
    the bill's contents.
 7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id`, then `get_votes` with
    `rollcall_id` and `search_people` with `ids` — in batches of at most 100, since that cap is
-   schema-enforced and large chambers exceed it — to turn UUIDs into names.
+   schema-enforced and large chambers exceed it — to turn UUIDs into names. Roll-call `counts` are
+   recorded tallies, not a pass/fail result, and `get_rollcalls` can omit roll calls stored without
+   their bill link: before saying a bill has no recorded votes, page `get_votes` with `bill_id` to
+   the end with `cursor`.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.
