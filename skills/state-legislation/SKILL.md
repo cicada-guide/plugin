@@ -193,7 +193,10 @@ failure means the argument set is wrong, not merely incomplete.
 not the complete answer; paginate.
 
 **An empty result is a valid answer.** Report that nothing matched and suggest a broader filter,
-rather than retrying the same query.
+rather than retrying the same query. The exception is a page past the end: at a nonzero `offset`,
+an empty page — even one saying the bill "may not have had a recorded floor vote" — or a `Requested
+range not satisfiable` error means the list ended. Page with `next_offset` while `has_more` is true
+and never compute an offset beyond it.
 
 **A `null` `text_source` from `get_latest_bill_document` means the text is unavailable** — the
 document may be a scan, or the fetch may have timed out. Say so and offer the document URL; do not

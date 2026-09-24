@@ -74,6 +74,14 @@ is cheap — `list_states`, `list_sessions`, `get_documents`, `get_rollcalls`. I
 `search_bills`, `search_people`, and `get_votes`. `get_latest_bill_document` is not a pagination
 envelope at all and reports `total_documents` instead.
 
+**Page only with `next_offset`; never compute an offset past it.** Verified 2026-09-24 on Alabama
+HB94 (4 roll calls): `get_rollcalls` with `offset: 4` returns an empty page whose text reads `No
+rollcalls found for bill ... This bill may not have had a recorded floor vote.` That sentence
+describes the page, not the bill. An `offset` beyond the row count fails outright in the tools that
+report `total` — `get_rollcalls`, `get_documents`, `list_sessions` — with `Error: Database error:
+Requested range not satisfiable` and `isError: true`. Both mean the list ended, and neither is
+evidence about the bill. `search_bills` and `search_people` return an empty page at any offset.
+
 ### The cursor envelope
 
 ```json
