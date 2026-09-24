@@ -15,8 +15,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Cicada Guide",
-    "shortDescription": "Research state bills, legislators, and votes",
-    "longDescription": "Search U.S. state legislation, inspect bill text and sponsors, explore roll calls, and trace individual legislators' recorded votes using Cicada Guide's public legislative database.",
+    "shortDescription": "State bill briefs and sourced voting records",
+    "longDescription": "Research U.S. state bills with source links, session-specific identification, bill text, sponsors, and recorded votes. Check a legislator's latest recorded vote and distinguish confirmed status from missing or conflicting evidence.",
     "developerName": "Cicada Guide",
     "category": "Education",
     "capabilities": ["Read"],
@@ -24,9 +24,9 @@
     "privacyPolicyURL": "https://cicada.guide/privacy-policy",
     "termsOfServiceURL": "https://cicada.guide/terms-and-conditions",
     "defaultPrompt": [
-      "Find recent Alabama bills about public education",
-      "Show me the sponsors and floor votes for this bill",
-      "What is the latest recorded vote by this legislator?"
+      "Find Alabama public education bills in the 2026 Regular Session and cite their sources",
+      "Research Alabama HB591 from the 2026 Regular Session: text, sponsors, status, votes, and missing evidence",
+      "What is Alabama Representative Rex Reynolds's latest recorded vote? Include the date, measure, outcome, and source"
     ],
     "brandColor": "#C9A227",
     "logo": "./assets/logo.svg"

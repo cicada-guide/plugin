@@ -83,18 +83,28 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | --- | --- |
 | Find bills by number, topic, subject, status, sponsor | `search_bills` |
 | Read one bill's full record | `get_bill` |
+| Open a normalized bill workspace with sponsors and initial roll calls | `get_bill_dossier` |
 | Display a bill visually ("show me", "pull it up") | `show_bill` |
 | Read the newest attached document's text | `get_latest_bill_document` |
 | List every document on a bill | `get_documents` |
 | Stream a large PDF in chunks | `read_pdf_bytes` |
 | Find legislators by name or party | `search_people` |
 | Read one legislator's full record | `get_person` |
+| Display a resolved legislator's voting record | `show_person_record` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
 | Who voted which way on one roll call | `get_votes` |
+| Get a roll call's aggregate counts for a bill workspace | `get_rollcall_breakdown` |
 | One legislator's voting history over time | `get_person_votes` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
+| Open an exploratory research workspace | `open_research_desk` |
+
+`get_bill_dossier` omits full document text and may include only the first roll-call page.
+`get_rollcall_breakdown` places named member rows in host-only metadata; use paginated `get_votes`
+and person resolution for a model-visible member breakdown. Resolve identity before
+`show_person_record`, and use `open_research_desk` for an exploration request rather than a known
+bill or person.
 
 UUIDs flow between tools. `list_states` yields `division_id`; `list_sessions` yields `session_id`;
 `search_bills` yields bill `id`; `search_people` yields person `id`; `get_rollcalls` yields
@@ -190,6 +200,11 @@ Three subagents handle work whose intermediate tool traffic would bury the conve
 call sequence.
 
 ## Answering well
+
+Preserve conflicting evidence. An enrolled document is not proof of signature or enactment; report
+its version label separately from the bill's dated status when they disagree. Missing roll calls
+mean no recorded votes are available in the dataset, not that no vote occurred. A failed tool call
+is unavailable evidence, not an empty search result. Never infer chronology from UUID ordering.
 
 Cite the bill number, jurisdiction, and session with any claim about legislation, and link the
 source document when one exists. Distinguish what the data says from what it omits: a legislator

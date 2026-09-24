@@ -1,11 +1,11 @@
 # cicada-guide tool reference
 
-Verified against server `cicada-guide-mcp-server` 1.2.0, MCP protocol revision `2025-06-18`, on
-2026-09-06. The endpoint is unversioned, so re-check this document against a live `tools/list` if
-tool behavior appears to disagree with it.
+Verified against the live endpoint's `tools/list`, MCP protocol revision `2025-06-18`, on
+2026-09-24. The endpoint is unversioned, so re-check this document against a live `tools/list` if
+tool behavior appears to disagree with it. Older behavioral observations below retain their dates.
 
-The tools below are the complete `tools/list` as of that date. A tool absent from this file is
-absent from the server — never call one this document does not describe.
+The tools below match the live `tools/list` as of that date. Check the live list before concluding
+an undocumented tool is unavailable.
 
 Re-confirmed live on 2026-09-06 against Alabama, Georgia and Texas records: `list_states` returns 51
 divisions (50 states + DC, no territories); `search_people.ids` carries `minItems: 1, maxItems: 100`;
@@ -22,6 +22,13 @@ never modify it. Every invocation emits an analytics event, which is why the des
 
 Every input schema is strict — an unknown parameter is rejected before the handler runs.
 
+### `open_research_desk`
+
+Takes only the shared `context`. Opens an interactive research desk with state and session filters,
+bill search, legislator search, and links to bill and voting-record workspaces. Use it when the user
+wants to explore rather than retrieve a known record. Hosts without MCP Apps support receive a
+short text fallback. It has no `response_format`.
+
 ## Parameters shared by most tools
 
 | Parameter | Type | Default | Constraints |
@@ -29,7 +36,7 @@ Every input schema is strict — an unknown parameter is rejected before the han
 | `context` | string | — | Accepted by every tool. 15-25 words, third person, no personal data. See the note below — it is not a declared parameter. |
 | `limit` | integer | `20` | 1-100 |
 | `offset` | integer | `0` | >= 0. Absent on `get_votes` and `get_person_votes`. |
-| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`. |
+| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on the four workspace/display tools and `get_rollcall_breakdown`. |
 
 **`context` is injected, not declared.** No tool schema on the server declares `context` — the
 analytics wrapper adds it to the published schema and strips it before the strict validation runs.
@@ -124,9 +131,16 @@ full-text ceiling, and a long one silently ignores terms past the eighth. Narrow
 A missing id is not an error: returns the text `No bill found with id=<id>.` and no
 `structuredContent`.
 
+### `get_bill_dossier`
+
+`bill_id` (UUID, required), from `search_bills` or `get_bill`. Returns normalized bill, jurisdiction,
+session, sponsors, document metadata, the first page of roll calls, and partial-data warnings for a
+bill workspace. It omits full document text and source blobs. Use `get_latest_bill_document` for
+the text and `get_rollcalls` with the next offset when more roll calls are available.
+
 ### `show_bill`
 
-`id` (UUID, required). Like the two other app display tools, it has no `response_format`.
+`id` (UUID, required). Like the other workspace/display tools, it has no `response_format`.
 
 Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
 via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling it in
@@ -211,6 +225,12 @@ the tool returns explanatory text instead of an empty envelope.
 returns `No person found with id=<id>.` Prefer `search_people` with `ids` for more than one
 person.
 
+### `show_person_record`
+
+`id` (UUID, required), from `search_people` after resolving identity. Opens an interactive
+legislator record with enriched voting history. Hosts without MCP Apps support receive the resolved
+person as text. It has no `response_format`.
+
 ---
 
 ## Votes
@@ -293,6 +313,14 @@ Items carry `id`, `category`, `people_id`, `rollcall_id`, `bill_id` — no names
 
 Only after exhausting the siblings should the breakdown be reported as unavailable. Never present
 either case as nobody having voted.
+
+### `get_rollcall_breakdown`
+
+`rollcall_id` (UUID, required), from `get_rollcalls` or `get_bill_dossier`. Returns roll-call metadata
+and aggregate vote counts to the model; named member rows go to host-only metadata for the bill
+workspace UI. The member list is capped at 500 rows and reports `partial: true` at the cap. For a
+complete model-visible breakdown, page `get_votes` and resolve people IDs. It has no
+`response_format`.
 
 ### `get_person_votes`
 

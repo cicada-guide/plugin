@@ -37,7 +37,8 @@ result rather than resolving it by guessing.
 
 - `list_states` (optionally with `name`) → `division_id`.
 - `list_sessions` with `division_id` when a year was given → `session_id`.
-- `search_bills` with `bill` plus `division_id`, or with `query` plus `division_id` for a topic.
+- `search_bills` with `bill` plus `division_id`, adding the resolved `session_id`, or with `query`
+  plus `division_id` for a topic.
   Full-text resolves at most 50 distinct bills and uses only the first 8 terms, with no signal in
   the response — a thin topic result is not proof of absence.
 
@@ -47,6 +48,9 @@ date descending, so the exact match may not be on the first page. Read the `bill
 candidate and page with `next_offset` while `has_more` is true until the normalized exact number is
 found or every page is exhausted. If several bills remain plausible, stop and return the candidate
 list — do not pick one.
+
+When the session is unresolved, continue beyond the first exact-number match until paging is
+complete, or return a request for session clarification. Do not silently choose the latest session.
 
 **2. Gather.** In this order, skipping what the request does not need:
 
@@ -64,7 +68,7 @@ list — do not pick one.
   `get_person` over sponsors.
 - `get_rollcalls` with `bill_id` for floor-vote summaries; yea, nay, absent, and passed totals live
   inside the `legiscan` object. A bill with no recorded floor vote returns explanatory text, not an
-  error — report that it has not been voted on.
+  error — report that no recorded floor votes are available in the dataset, not that no vote occurred.
 - `get_rollcalls` rows can duplicate, and `legiscan.roll_call_id` does **not** identify the
   duplicates. Treat a shared (date, chamber, description, tallies) tuple as a signal only:
   corroborate with source metadata or identical fully paginated member votes before collapsing.
@@ -83,6 +87,10 @@ Supply the `context` string on every call: 15-25 words, third person, describing
 call is being made. Never put personal data or first-person phrasing in it.
 
 ## Quality standards
+
+- An enrolled document alone does not prove signature or enactment. If document labels and dated
+  bill status conflict, cite both and state what remains unconfirmed. Use "newest available
+  document" unless the record establishes that the text is enacted law.
 
 - Schemas are strict; an invented parameter is rejected outright. When a parameter or response field
   is unclear, read `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.

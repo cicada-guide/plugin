@@ -56,6 +56,12 @@ date, description, outcome, chamber, and source URL already joined.
 
 Page with `cursor`. There is no `offset`.
 
+For a latest-vote request, confirm jurisdiction before attributing the result, even when the name
+search has only one candidate. Compare returned roll-call dates across confirmed duplicate person
+rows; UUID order is not chronology. If dates tie and no time or sequence establishes the order,
+report the tied records rather than claiming one occurred last. Call it the latest recorded vote
+in the available data, and state any session, date, or category filter that limits that claim.
+
 Call `get_person` when the request also asks for contact details or biography.
 
 ### 3. Report

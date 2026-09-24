@@ -46,6 +46,11 @@ Two packaged skills drive longer workflows:
 
 ## Scope
 
+Research briefs distinguish the latest available status from conflicting document labels: an
+enrolled document alone does not confirm enactment. Missing vote records are reported as coverage
+gaps. Latest-vote lookups confirm the legislator's jurisdiction and report the date, measure,
+recorded position, outcome, and source when available.
+
 **U.S. state legislatures only.** The dataset holds no federal congressional bills, no municipal
 ordinances, and no ballot measures. Coverage varies by state and session — `list_states` reports
 which jurisdictions are present.
@@ -131,17 +136,21 @@ change when you make one.
 | --- | --- |
 | `search_bills` | Search bills by number, topic, subject, status, sponsor, session, or state |
 | `get_bill` | Full record for one bill |
+| `get_bill_dossier` | Bill workspace data: resolved sponsors, documents, and initial roll calls |
 | `show_bill` | Render a bill as an interactive card |
 | `get_latest_bill_document` | Newest attached document, with its text |
 | `get_documents` | All documents attached to a bill |
 | `read_pdf_bytes` | Stream a large legislative PDF in chunks |
 | `search_people` | Find legislators by name or party, or batch-resolve up to 100 ids |
 | `get_person` | Full record for one legislator |
+| `show_person_record` | Display a resolved legislator and recorded votes |
 | `get_rollcalls` | Floor-vote summaries for a bill |
+| `get_rollcall_breakdown` | Aggregate counts for a roll call's bill workspace view |
 | `get_votes` | Individual positions on a roll call |
 | `get_person_votes` | One legislator's voting history, with bill context joined |
 | `list_states` | Available jurisdictions |
 | `list_sessions` | Legislative sessions within a jurisdiction |
+| `open_research_desk` | Interactive exploration of bills, legislators, and votes |
 
 Full parameter reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md).
 

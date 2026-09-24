@@ -16,12 +16,15 @@ Bill numbers repeat across states and sessions, so scope the search before trust
 { "tool": "list_sessions", "arguments": { "division_id": "<division uuid>" } }
 
 // 3. search, scoped
-{ "tool": "search_bills", "arguments": { "bill": "HB 314", "division_id": "<division uuid>" } }
+{ "tool": "search_bills", "arguments": { "bill": "HB 314", "division_id": "<division uuid>", "session_id": "<resolved session uuid>" } }
 ```
 
 Read the `bill` field on every result before reporting. The wildcard is interior, so `"HB 314"` also
 matches `HB 3140` **and** `HB 5314`, `HB 1314`. Page with `next_offset` while `has_more` is true until
 the normalized exact number is found or every page is exhausted; results order by date descending.
+
+Omit `session_id` only when the session has not been resolved. In that case, the first exact-number
+match is not enough: finish paging for other sessions or ask which session the user intends.
 
 ## Research a topic
 
@@ -92,10 +95,13 @@ the vote categories from step 2 rather than making further calls.
 // 1. find them
 { "tool": "search_people", "arguments": { "name": "Rex Reynolds" } }
 
-// 2. their most recent vote, enriched
+// 2. confirm jurisdiction and identity before attributing votes
+{ "tool": "get_person", "arguments": { "id": "<person uuid>" } }
+
+// 3. their most recent recorded vote, enriched
 { "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "latest": true } }
 
-// 3. or a filtered history
+// 4. or a filtered history
 { "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "category": "NAY",
   "start_date": "2024-01-01", "end_date": "2024-12-31", "limit": 50 } }
 ```

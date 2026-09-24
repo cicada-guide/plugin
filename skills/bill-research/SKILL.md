@@ -27,7 +27,7 @@ came from the project default rather than from the request.
 
 Then search:
 
-- A bill number → `search_bills` with `bill` plus `division_id`.
+- A bill number → `search_bills` with `bill` plus `division_id`, adding `session_id` when resolved.
 - A topic → `search_bills` with `query` plus `division_id`. Full-text resolves at most 50
   distinct bills and uses only the first 8 terms, silently — a thin result is not proof the topic
   is unlegislated. Narrow by `subject` or `session_id` and say which query ran.
@@ -41,6 +41,10 @@ Stop and ask when the search returns several plausible bills and nothing in the 
 distinguishes them. List the candidates with number, title, session, and status rather than
 picking one silently. Proceed without asking only when one result clearly matches.
 
+When the session is unresolved, do not stop at the first exact number: the same number may appear
+in later pages from other sessions. Resolve the intended session or finish paging and present the
+exact-number candidates. Never silently interpret an omitted year as the current session.
+
 If nothing matches, say so and suggest a broader query — do not pad the brief with an adjacent
 bill.
 
@@ -51,7 +55,8 @@ Call in this order, skipping what the request does not need:
 1. `get_bill` — full record: status, dates, subjects, sponsors, session.
 2. `search_people` with `ids` set to the `sponsors` array — one call, not a loop. Skip this when
    `sponsors` is null or empty; `ids` requires at least one entry and rejects an empty array.
-3. `get_latest_bill_document` — the operative text. Check `text_source`; a `null` means the text
+3. `get_latest_bill_document` — the newest available document, not necessarily enacted law. Check
+   `text_source`; a `null` means the text
    is unavailable, not empty. For a large PDF, stream it with `read_pdf_bytes` — see the streaming
    sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
    offset there is `offset + byteCount`, not `byteCount`.
@@ -66,6 +71,15 @@ Call in this order, skipping what the request does not need:
    `search_people` `ids` **in batches of up to 100** and check every batch's `unresolved_ids`.
 
 ## 3. Write the brief
+
+Compare the bill's reported status and dated history with the document's version label. An enrolled
+document alone does not establish a governor's signature or enactment. If sources conflict, report
+each dated observation with its source and say what remains unconfirmed; do not invent a final
+status. Describe status as the latest available record, not a guarantee of the present legal state.
+
+If no roll calls are returned, say "No recorded floor votes are available in this dataset."
+Do not infer that no vote occurred. Check sponsor resolution for unresolved IDs and identify those
+gaps instead of guessing names.
 
 Structure:
 
