@@ -1,6 +1,6 @@
 ---
 name: bill-brief-researcher
-description: Use this agent when one U.S. state bill needs a full sourced brief and assembling it means chaining many tool calls. Typical triggers include a request for everything known about a named bill, a request to read what a bill does alongside who sponsored it and how the chamber voted, and a follow-up asking for the complete picture on a bill already mentioned in conversation. The /cicada-guide:bill-research command covers the same ground interactively; reach for the agent when the gathering should run autonomously instead of filling the conversation with intermediate output. See "When to invoke" in the agent body for worked scenarios.
+description: Use this agent when one U.S. state bill needs a full sourced brief and assembling it means chaining many tool calls. Typical triggers include a request for everything known about a named bill, a request to read what a bill does alongside who sponsored it and how the chamber voted, and a follow-up asking for the complete picture on a bill already mentioned in conversation. The /cicada-guide:bill-research command covers the same ground interactively; reach for the agent when the gathering should run autonomously instead of filling the conversation with intermediate output. Do not use it for a sweep of one topic across states; multi-state-bill-scanner handles that. See "When to invoke" in the agent body for worked scenarios.
 model: inherit
 color: blue
 ---

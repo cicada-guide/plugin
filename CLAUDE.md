@@ -71,6 +71,14 @@ Avoid writing a tool *count* into prose; it is the first thing to go stale.
 reject unknown keys outright rather than ignoring them, so a plausible invented name is not a
 harmless doc error — it is a runtime failure for every user who follows it.
 
+**Dataset rules are restated in every entry point, not referenced.** Subagents never load the
+`state-legislation` skill, and a slash command can run without it, so each skill and agent carries
+its own copy of the rules that prevent wrong answers: `search_bills`' interior wildcard and query
+caps, `get_rollcalls` missing unlinked roll calls, duplicate roll-call rows, the 100-id
+`search_people` batch cap, the two error shapes, and 25,000-character truncation. When one changes,
+grep `skills/` and `agents/` for its other copies and update every one. A lagging copy gives only
+that entry point the wrong answer, so nothing else looks broken.
+
 ## Product constraints
 
 Deliberate limits, not oversights. Restating them is much of what the skills do, so relaxing one

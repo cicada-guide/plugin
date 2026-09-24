@@ -1,6 +1,6 @@
 ---
 name: bill-research
-description: Produces a sourced brief on one U.S. state bill — identification, status, sponsors, bill text, roll calls, and how members voted.
+description: Produces a sourced brief on one U.S. state bill — identification, status, sponsors, bill text, roll calls, and how members voted. This skill should be used when the user wants the full picture on one named bill ("brief me on Alabama HB 314", "what does this bill do and how did the chamber vote"), not for a topic sweep across states.
 argument-hint: "<bill number or topic> [state] [year]"
 disable-model-invocation: false
 ---

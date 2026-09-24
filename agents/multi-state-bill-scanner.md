@@ -54,12 +54,19 @@ the conversation that asked for it. You absorb that traffic and return one conso
    `get_latest_bill_document` and read `text`. When `text_source` is `null` there is no stored text
    and the fetch failed — report that and cite `item.url` rather than treating an empty string as
    the bill's contents.
-7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id`, then `get_votes` with
-   `rollcall_id` and `search_people` with `ids` — in batches of at most 100, since that cap is
-   schema-enforced and large chambers exceed it — to turn UUIDs into names. Roll-call `counts` are
-   recorded tallies, not a pass/fail result, and `get_rollcalls` can omit roll calls stored without
-   their bill link: before saying a bill has no recorded votes, page `get_votes` with `bill_id` to
-   the end with `cursor`.
+7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id` for floor votes. Their
+   `counts` are recorded tallies, not a pass/fail result.
+   - `get_rollcalls` can omit roll calls stored without their bill link, whether it returns rows or
+     none. Page `get_votes` with `bill_id` and `limit: 100` to the end with `cursor`, collect the
+     distinct `rollcall_id` values, and describe any `get_rollcalls` lacks with
+     `get_rollcall_breakdown`. Past about 20 pages, stop and list that bill's roll calls as possibly
+     incomplete under Coverage and caveats.
+   - Rows can duplicate. Treat a shared (date, description, counts) tuple as a signal only:
+     corroborate with identical fully paginated member votes before collapsing. For a corroborated
+     group, use one row and never add sibling counts.
+   - For individual positions, `get_votes` with `rollcall_id`, then `search_people` with `ids` — in
+     batches of at most 100, since that cap is schema-enforced and large chambers exceed it — to
+     turn UUIDs into names. Check `unresolved_ids` on each batch.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.

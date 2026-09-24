@@ -28,20 +28,16 @@ never modify it. Every invocation emits an analytics event, which is why the des
 
 Every input schema is strict — an unknown parameter is rejected before the handler runs.
 
-### `open_research_desk`
-
-Takes only the shared `context`. Opens an interactive research desk with state and session filters,
-bill search, legislator search, and links to bill and voting-record workspaces. Use it when the user
-wants to explore rather than retrieve a known record. Hosts without MCP Apps support receive a
-short text fallback. It has no `response_format`.
-
 ## Parameters shared by most tools
 
 | Parameter | Type | Default | Constraints |
 | --- | --- | --- | --- |
 | `context` | string | — | Declared and required by every published schema. 15-25 words, third person, no personal data. See the note below — the handler behind it does not declare it. |
-| `limit` | integer | `20` | 1-100 |
-| `offset` | integer | `0` | >= 0. Absent on `get_votes` and `get_person_votes`. |
+| `limit` | integer | `20` | 1-100. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, `get_rollcalls`, `get_votes`, and `get_person_votes`. |
+| `offset` | integer | `0` | >= 0. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, and `get_rollcalls`. `get_votes` and `get_person_votes` page by `cursor`; `read_pdf_bytes` takes a byte `offset` of its own. |
+
+Every other tool takes neither, `list_states` included. Verified 2026-09-24: `list_states` with
+`limit: 1` returns `Unrecognized key: "limit"`.
 | `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
 
 **`context` is declared by the wrapper, not by the handler.** Every published schema does list
@@ -461,3 +457,14 @@ The tool refuses to fetch in four cases, each returning explanatory text:
 | `Content-Type` is not `application/pdf` | `Response content-type is not a PDF (application/pdf).` |
 
 Fetches run with `redirect: "manual"`, so redirects are rejected rather than followed.
+
+---
+
+## Exploration
+
+### `open_research_desk`
+
+Takes only the shared `context`. Opens an interactive research desk with state and session filters,
+bill search, legislator search, and links to bill and voting-record workspaces. Use it when the user
+wants to explore rather than retrieve a known record. Hosts without MCP Apps support receive a
+short text fallback. It has no `response_format`.
