@@ -13,7 +13,7 @@ every release.
 | Layout | Repo root is the plugin | `.claude-plugin/` holds both `marketplace.json` (`"source": "./"`) and `plugin.json`. |
 | MCP endpoint | `https://public.cicada.guide/mcp` | Cloudflare Custom Domain on the Worker, rather than the `workers.dev` hostname. |
 | MCP server key | `guide-public` | Tools surface as `mcp__plugin_cicada-guide_guide-public__search_bills`. The `<server>` segment is mandatory — `mcp__plugin_cicada-guide__search_bills` is not reachable by any configuration. |
-| Contact email | Omitted | `author` and `owner` carry a name and URL only. Issues route through the repo rather than a published inbox. |
+| Contact email | Codex manifest only | The Claude manifests' `author` and `owner` carry a name and URL only, and issues route through the repo. `.codex-plugin/plugin.json` keeps `author.email` deliberately (confirmed 2026-09-24); do not strip it as drift. |
 | Always-on skill name | `state-legislation` | Renamed from `cicada-guide` in 0.2.0, which had produced `/cicada-guide:cicada-guide`. Done in the same pass that converted cross-component links to `${CLAUDE_PLUGIN_ROOT}`, since both touch the same sites. |
 | Cross-component links | `${CLAUDE_PLUGIN_ROOT}/skills/...` | Skills and agents reference shared files by plugin root, never by a relative path. A subagent's working directory is the user's project, so `../skills/...` resolves to nothing. |
 | Codex manifest | `.codex-plugin/plugin.json`, kept in step | A separate manifest with its own `interface` block, description text, and `logo` pointing at `assets/logo.svg`. It carries its own `version`, which is why the bump below is four fields rather than two. |
@@ -28,7 +28,21 @@ every release.
   `mcp-session-id` response header on the next call, and send `notifications/initialized` between
   the two. Reconcile against the server, never against the other copies: the count and tool names
   are repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three agreeing
-  with each other is exactly the state drift leaves behind.
+  with each other is exactly the state drift leaves behind. This writes the live list to
+  `tools-list.json` (bash):
+
+  ```bash
+  E=https://public.cicada.guide/mcp
+  H=(-H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream'
+     -H 'MCP-Protocol-Version: 2025-06-18')
+  SID=$(curl -s -D - -o /dev/null "${H[@]}" "$E" -d '{"jsonrpc":"2.0","id":1,"method":"initialize",
+    "params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"docs","version":"0"}}}' |
+    tr -d '\r' | awk -F': ' 'tolower($1)=="mcp-session-id"{print $2}')
+  curl -s "${H[@]}" -H "Mcp-Session-Id: $SID" "$E" -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+  curl -s "${H[@]}" -H "Mcp-Session-Id: $SID" "$E" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |
+    sed -n 's/^data: //p' > tools-list.json
+  ```
+
 - **Bump all four `version` fields together.** They live in three files:
   `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and *both* `metadata.version` and
   `plugins[0].version` in `.claude-plugin/marketplace.json`. They are independent fields and drift

@@ -28,27 +28,25 @@ never modify it. Every invocation emits an analytics event, which is why the des
 
 Every input schema is strict — an unknown parameter is rejected before the handler runs.
 
-### `open_research_desk`
-
-Takes only the shared `context`. Opens an interactive research desk with state and session filters,
-bill search, legislator search, and links to bill and voting-record workspaces. Use it when the user
-wants to explore rather than retrieve a known record. Hosts without MCP Apps support receive a
-short text fallback. It has no `response_format`.
-
-## Parameters shared by most tools
+## Shared parameters
 
 | Parameter | Type | Default | Constraints |
 | --- | --- | --- | --- |
-| `context` | string | — | Accepted by every tool. 15-25 words, third person, no personal data. See the note below — it is not a declared parameter. |
-| `limit` | integer | `20` | 1-100 |
-| `offset` | integer | `0` | >= 0. Absent on `get_votes` and `get_person_votes`. |
+| `context` | string | — | Declared and required by every published schema. 15-25 words, third person, no personal data. See the note below — the handler behind it does not declare it. |
+| `limit` | integer | `20` | 1-100. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, `get_rollcalls`, `get_votes`, and `get_person_votes`. |
+| `offset` | integer | `0` | >= 0. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, and `get_rollcalls`. `get_votes` and `get_person_votes` page by `cursor`; `read_pdf_bytes` takes a byte `offset` of its own. |
 | `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
 
-**`context` is injected, not declared.** No tool schema on the server declares `context` — the
-analytics wrapper adds it to the published schema and strips it before the strict validation runs.
-That is why the published schema marks it required while a call without it still succeeds. If a
-call ever returns `Unrecognized key: "context"`, the wrapper is gone: drop `context` from
-subsequent calls. Every other shared parameter is genuinely declared and unaffected.
+Every tool not listed in the `limit` and `offset` rows takes neither, `list_states` included.
+Verified 2026-09-24: `list_states` with `limit: 1` returns `Unrecognized key: "limit"`.
+
+**`context` is declared by the wrapper, not by the handler.** Every published schema does list
+`context` under `properties` and name it in `required` — so validate against it and always send one.
+What no handler declares is the parameter itself: the analytics wrapper adds it to the published
+schema and strips it before the strict validation runs. That is why a call omitting it still
+succeeds despite being marked required. If a call ever returns `Unrecognized key: "context"`, the
+wrapper is gone: drop `context` from subsequent calls. Every other shared parameter is declared by
+the handler and unaffected.
 
 Every tool returns a `content` array of text blocks. List tools also return `structuredContent`
 holding the typed envelope. Text truncates at 25,000 characters with a pagination hint.
@@ -75,6 +73,14 @@ and must change, while a handler-level failure often means a required filter is 
 is cheap — `list_states`, `list_sessions`, `get_documents`, `get_rollcalls`. It is **absent** from
 `search_bills`, `search_people`, and `get_votes`. `get_latest_bill_document` is not a pagination
 envelope at all and reports `total_documents` instead.
+
+**Page only with `next_offset`; never compute an offset past it.** Verified 2026-09-24 on Alabama
+HB94 (4 roll calls): `get_rollcalls` with `offset: 4` returns an empty page whose text reads `No
+rollcalls found for bill ... This bill may not have had a recorded floor vote.` That sentence
+describes the page, not the bill. An `offset` beyond the row count fails outright in the tools that
+report `total` — `get_rollcalls`, `get_documents`, `list_sessions` — with `Error: Database error:
+Requested range not satisfiable` and `isError: true`. Both mean the list ended, and neither is
+evidence about the bill. `search_bills` and `search_people` return an empty page at any offset.
 
 ### The cursor envelope
 
@@ -140,25 +146,19 @@ A missing id is not an error: returns the text `No bill found with id=<id>.` and
 
 ### `get_bill_dossier`
 
-`bill_id` (UUID, required), from `search_bills` or `get_bill`. Returns `bill`, `division`,
-`session`, resolved `sponsors` (name and party), `documents`, the first page of `rollcalls` (up to
-100), plus `warnings` and `partial`. It omits full document text and source blobs. Use
-`get_latest_bill_document` for the text and `get_rollcalls` with `offset: 100` when `rollcalls`
-reports `has_more`.
-
-Read `warnings` before trusting an empty or `null` section. Verified 2026-09-24 on Texas SB8:
-`division` came back `null` with `partial: true` and the warning `Jurisdiction details are
-temporarily unavailable.` — resolve the jurisdiction from `bill.division_id` through `list_states`
-instead.
+`bill_id` (UUID, required), from `search_bills` or `get_bill`. Returns normalized bill, jurisdiction,
+session, sponsors, document metadata, the first page of roll calls, and partial-data warnings for a
+bill workspace. It omits full document text and source blobs. Use `get_latest_bill_document` for
+the text and `get_rollcalls` with the next offset when more roll calls are available.
 
 ### `show_bill`
 
 `id` (UUID, required). Like the other workspace/display tools, it has no `response_format`.
 
 Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
-via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling it in
-a host without card support is always safe. `structuredContent` adds `_display.divisionName` and
-`_display.sessionName`.
+via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling
+it in a host without card support is always safe. `structuredContent` adds `_display.divisionName`
+and `_display.sessionName`.
 
 Use `show_bill` when the user wants to look at a bill; `get_bill` when they want its contents read
 back.
@@ -465,3 +465,14 @@ The tool refuses to fetch in four cases, each returning explanatory text:
 | `Content-Type` is not `application/pdf` | `Response content-type is not a PDF (application/pdf).` |
 
 Fetches run with `redirect: "manual"`, so redirects are rejected rather than followed.
+
+---
+
+## Exploration
+
+### `open_research_desk`
+
+Takes only the shared `context`. Opens an interactive research desk with state and session filters,
+bill search, legislator search, and links to bill and voting-record workspaces. Use it when the user
+wants to explore rather than retrieve a known record. Hosts without MCP Apps support receive a
+short text fallback. It has no `response_format`.

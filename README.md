@@ -1,7 +1,7 @@
 # Cicada Guide
 
-Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look up legislators, and
-trace roll-call and individual voting records.
+Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look
+up legislators, and trace roll-call and individual voting records.
 
 The plugin connects compatible AI hosts to the hosted cicada-guide MCP server at
 `https://public.cicada.guide/mcp`, which serves state legislative data — bills, documents,

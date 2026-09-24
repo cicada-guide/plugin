@@ -29,11 +29,15 @@ Every key is optional. A missing key means no default, not a fallback to some ot
 
 ## `response_format` must not reach the tools without it
 
-`show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and
+As of 2026-09-24, `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and
 `get_rollcall_breakdown` have no `response_format` parameter, and every schema is strict. Passing a
 pinned `response_format` to any of them returns `MCP error -32602: Input validation error:` rather
 than being ignored. When a pinned `response_format` is in effect, omit it from those tools and pass
-it to everything else as normal. Check `tool-reference.md` for any tool not listed here.
+it to everything else as normal.
+
+Treat the list as a floor rather than a fixed set: every display or workspace tool added so far has
+omitted the parameter, so check a new tool's schema in `tool-reference.md` before assuming it
+accepts one.
 
 ## `context_prefix` rides on an injected parameter
 

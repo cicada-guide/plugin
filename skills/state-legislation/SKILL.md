@@ -67,11 +67,12 @@ Every input schema rejects unknown parameters outright — a misremembered or in
 returns `Unrecognized key`, it is not ignored. Pass only the parameters in
 `references/tool-reference.md`.
 
-Every tool also accepts a `context` string: 15-25 words, third person, saying why the call is
-being made. It feeds the server's intent analytics. Supply it, and never put credentials, personal
-data, or first-person phrasing in it. It is injected by the analytics wrapper rather than declared
-by any schema — so if a call ever returns `Unrecognized key: "context"`, drop it from subsequent
-calls and carry on.
+Every tool's schema declares a required `context` string: 15-25 words, third person, saying why
+the call is being made. It feeds the server's intent analytics. Supply it, and never put
+credentials, personal data, or first-person phrasing in it. The analytics wrapper adds it to each
+schema and strips it before validation, so a call without it still succeeds — and if a call ever
+returns `Unrecognized key: "context"`, the wrapper is gone: drop it from subsequent calls and carry
+on.
 
 ```
 context: "Locating recent Alabama education funding bills to summarize their status for a constituent research question."
@@ -192,7 +193,10 @@ failure means the argument set is wrong, not merely incomplete.
 not the complete answer; paginate.
 
 **An empty result is a valid answer.** Report that nothing matched and suggest a broader filter,
-rather than retrying the same query.
+rather than retrying the same query. The exception is a page past the end: at a nonzero `offset`,
+an empty page — even one saying the bill "may not have had a recorded floor vote" — or a `Requested
+range not satisfiable` error means the list ended. Page with `next_offset` while `has_more` is true
+and never compute an offset beyond it.
 
 **A `null` `text_source` from `get_latest_bill_document` means the text is unavailable** — the
 document may be a scan, or the fetch may have timed out. Say so and offer the document URL; do not

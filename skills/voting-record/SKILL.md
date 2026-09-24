@@ -1,6 +1,6 @@
 ---
 name: voting-record
-description: Produces a sourced voting-record summary for one U.S. state legislator, or a party breakdown of a single roll call.
+description: Produces a sourced voting-record summary for one U.S. state legislator, or a party breakdown of a single roll call. This skill should be used when the user asks how a named state legislator voted ("how did Senator Reynolds vote on HB 314", "what was her latest vote") or how one roll call split by party ("break down the final passage vote by party").
 argument-hint: "<legislator name> [state] [session or date range]"
 disable-model-invocation: false
 ---
