@@ -48,9 +48,13 @@ a vote to the wrong legislator is the worst failure this dataset can produce.
    returns — `get_person` carries no role, district, jurisdiction, or source id. A legislator with
    recent votes in the expected state is strong evidence; one with none is weak evidence of
    absence, not proof. No tool returns chamber or district, so a request constraint like "Senator"
-   or "District 12" cannot be verified — say so rather than treating it as confirmed.
-5. **Decide.** Resolved means exactly one candidate satisfies every stated constraint and the
-   evidence naming that jurisdiction was actually retrieved. Anything else is ambiguous.
+   or "District 12" cannot be checked.
+5. **Decide.** Resolved means exactly one candidate satisfies every constraint that can be checked
+   — name, party, and state — and the evidence naming that state was actually retrieved. Anything
+   else is ambiguous. A chamber or district in the request cannot break a tie between candidates,
+   and it cannot be confirmed for the one you resolve: list it on the `UNVERIFIED` line so the
+   caller does not report it as established. A House member with the right name and state is still
+   a possible wrong answer to "Senator X".
 6. **Batch mode.** For a set of ids, call `search_people` with `ids` (1-100 per call). The page size
    widens to cover the batch, so one call returns all of them. Read `unresolved_ids` on the response
    and list every id it names. Never loop `get_person` over a batch.
@@ -69,12 +73,13 @@ call is being made. Never put a person's contact details or any personal data in
 - Failed calls come back as results in two shapes, never exceptions: a text block beginning with
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. Retry once, then
   report the candidate as unverified instead of dropping them.
-- Same-name rows may be one person stored twice. There is no source id to compare: if two
-  candidates voted on the same roll call (a shared `rollcall.id`), they are different people. If
-  they share full name, party, and `bill.division_id` and never share a roll call, collapse them and
-  return RESOLVED with every row's id, noting the records must be unioned — an empty duplicate
-  would misreport a real legislator as having never voted. Never add counts across siblings. Do not
-  assume a split in the first place: most names resolve to a single row.
+- Same-name rows may be one person stored twice, but nothing can prove it: there is no source id,
+  and matching name, party, and state fits two legislators in different chambers or years just as
+  well. Ten recent votes per row cannot show that two rows never shared a roll call either. Never
+  collapse candidates. Two rows on the same roll call (a shared `rollcall.id`) are proven to be
+  different people — say so under RULED OUT or in the candidate list. Otherwise return AMBIGUOUS
+  with each row's party, state, and vote date range, and ask whether they are one person. Most
+  names resolve to a single row.
 - U.S. state legislators only. Members of Congress are not in this dataset.
 - When a parameter, constraint, or response field is unclear, read
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
@@ -87,8 +92,9 @@ Open with a verdict line, then the evidence:
 ```
 VERDICT: RESOLVED
 PERSON: <full_name> (<party>)
-ID: <person uuid — every row's uuid when duplicates were collapsed>
+ID: <person uuid>
 EVIDENCE: <state and session from bill.division_id / bill.session_id, and which call produced it>
+UNVERIFIED: <chamber, district, or other request constraints no tool can check — or "none">
 RULED OUT: <other candidates, one line each, with why>
 ```
 

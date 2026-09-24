@@ -42,7 +42,7 @@ short text fallback. It has no `response_format`.
 | `context` | string | — | Accepted by every tool. 15-25 words, third person, no personal data. See the note below — it is not a declared parameter. |
 | `limit` | integer | `20` | 1-100 |
 | `offset` | integer | `0` | >= 0. Absent on `get_votes` and `get_person_votes`. |
-| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on the four workspace/display tools and `get_rollcall_breakdown`. |
+| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
 
 **`context` is injected, not declared.** No tool schema on the server declares `context` — the
 analytics wrapper adds it to the published schema and strips it before the strict validation runs.
@@ -213,25 +213,26 @@ Texas's 150. Chunk the id list into batches of up to 100 and check `unresolved_i
 A bill's `sponsors` array is small enough that one call is normally sufficient; a chamber's voters
 are not.
 
-**Two rows with one name may be one person stored twice — or two people.** With `legiscan.people_id`
-gone there is no shared source id to compare, so decide from vote history. Call `get_person_votes`
-on each row:
+**Two rows with one name may be one person stored twice — or two people — and no tool can tell
+which.** With `legiscan.people_id` gone there is no shared source id to compare. Vote history can
+prove two rows are *different* people — both appearing on the same roll call (a shared
+`rollcall.id`), since a roll call holds one vote per legislator — but nothing proves two rows are
+the *same* person. Same name, party, and `bill.division_id` with no shared roll call is equally
+consistent with two legislators in different chambers or different years, and a partial page of
+votes cannot establish "no shared roll call" anyway.
 
-- **Both rows appear on the same roll call** (a shared `rollcall.id`) → two different people. A
-  roll call holds one vote per legislator.
-- **Same full name, same party, same `bill.division_id`, and no shared roll call** → likely one
-  person stored twice. Union the vote histories and say the record was assembled from both rows.
-- **Anything thinner** — one row has no votes, or the parties or divisions differ → do not merge.
-  List the candidates with the evidence found and ask.
+Never merge rows on your own. List the candidates with the evidence found for each — party,
+jurisdiction, and the date range of their recorded votes — and ask. Merge only when the user
+confirms the rows are one person, and then union the records.
 
 Duplication is not the default reading. Verified 2026-09-24: `search_people` for "Reynolds" returns
 three distinct people, and a `name` search for "Smith" returns 24 rows — including two Charles
 Smiths, one `D` and one `R`, who are different legislators. Sponsor arrays can duplicate the same way
 as person rows, so the length of `sponsors` can overstate how many legislators sponsored a bill.
 
-**When rows do duplicate, union the records; never add counts across siblings.** Reporting from
-whichever row came first can state that a sitting legislator has never voted, or return only part of
-their record.
+**When the user confirms rows are one person, union the records; never add counts across
+siblings.** Until then, a candidate with no recorded votes is reported as such, not treated as proof
+that another same-name row is the same legislator.
 
 **`ids` is how vote records become names.** When `ids` is present the effective page size widens to
 `max(limit, ids.length)`, so one call returns the whole batch instead of silently paginating. The
@@ -282,9 +283,20 @@ Start here for "how was this bill voted on", then pass a rollcall `id` to `get_v
 without its `bill_id`, so `get_rollcalls` never returns it. Verified 2026-09-24 on Texas HB7 (89th
 Legislature 2nd Special Session): `get_rollcalls` returned nothing, while `get_votes` with the same
 `bill_id` returned votes on several roll calls, and `get_rollcall_breakdown` on one of those reported
-`bill_id: null` with 30 recorded votes. Before reporting "no recorded floor votes", call `get_votes`
-with `bill_id` and `limit: 100`; collect the distinct `rollcall_id` values and get each one's date,
-description, and counts from `get_rollcall_breakdown`.
+`bill_id: null` with 30 recorded votes.
+
+**A bill can have some roll calls linked and others not**, so a non-empty `get_rollcalls` can also
+be incomplete. Whenever an answer presents a bill's roll calls as its full voting history — or
+says it has none — reconcile against the votes:
+
+1. `get_votes` with `bill_id` and `limit: 100`, paging with `cursor` until `has_more` is false.
+   One page usually holds a single roll call's votes, so stopping early misses roll calls.
+2. Collect the distinct `rollcall_id` values and drop the ones `get_rollcalls` already returned.
+3. Describe each remaining id with `get_rollcall_breakdown` (date, description, counts).
+
+When paging would run past about 20 pages, stop, present what was found, and say the list may omit
+roll calls stored without their bill link. Roll calls with `counts: null` have no votes and can
+only appear through `get_rollcalls`.
 
 **Rows can duplicate per real floor vote.** Verified 2026-09-06 on Texas SB8 (regular session):
 three rows with identical date, description ("Senate concurs in House amendment(s)"), and tallies
@@ -310,7 +322,7 @@ One row per legislator per rollcall.
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `rollcall_id` | UUID | Preferred filter |
-| `bill_id` | UUID | Votes across every rollcall on a bill — including roll calls `get_rollcalls` misses |
+| `bill_id` | UUID | Votes across every rollcall on a bill — including roll calls `get_rollcalls` misses. Page to the end before collecting roll-call ids |
 | `people_id` | UUID | One legislator's votes |
 | `category` | `YEA` \| `NAY` \| `ABSENT` \| `NV` | Not sufficient on its own |
 | `limit` | integer 1-100 | |
@@ -386,8 +398,9 @@ The envelope adds `retrieved_at`, `source_freshness`, `ordering`, and `active_fi
   also the only jurisdiction evidence any tool returns for a legislator.
 - **Same-day order is not chronology.** `ordering` is `rollcall.date DESC`, `rollcall.id DESC`,
   `vote.id DESC` — within one date, rows sort by UUID. `latest: true` therefore picks arbitrarily
-  among votes cast on the latest date. For a "most recent vote" question, fetch with a `limit` and
-  report every vote sharing the latest date unless a description establishes their order.
+  among votes cast on the latest date. For a "most recent vote" question, fetch a page and keep
+  paging with `cursor` while `has_more` is true and the page's last item still carries the newest
+  `rollcall.date`; report every vote on that date unless a description establishes their order.
 
 Prefer this over `get_votes` with `people_id` — it needs no follow-up enrichment.
 

@@ -71,7 +71,7 @@ For a specific version rather than the newest:
 // 1. the floor votes that happened
 { "tool": "get_rollcalls", "arguments": { "bill_id": "<bill uuid>" } }
 // → items carry date, description, and counts { yea, nay, absent, nv, total } — null when unrecorded
-// → empty? call get_votes with bill_id before saying no votes were recorded (see below)
+// → may be incomplete, even when non-empty: reconcile with get_votes by bill_id (see below)
 
 // 2. individual positions on one roll call
 { "tool": "get_votes", "arguments": { "rollcall_id": "<rollcall uuid>", "limit": 100 } }
@@ -93,14 +93,20 @@ the vote categories from step 2 rather than making further calls.
 `counts` are the recorded votes, not a result — nothing returns pass/fail or the chamber. Say a
 measure passed only when the roll-call `description` or the bill's `status` says so.
 
-When `get_rollcalls` comes back empty, some roll calls may be stored without their `bill_id`:
+Some roll calls are stored without their `bill_id`, so `get_rollcalls` can omit them whether it
+returns rows or none. Before presenting the list as complete, or saying there are none:
 
 ```jsonc
 { "tool": "get_votes", "arguments": { "bill_id": "<bill uuid>", "limit": 100 } }
-// collect the distinct rollcall_id values, then for each:
+// page with cursor until has_more is false — one page is usually a single roll call's votes
+{ "tool": "get_votes", "arguments": { "bill_id": "<bill uuid>", "limit": 100, "cursor": "<next_cursor>" } }
+// collect the distinct rollcall_id values, drop those get_rollcalls returned, then for each:
 { "tool": "get_rollcall_breakdown", "arguments": { "rollcall_id": "<rollcall uuid>" } }
 // → rollcall date and description, counts { YEA, NAY, ABSENT, NV, total }
 ```
+
+Past about 20 pages, stop and say the roll-call list may omit roll calls stored without their bill
+link.
 
 Only when that also returns nothing is "no recorded floor votes in this dataset" the answer.
 
@@ -114,7 +120,8 @@ Only when that also returns nothing is "no recorded floor votes in this dataset"
 //    read bill.division_id off the items and match it against list_states
 { "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "limit": 10 } }
 
-// 3. their most recent recorded votes: every item sharing the newest rollcall.date.
+// 3. their most recent recorded votes: every item sharing the newest rollcall.date. Keep paging
+//    with cursor while has_more is true and the last item is still on that date.
 //    latest: true returns one of them, chosen by UUID, not by time of day
 
 // 4. or a filtered history
@@ -164,8 +171,9 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | `Error: Provide at least one of rollcall_id, bill_id, or people_id...` | `get_votes` with no entity filter, or `category` alone | Add `rollcall_id`, `bill_id`, or `people_id` |
 | `MCP error -32602: Input validation error:` naming a key | An invented or misremembered parameter, e.g. `offset` passed to `get_votes` / `get_person_votes`, or `response_format` passed to `show_bill`, `get_bill_dossier`, or another tool without it | Schemas are strict; drop or correct the named key — see the two error shapes in `tool-reference.md` |
 | Wrong legislator | `search_people` and `get_person` return no state or chamber, so a common surname is ambiguous | Confirm jurisdiction from `bill.division_id` in `get_person_votes`; ask when still tied |
-| Two identical-looking candidates | One person stored on duplicate rows, or two people | Shared roll call → two people. Same name, party, and division with no shared roll call → union the records; otherwise ask |
-| A sitting legislator appears to have no votes | The chosen row may be an empty duplicate | Check other rows with the same name, party, and division; union records across siblings, never add counts |
+| Two identical-looking candidates | One person stored on duplicate rows, or two people — no tool can tell which | Shared roll call → two people. Otherwise list both with party, state, and vote dates, and ask; never merge on your own |
+| A sitting legislator appears to have no votes | The chosen row may be an empty duplicate, or a coverage gap | Surface other rows with the same name as candidates and ask; union records only after the user confirms, never add counts |
+| Roll-call list is short a vote the bill clearly had | Roll calls stored without their `bill_id` | Page `get_votes` by `bill_id` to the end and describe the extra `rollcall_id` values |
 | Right bill number, wrong bill | Interior-wildcard match (`HB 314` → `HB 3140`, `HB 5314`) | Read the `bill` field; scope by `division_id` and `session_id`; the exact match may not be on page one |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Batch-resolve with `search_people` `ids` |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` have no `total` | Report "at least N", or paginate to exhaustion |
@@ -174,7 +182,6 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | Response ends mid-sentence | 25,000-character truncation | Paginate; do not treat it as the full answer |
 | `No bill found with id=...` | Valid UUID, no row | Not an error — re-derive the id from `search_bills` |
 | `counts: null`, or `No votes found` on a roll call | No individual votes recorded for that row — a voteless duplicate or a per-state coverage gap | Check possible sibling rows; if none has votes, report the breakdown as unavailable, never as nobody voting |
-| `get_rollcalls` is empty for a bill that clearly had votes | Roll calls stored without their `bill_id` | `get_votes` with `bill_id`, then `get_rollcall_breakdown` per `rollcall_id` |
 | More roll calls than the bill plausibly had | `get_rollcalls` `total` counts rows, and rows can duplicate | Treat the (date, description, counts) tuple as a signal; corroborate before collapsing |
 | A chamber's vote total comes out 2-3x too high | Votes were accumulated across duplicate rows that each carry a full copy | Report from one row per floor vote, never a sum across siblings |
 | Code reads `legiscan` and finds nothing | The server no longer returns `legiscan` objects (absent as of 2026-09-24) | Use `counts` on roll calls and `bill.division_id` from `get_person_votes` |

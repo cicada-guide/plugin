@@ -31,17 +31,15 @@ against when the request names none — see **Project settings** in
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/SKILL.md`. It narrows the candidate list; it does
 not on its own confirm an identification.
 
-**Two rows with the same name may be one legislator stored twice.** There is no source id to
-compare, so decide from vote history. If both rows voted on the same roll call, they are two
-people. If they share full name, party, and `bill.division_id` and never share a roll call, treat
-them as one legislator: union their `get_person_votes` records and say the record was assembled that
-way. Using a single row would either report a sitting legislator as having no voting history, or
-silently return part of one. Union the records; never add counts across siblings. Do not assume a
-split, though: most names resolve to a single row.
+**Never merge two same-name rows on your own.** There is no source id to compare, so nothing proves
+two rows are one legislator — matching name, party, and state fits two people in different chambers
+or years just as well. Both rows voting on the same roll call proves they are two people. Otherwise,
+list the candidates with party, state, and the date range of their recorded votes, and ask. When the
+user confirms the rows are one legislator, union their `get_person_votes` records, say the record
+was assembled that way, and never add counts across them. Most names resolve to a single row.
 
-When candidates remain plausibly different people, list them with party and whatever jurisdiction
-evidence was found, and ask. Never pick one silently — attributing a vote to the wrong person is the
-worst failure this skill can produce.
+Never pick one candidate silently — attributing a vote to the wrong person is the worst failure this
+skill can produce.
 
 ### 2. Pull the record
 
@@ -51,8 +49,9 @@ title, status, `session_id`, `division_id`, `source_url`). `bill` is `null` for 
 calls attached to no bill; report those by description and date. Resolve `session_id` and
 `division_id` to names with `list_sessions` and `list_states` when the report needs them.
 
-- Latest vote only → a small `limit` such as 10, then every item on the newest `rollcall.date`.
-  `latest: true` returns just one of them.
+- Latest vote only → a page of about 10, then keep paging with `cursor` while `has_more` is true
+  and the page's last item still carries the newest `rollcall.date`. Report every item on that
+  date. `latest: true` returns just one of them.
 - A session → `session_id` from `list_sessions`.
 - A period → `start_date` and `end_date` as `YYYY-MM-DD`.
 - Only one side → `category` of `YEA`, `NAY`, `ABSENT`, or `NV`.
@@ -61,8 +60,9 @@ Page with `cursor`. There is no `offset`.
 
 For a latest-vote request, confirm jurisdiction before attributing the result, even when the name
 search has only one candidate. Do not rely on `latest: true` alone: within one date the tool sorts
-by UUID, so it returns an arbitrary one of that day's votes. Fetch with a `limit`, and compare
-roll-call dates across confirmed duplicate person rows; UUID order is not chronology. If dates tie
+by UUID, so it returns an arbitrary one of that day's votes. Page through the whole newest date as
+above, and compare roll-call dates across user-confirmed duplicate person rows; UUID order is not
+chronology. If dates tie
 and no description establishes the order, report the tied records rather than claiming one occurred
 last. Call it the latest recorded vote in the available data, and state any session, date, or
 category filter that limits that claim.
@@ -83,9 +83,10 @@ not positions — count them separately and do not fold them into a yes/no tally
 
 ## Path B — one roll call across the chamber
 
-1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. When that is empty, call
-   `get_votes` with `bill_id` — some roll calls are stored without their bill link — and describe
-   each distinct `rollcall_id` with `get_rollcall_breakdown`.
+1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. It can omit roll calls
+   stored without their bill link, whether it returns rows or none. When the roll call the user
+   means is not there, page `get_votes` with `bill_id` to the end with `cursor`, collect the
+   distinct `rollcall_id` values, and describe the extra ones with `get_rollcall_breakdown`.
 2. Treat a shared (date, description, counts) tuple as a duplicate signal, not a unique key.
    Corroborate it with identical fully paginated member votes before collapsing rows; otherwise
    retain each row and label the possible duplication. Pick the roll call the user means, and when

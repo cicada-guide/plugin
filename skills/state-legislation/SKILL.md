@@ -89,12 +89,12 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | List every document on a bill | `get_documents` |
 | Stream a large PDF in chunks | `read_pdf_bytes` |
 | Find legislators by name or party | `search_people` |
-| Read one legislator's full record | `get_person` |
+| Read one legislator's contact details (no jurisdiction or role) | `get_person` |
 | Display a resolved legislator's voting record | `show_person_record` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
 | Who voted which way on one roll call | `get_votes` |
-| Get a roll call's aggregate counts for a bill workspace | `get_rollcall_breakdown` |
+| Describe one roll call by id — date, description, counts — including one `get_rollcalls` misses | `get_rollcall_breakdown` |
 | One legislator's voting history over time | `get_person_votes` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
@@ -127,9 +127,12 @@ none were recorded, not a 0-0 vote. No tool reports whether a measure passed or 
 State passage only when the roll-call `description` or the bill's `status` says so — never from
 `yea > nay`, since thresholds vary.
 
-**An empty `get_rollcalls` is not proof of no recorded votes.** Some roll calls are stored without a
-`bill_id` and never appear there. Before saying a bill has no recorded floor votes, call `get_votes`
-with `bill_id`; any `rollcall_id` it returns can be described with `get_rollcall_breakdown`.
+**`get_rollcalls` can miss roll calls, whether it returns rows or none.** Some roll calls are stored
+without a `bill_id` and never appear there. Before presenting a bill's roll calls as complete, or
+saying it has none, page `get_votes` with `bill_id` to the end with `cursor`, collect the distinct
+`rollcall_id` values, and describe any `get_rollcalls` lacks with `get_rollcall_breakdown`. When
+that is too many pages to finish, say the list may be incomplete. The call sequence is in
+`references/tool-reference.md` under `get_rollcalls`.
 
 **Roll-call rows can duplicate.** `get_rollcalls` may return several rows for one real floor vote
 with the same date, description, and counts. Treat that tuple as a duplicate signal, not a unique
@@ -148,7 +151,8 @@ Check `unresolved_ids` on each batch so no legislator is silently dropped.
 joined and filters by date, session and category; `get_votes` with `people_id` yields bare rows
 that then need enrichment. Its items are nested — `vote`, `person`, `rollcall`, `bill` — and `bill`
 is `null` for procedural roll calls attached to no bill. Within one date, rows sort by UUID, so
-`latest: true` picks arbitrarily among same-day votes: report every vote on the latest date.
+`latest: true` picks arbitrarily among same-day votes: page while the newest date continues and
+report every vote on it.
 
 **`search_people` cannot filter or report by jurisdiction, and neither can `get_person`.** Both
 return name and party only — no state, chamber, district, or role. A common surname will match
@@ -157,12 +161,12 @@ legislators across many states. The only jurisdiction evidence is vote history: 
 Never state a legislator's chamber or district — no tool returns either. When two candidates remain
 plausible, list them and ask rather than picking one.
 
-**Two rows with the same name may be one person stored twice — or two people.** There is no shared
-source id to compare. If both rows voted on the same roll call, they are two people. If they share
-full name, party, and `bill.division_id` and never share a roll call, treat them as one person
-stored twice: union their `get_person_votes` records, never add counts across them, and say the
-record was assembled from both rows. Anything thinner is a question for the user. Do not assume a
-split — most names resolve to one row. Sponsor arrays can duplicate the same way.
+**Never merge two same-name rows on your own.** There is no shared source id, so nothing can prove
+two rows are one person — matching name, party, and state fits two legislators in different
+chambers or years just as well. Both rows voting on the same roll call proves they are two people.
+Otherwise list the candidates with party, state, and vote date ranges, and ask; union their records
+only after the user confirms they are one person, and never add counts across them. Most names
+resolve to one row. Sponsor arrays can duplicate the same way.
 
 **Bill-number matching is deliberately loose, and the wildcard is interior.** `search_bills` with
 `bill: "HB 314"` matches both `HB 314` and `HB314` storage forms, and also `HB 3140` **and**

@@ -143,7 +143,7 @@ change when you make one.
 | `get_documents` | All documents attached to a bill |
 | `read_pdf_bytes` | Stream a large legislative PDF in chunks |
 | `search_people` | Find legislators by name or party, or batch-resolve up to 100 ids |
-| `get_person` | Full record for one legislator |
+| `get_person` | Name, party, and contact details for one legislator |
 | `show_person_record` | Display a resolved legislator and recorded votes |
 | `get_rollcalls` | Floor-vote summaries for a bill |
 | `get_rollcall_breakdown` | Metadata and aggregate counts for one roll call; member rows go to the workspace view |
@@ -176,8 +176,10 @@ report rather than its call-by-call traffic.
   side-by-side comparison. For cross-state questions only; a single bill or single state is a direct
   call sequence.
 - **`legislator-disambiguator`** — resolves an ambiguous legislator name to one person id, probing
-  each candidate for chamber and district evidence. Returns `RESOLVED`, `AMBIGUOUS`, or `NOT FOUND`
-  and never guesses, because attributing a vote to the wrong person is this dataset's worst failure.
+  each candidate's vote history for the state they serve. The data carries no chamber or district,
+  so it confirms state only and flags any chamber or district in the request as unverified. Returns
+  `RESOLVED`, `AMBIGUOUS`, or `NOT FOUND` and never guesses, because attributing a vote to the wrong
+  person is this dataset's worst failure.
 - **`bill-brief-researcher`** — assembles a full sourced brief on one bill: record, text, sponsors,
   roll calls, and the vote breakdown. Same ground as `/cicada-guide:bill-research`, run
   autonomously; it returns candidates instead of picking when the bill is ambiguous, since it cannot

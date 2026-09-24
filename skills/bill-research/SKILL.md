@@ -61,9 +61,11 @@ Call in this order, skipping what the request does not need:
    sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
    offset there is `offset + byteCount`, not `byteCount`.
 4. `get_rollcalls` — floor votes, each with `counts` (yea, nay, absent, nv, total) tallied from
-   recorded votes; `null` counts mean none were recorded. When it returns nothing, call `get_votes`
-   with `bill_id` before concluding there were no recorded votes — some roll calls are stored
-   without their bill link — and describe each distinct `rollcall_id` with `get_rollcall_breakdown`.
+   recorded votes; `null` counts mean none were recorded. It can omit roll calls stored without
+   their bill link, whether it returns rows or none, and the brief presents the legislative history
+   as complete. So page `get_votes` with `bill_id` to the end with `cursor`, collect the distinct
+   `rollcall_id` values, and describe any `get_rollcalls` lacks with `get_rollcall_breakdown`. Past
+   about 20 pages, stop and note in the brief that the list may be incomplete.
 5. `get_votes` — only when the request asks who voted how. Treat matching (date, description,
    counts) values as a duplicate signal, not proof: corroborate with identical fully paginated
    member votes before collapsing rows. Distinct or unverified rows remain separate and are labeled
@@ -78,8 +80,8 @@ document alone does not establish a governor's signature or enactment. If source
 each dated observation with its source and say what remains unconfirmed; do not invent a final
 status. Describe status as the latest available record, not a guarantee of the present legal state.
 
-If neither `get_rollcalls` nor `get_votes` with `bill_id` returns anything, say "No recorded floor
-votes are available in this dataset."
+If neither `get_rollcalls` nor fully paged `get_votes` with `bill_id` returns anything, say "No
+recorded floor votes are available in this dataset."
 Do not infer that no vote occurred. Check sponsor resolution for unresolved IDs and identify those
 gaps instead of guessing names.
 
