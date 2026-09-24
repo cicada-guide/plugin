@@ -28,7 +28,21 @@ every release.
   `mcp-session-id` response header on the next call, and send `notifications/initialized` between
   the two. Reconcile against the server, never against the other copies: the count and tool names
   are repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three agreeing
-  with each other is exactly the state drift leaves behind.
+  with each other is exactly the state drift leaves behind. This writes the live list to
+  `tools-list.json` (bash):
+
+  ```bash
+  E=https://public.cicada.guide/mcp
+  H=(-H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream'
+     -H 'MCP-Protocol-Version: 2025-06-18')
+  SID=$(curl -s -D - -o /dev/null "${H[@]}" "$E" -d '{"jsonrpc":"2.0","id":1,"method":"initialize",
+    "params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"docs","version":"0"}}}' |
+    tr -d '\r' | awk -F': ' 'tolower($1)=="mcp-session-id"{print $2}')
+  curl -s "${H[@]}" -H "Mcp-Session-Id: $SID" "$E" -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+  curl -s "${H[@]}" -H "Mcp-Session-Id: $SID" "$E" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |
+    sed -n 's/^data: //p' > tools-list.json
+  ```
+
 - **Bump all four `version` fields together.** They live in three files:
   `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and *both* `metadata.version` and
   `plugins[0].version` in `.claude-plugin/marketplace.json`. They are independent fields and drift
