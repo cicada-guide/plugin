@@ -42,12 +42,11 @@ result rather than resolving it by guessing.
   Full-text resolves at most 50 distinct bills and uses only the first 8 terms, with no signal in
   the response — a thin topic result is not proof of absence.
 
-Bill-number matching splits the alpha prefix from the digits and joins with `%`, so the wildcard is
-interior: `HB 314` matches `HB314` **and** `HB 3140` **and** `HB 5314`, `HB 1314`. Results order by
-date descending, so the exact match may not be on the first page. Read the `bill` field on every
-candidate and page with `next_offset` while `has_more` is true until the normalized exact number is
-found or every page is exhausted. If several bills remain plausible, stop and return the candidate
-list — do not pick one.
+Bill-number matching is exact in either stored spelling (`HB 314` or `HB314`), but the same number
+repeats across sessions and states. `session_name` with a year (partial match, so regular and
+special sessions both match) narrows without a UUID; `session_id` pins one session. Read each
+candidate's session, and if several bills remain plausible, stop and return the candidate list — do
+not pick one.
 
 When the session is unresolved, continue beyond the first exact-number match until paging is
 complete, or return a request for session clarification. Do not silently choose the latest session.
