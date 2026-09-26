@@ -126,7 +126,8 @@ rejected as an unrecognized key. Pass the previous response's `next_cursor` as `
 `counts: { yea, nay, absent, nv, total }` tallied from the recorded individual votes; `null` means
 none were recorded, not a 0-0 vote. No tool reports whether a measure passed or which chamber voted.
 State passage only when the roll-call `description` or the bill's `status` says so — never from
-`yea > nay`, since thresholds vary.
+`yea > nay`, since thresholds vary. Report each roll call's own `counts`; never add counts across
+roll calls.
 
 **`get_rollcalls` needs no reconciliation through `get_votes`.** It returns roll calls linked to
 the bill directly and through their recorded votes; each item's `linked_via` says which (`"bill"`

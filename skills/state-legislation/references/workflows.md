@@ -91,7 +91,8 @@ For a party-line breakdown, the `party` field arrives with the `search_people` b
 the vote categories from step 2 rather than making further calls.
 
 `counts` are the recorded votes, not a result — nothing returns pass/fail or the chamber. Say a
-measure passed only when the roll-call `description` or the bill's `status` says so.
+measure passed only when the roll-call `description` or the bill's `status` says so. Report each
+roll call's own `counts`; never add counts across roll calls.
 
 When `get_rollcalls` returns nothing, "no recorded floor votes in this dataset" is the answer.
 

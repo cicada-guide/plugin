@@ -69,7 +69,7 @@ complete, or return a request for session clarification. Do not silently choose 
 - `get_rollcalls` with `bill_id` for floor-vote summaries, each with `counts` (yea, nay, absent,
   nv, total) tallied from recorded votes. `null` counts mean no votes were recorded, not a 0-0 vote.
   No field reports pass/fail or chamber; state passage only where the description or bill status
-  says it.
+  says it. Report each roll call's own `counts`; never add counts across roll calls.
 - `get_rollcalls` includes roll calls linked through their recorded votes (`linked_via:
   "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while `has_more`
   is true, and list anything in `warnings` under Gaps. When it returns nothing, report that no

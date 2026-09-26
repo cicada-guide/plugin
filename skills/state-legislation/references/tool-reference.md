@@ -253,7 +253,8 @@ person as text. It has no `response_format`.
 
 **`counts` is tallied from the recorded individual votes, not from an official tally.** It is `null`
 when no individual votes are recorded for the roll call, which means "not recorded", never a 0-0
-vote. Tally values are numbers. Verified 2026-09-24.
+vote. Tally values are numbers. Verified 2026-09-24. Report each roll call's own `counts`; never
+add counts across roll calls.
 
 **No field says whether the measure passed, and no field names the chamber.** Do not derive
 passage from `yea > nay`: thresholds vary (supermajorities, majorities of members elected), and

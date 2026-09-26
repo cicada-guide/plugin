@@ -55,7 +55,8 @@ the conversation that asked for it. You absorb that traffic and return one conso
    and the fetch failed — report that and cite `item.url` rather than treating an empty string as
    the bill's contents.
 7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id` for floor votes. Their
-   `counts` are recorded tallies, not a pass/fail result.
+   `counts` are recorded tallies, not a pass/fail result. Report each roll call's own `counts`;
+   never add counts across roll calls.
    - `get_rollcalls` includes roll calls linked through their recorded votes (`linked_via:
      "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while
      `has_more` is true.

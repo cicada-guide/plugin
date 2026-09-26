@@ -61,7 +61,8 @@ Call in this order, skipping what the request does not need:
    sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
    offset there is `offset + byteCount`, not `byteCount`.
 4. `get_rollcalls` — floor votes, each with `counts` (yea, nay, absent, nv, total) tallied from
-   recorded votes; `null` counts mean none were recorded. It includes roll calls linked through
+   recorded votes; `null` counts mean none were recorded. Report each roll call's own `counts`;
+   never add counts across roll calls. It includes roll calls linked through
    their recorded votes (`linked_via: "votes"`), so no `get_votes` reconciliation is needed. Page
    with `next_offset` while `has_more` is true, and relay anything in `warnings`.
 5. `get_votes` — only when the request asks who voted how. Resolve `people_id` values through

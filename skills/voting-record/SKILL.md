@@ -98,7 +98,7 @@ is unavailable in this dataset. Do not present it as nobody having voted.
 
 Report the `counts` from `get_rollcalls` alongside the computed breakdown. They are tallied from the
 same vote rows, so a disagreement means a page was missed or truncated — re-page before reporting,
-and say so if it persists.
+and say so if it persists. Report each roll call's own `counts`; never add counts across roll calls.
 
 ## Constraints
 
