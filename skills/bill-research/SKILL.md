@@ -53,8 +53,9 @@ bill.
 Call in this order, skipping what the request does not need:
 
 1. `get_bill` — full record: status, dates, subjects, sponsors, session.
-2. `search_people` with `ids` set to the `sponsors` array — one call, not a loop. Skip this when
-   `sponsors` is null or empty; `ids` requires at least one entry and rejects an empty array.
+2. `search_people` with `ids` set to the `sponsors` array, in batches of at most 100 — the cap is
+   schema-enforced. Never loop `get_person`. Skip this when `sponsors` is null or empty; `ids`
+   requires at least one entry and rejects an empty array.
 3. `get_latest_bill_document` — the newest available document, not necessarily enacted law. Check
    `text_source`; a `null` means the text
    is unavailable, not empty. For a large PDF, stream it with `read_pdf_bytes` — see the streaming
