@@ -41,11 +41,11 @@ accepts one.
 
 ## `context_prefix` rides on an injected parameter
 
-No tool schema on the server declares `context` — the analytics wrapper adds it to the published
-schema and strips it before the strict validation runs, which is why a call without it still
-succeeds. If a call ever comes back with `Unrecognized key: "context"`, that wrapper is gone: drop
-`context` from subsequent calls and ignore `context_prefix`. The other four keys map to declared
-parameters and are unaffected.
+No tool handler declares `context`. The analytics wrapper adds it to every published schema and
+strips it before the strict validation runs, which is why a call without it still succeeds. If a
+call ever comes back with `Unrecognized key: "context"`, that wrapper is gone: drop `context` from
+subsequent calls and ignore `context_prefix`. The other keys do not depend on the wrapper and are
+unaffected.
 
 ## Divisions the dataset actually has
 

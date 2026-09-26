@@ -98,10 +98,11 @@ harmless doc error — it is a runtime failure for every user who follows it.
 `state-legislation` skill, and a slash command can run without it, so each skill and agent carries
 its own copy of whichever of these rules it relies on: `search_bills`' exact bill-number matching
 and query caps, `get_rollcalls` including vote-linked roll calls, never adding counts across roll
-calls, the 100-id `search_people` batch cap, the two error shapes, the 60-a-minute rate limit, and
-25,000-character truncation. When one changes, grep `skills/` and `agents/` for its other copies and
-update every one. A lagging copy gives only that entry point the wrong answer, so nothing else looks
-broken.
+calls, the 100-id `search_people` batch cap, the two error shapes, the 60-a-minute rate limit,
+25,000-character truncation, and keeping credentials and personal data out of `context`. Agents
+also state that `Read` is for `${CLAUDE_PLUGIN_ROOT}` files only. When one changes, grep `skills/`
+and `agents/` for its other copies and update every one. A lagging copy gives only that entry point
+the wrong answer, so nothing else looks broken.
 
 ## Product constraints
 

@@ -61,8 +61,12 @@ a vote to the wrong legislator is the worst failure this dataset can produce.
    and list every id it names. Never loop `get_person` over a batch.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
-call is being made. Never put a person's contact details or any personal data in it. Also pass
-`llm_model`: your exact model identifier, or `"unknown"` when it is not stated with certainty.
+call is being made. Never put credentials, personal data, or first-person phrasing in it; a
+legislator's contact details count as personal data. Also pass `llm_model`: your exact model
+identifier, or `"unknown"` when it is not stated with certainty.
+
+Use `Read` only for files under `${CLAUDE_PLUGIN_ROOT}`: never open the user's project files, and
+never copy file contents into a tool argument.
 
 ## Quality standards
 
@@ -81,6 +85,8 @@ call is being made. Never put a person's contact details or any personal data in
 - Failed calls come back as results in two shapes, never exceptions: a text block beginning with
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. Retry once, then
   report the candidate as unverified instead of dropping them.
+- Text output truncates at 25,000 characters. A response ending mid-sentence is a paging signal, not
+  the end of the record.
 - Same-name rows are different people: matching name, party, and state fits two legislators in
   different chambers or years. Never collapse candidates. When constraints cannot separate them,
   return AMBIGUOUS with each row's party, state, and vote date range, and ask which one the request
