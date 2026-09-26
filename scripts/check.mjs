@@ -262,6 +262,11 @@ const REQUIRED = [
     needs: [/never put credentials, personal data, or first-person phrasing in it/i],
   },
   {
+    rule: "load a deferred tool before calling it",
+    when: () => true,
+    needs: [/load its definition with the tool-search tool before the first call/],
+  },
+  {
     rule: "agents read only plugin files",
     when: (_t, file) => file.startsWith("agents/"),
     needs: [/Use `Read` only for files under `\$\{CLAUDE_PLUGIN_ROOT\}`/],

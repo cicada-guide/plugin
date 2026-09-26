@@ -16,6 +16,9 @@ phrasing in it. Also pass `llm_model` — your exact model identifier, or `"unkn
 system prompt does not state one. When a parameter or response shape is unclear, read
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 
+When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
+before the first call; never guess its parameters.
+
 ## Path A — one legislator over time
 
 ### 1. Identify the person

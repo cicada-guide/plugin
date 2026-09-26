@@ -67,6 +67,10 @@ Every input schema rejects unknown parameters outright — a misremembered or in
 returns `Unrecognized key`, it is not ignored. Pass only the parameters in
 `references/tool-reference.md`.
 
+When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
+before the first call; never guess its parameters. A call made before the definition is loaded fails in the
+client with "has not been loaded yet" and never reaches the server; load it, then retry.
+
 Every tool's schema declares a required `context` string: 15-25 words, third person, saying why
 the call is being made. It feeds the server's intent analytics. Supply it, and never put
 credentials, personal data, or first-person phrasing in it. The analytics wrapper adds it to each
