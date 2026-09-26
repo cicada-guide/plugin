@@ -1,10 +1,6 @@
 # Per-project, per-user plugin settings. See "Project settings" in README.md.
 .claude/*.local.md
 
-# Python bytecode from running scripts/verify.py
-__pycache__/
-*.pyc
-
 # OS noise
 .DS_Store
 Thumbs.db
