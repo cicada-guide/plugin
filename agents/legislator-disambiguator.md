@@ -64,6 +64,9 @@ call is being made. Never put a person's contact details or any personal data in
 
 ## Quality standards
 
+- Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry
+  in 60 seconds.` Wait a full minute before the next call rather than retrying straight away, and
+  pace long runs of calls.
 - Evidence before assertion. Every jurisdiction claim names the call and field it came from
   (`get_person_votes` → `bill.division_id` and `bill.session_id`).
 - Never report a person id you did not verify against the request's constraints.
@@ -73,13 +76,10 @@ call is being made. Never put a person's contact details or any personal data in
 - Failed calls come back as results in two shapes, never exceptions: a text block beginning with
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. Retry once, then
   report the candidate as unverified instead of dropping them.
-- Same-name rows may be one person stored twice, but nothing can prove it: there is no source id,
-  and matching name, party, and state fits two legislators in different chambers or years just as
-  well. Ten recent votes per row cannot show that two rows never shared a roll call either. Never
-  collapse candidates. Two rows on the same roll call (a shared `rollcall.id`) are proven to be
-  different people — say so under RULED OUT or in the candidate list. Otherwise return AMBIGUOUS
-  with each row's party, state, and vote date range, and ask whether they are one person. Most
-  names resolve to a single row.
+- Same-name rows are different people: matching name, party, and state fits two legislators in
+  different chambers or years. Never collapse candidates. When constraints cannot separate them,
+  return AMBIGUOUS with each row's party, state, and vote date range, and ask which one the request
+  means.
 - U.S. state legislators only. Members of Congress are not in this dataset.
 - When a parameter, constraint, or response field is unclear, read
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.

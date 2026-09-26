@@ -31,12 +31,9 @@ against when the request names none — see **Project settings** in
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/SKILL.md`. It narrows the candidate list; it does
 not on its own confirm an identification.
 
-**Never merge two same-name rows on your own.** There is no source id to compare, so nothing proves
-two rows are one legislator — matching name, party, and state fits two people in different chambers
-or years just as well. Both rows voting on the same roll call proves they are two people. Otherwise,
-list the candidates with party, state, and the date range of their recorded votes, and ask. When the
-user confirms the rows are one legislator, union their `get_person_votes` records, say the record
-was assembled that way, and never add counts across them. Most names resolve to a single row.
+**Same-name rows are different people.** Matching name, party, and state fits two legislators in
+different chambers or years. Never combine their records. List the candidates with party, state,
+and the date range of their recorded votes, and ask which one the user means.
 
 Never pick one candidate silently — attributing a vote to the wrong person is the worst failure this
 skill can produce.
@@ -61,11 +58,9 @@ Page with `cursor`. There is no `offset`.
 For a latest-vote request, confirm jurisdiction before attributing the result, even when the name
 search has only one candidate. Do not rely on `latest: true` alone: within one date the tool sorts
 by UUID, so it returns an arbitrary one of that day's votes. Page through the whole newest date as
-above, and compare roll-call dates across user-confirmed duplicate person rows; UUID order is not
-chronology. If dates tie
-and no description establishes the order, report the tied records rather than claiming one occurred
-last. Call it the latest recorded vote in the available data, and state any session, date, or
-category filter that limits that claim.
+above; UUID order is not chronology. If dates tie and no description establishes the order, report
+the tied records rather than claiming one occurred last. Call it the latest recorded vote in the
+available data, and state any session, date, or category filter that limits that claim.
 
 Call `get_person` only when the request also asks for contact details; it returns no biography,
 role, or jurisdiction.
@@ -83,38 +78,34 @@ not positions — count them separately and do not fold them into a yes/no tally
 
 ## Path B — one roll call across the chamber
 
-1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. It can omit roll calls
-   stored without their bill link, whether it returns rows or none. When the roll call the user
-   means is not there, page `get_votes` with `bill_id` to the end with `cursor`, collect the
-   distinct `rollcall_id` values, and describe the extra ones with `get_rollcall_breakdown`.
-2. Treat a shared (date, description, counts) tuple as a duplicate signal, not a unique key.
-   Corroborate it with identical fully paginated member votes before collapsing rows; otherwise
-   retain each row and label the possible duplication. Pick the roll call the user means, and when
-   several remain, name them by date and description and confirm.
-3. `get_votes` with the chosen `rollcall_id` and `limit: 100`, paging with `cursor` until
-   `has_more` is false. For a corroborated duplicate group, use one row; never add counts across
-   siblings.
-4. Collect every `people_id` and resolve in batches of up to 100 through `search_people` `ids`.
-   Check `unresolved_ids` and account for anyone listed.
-5. Join party from step 4 to category from step 3 for the breakdown.
+1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. It includes roll calls
+   linked through their recorded votes (`linked_via: "votes"`), so no `get_votes` reconciliation
+   is needed. Page with `next_offset` while `has_more` is true, and relay anything in `warnings`.
+2. Pick the roll call the user means. When several remain, name them by date and description and
+   confirm.
+3. `get_rollcall_breakdown` with the chosen `rollcall_id`. One call returns `counts`, `by_party`
+   (each party's `YEA`, `NAY`, `ABSENT`, `NV`, `total`), and `members` (each legislator's `name`,
+   `party`, and `category`). Keys are upper-case. `party: null` means no party is recorded.
+4. When `partial` is `true`, the 500-row cap was reached and `by_party` covers only the rows
+   returned; say so.
+
+A roll call with `counts: null` has no recorded member votes. Say the member-by-member breakdown
+is unavailable in this dataset. Do not present it as nobody having voted.
+
+Report each roll call's own `counts`; never add counts across roll calls.
 
 Markdown output truncates at 25,000 characters with a pagination hint appended. A truncated page
 is not a complete page — keep paging rather than tallying what arrived, and prefer
 `response_format: "json"` so the structured envelope carries the full page.
 
-A roll call with `counts: null` has no recorded member votes. When no row in its duplicate group
-has votes either, say the member-by-member breakdown is unavailable in this dataset. Do not present
-it as nobody having voted.
-
-Report the `counts` from `get_rollcalls` alongside the computed breakdown. They are tallied from the
-same vote rows, so a disagreement means a page was missed or truncated — re-page before reporting,
-and say so if it persists.
+Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in 60
+seconds.` Wait a full minute before the next call rather than retrying straight away.
 
 ## Constraints
 
 - Never generalize from a single vote. One `NAY` is one vote, not a position on an issue.
-- Report the coverage window. Absence of a vote in the dataset is not evidence the legislator did
-  not vote; roll calls may be missing.
+- Report the date range the results cover. A vote absent from the results is not evidence the
+  legislator did not vote.
 - Do not score, grade, or rate a legislator, and do not compare them to an ideological baseline.
   Report what was voted and when.
 - Attribute every claim to the bill and roll call it came from, with the source URL when present.

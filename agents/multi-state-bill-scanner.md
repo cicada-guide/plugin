@@ -55,24 +55,22 @@ the conversation that asked for it. You absorb that traffic and return one conso
    and the fetch failed — report that and cite `item.url` rather than treating an empty string as
    the bill's contents.
 7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id` for floor votes. Their
-   `counts` are recorded tallies, not a pass/fail result.
-   - `get_rollcalls` can omit roll calls stored without their bill link, whether it returns rows or
-     none. Page `get_votes` with `bill_id` and `limit: 100` to the end with `cursor`, collect the
-     distinct `rollcall_id` values, and describe any `get_rollcalls` lacks with
-     `get_rollcall_breakdown`. Past about 20 pages, stop and list that bill's roll calls as possibly
-     incomplete under Coverage and caveats.
-   - Rows can duplicate. Treat a shared (date, description, counts) tuple as a signal only:
-     corroborate with identical fully paginated member votes before collapsing. For a corroborated
-     group, use one row and never add sibling counts.
-   - For individual positions, `get_votes` with `rollcall_id`, then `search_people` with `ids` — in
-     batches of at most 100, since that cap is schema-enforced and large chambers exceed it — to
-     turn UUIDs into names. Check `unresolved_ids` on each batch.
+   `counts` are recorded tallies, not a pass/fail result. Report each roll call's own `counts`;
+   never add counts across roll calls.
+   - `get_rollcalls` includes roll calls linked through their recorded votes (`linked_via:
+     "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while
+     `has_more` is true, and list anything in `warnings` under Coverage and caveats.
+   - For individual positions, `get_rollcall_breakdown` with `rollcall_id`. One call returns
+     `by_party` and `members` with each legislator's name, party, and vote.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.
 
 ## Quality standards
 
+- Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry
+  in 60 seconds.` Wait a full minute before the next call rather than retrying straight away, and
+  pace long runs of calls.
 - Schemas are strict. An unknown parameter is rejected outright, not ignored. Pass only documented
   parameters; when unsure, read
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.

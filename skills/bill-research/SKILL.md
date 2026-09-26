@@ -61,17 +61,17 @@ Call in this order, skipping what the request does not need:
    sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
    offset there is `offset + byteCount`, not `byteCount`.
 4. `get_rollcalls` — floor votes, each with `counts` (yea, nay, absent, nv, total) tallied from
-   recorded votes; `null` counts mean none were recorded. It can omit roll calls stored without
-   their bill link, whether it returns rows or none, and the brief presents the legislative history
-   as complete. So page `get_votes` with `bill_id` to the end with `cursor`, collect the distinct
-   `rollcall_id` values, and describe any `get_rollcalls` lacks with `get_rollcall_breakdown`. Past
-   about 20 pages, stop and note in the brief that the list may be incomplete.
-5. `get_votes` — only when the request asks who voted how. Treat matching (date, description,
-   counts) values as a duplicate signal, not proof: corroborate with identical fully paginated
-   member votes before collapsing rows. Distinct or unverified rows remain separate and are labeled
-   as possible duplicates. For a corroborated group, use one row and never add sibling counts.
-   Resolve `people_id` values through `search_people` `ids` **in batches of up to 100** and check
-   every batch's `unresolved_ids`.
+   recorded votes; `null` counts mean none were recorded. Report each roll call's own `counts`;
+   never add counts across roll calls. It includes roll calls linked through
+   their recorded votes (`linked_via: "votes"`), so no `get_votes` reconciliation is needed. Page
+   with `next_offset` while `has_more` is true, and relay anything in `warnings`.
+5. `get_rollcall_breakdown` — only when the request asks who voted how. One call per roll call
+   returns `by_party` and `members` (name, party, and vote for each legislator). When `partial` is
+   `true`, say the breakdown covers only the rows returned.
+
+Calls to the server are rate limited to 60 a minute. Past that a call fails with `Rate limit
+exceeded. Retry in 60 seconds.` Wait a full minute before the next call rather than retrying
+straight away.
 
 ## 3. Write the brief
 
@@ -80,10 +80,9 @@ document alone does not establish a governor's signature or enactment. If source
 each dated observation with its source and say what remains unconfirmed; do not invent a final
 status. Describe status as the latest available record, not a guarantee of the present legal state.
 
-If neither `get_rollcalls` nor fully paged `get_votes` with `bill_id` returns anything, say "No
-recorded floor votes are available in this dataset."
-Do not infer that no vote occurred. Check sponsor resolution for unresolved IDs and identify those
-gaps instead of guessing names.
+If `get_rollcalls` returns nothing, say "No recorded floor votes are available in this dataset."
+Do not infer that no vote occurred. Check sponsor resolution for unresolved IDs and list them
+instead of guessing names.
 
 Structure:
 
@@ -97,9 +96,9 @@ Structure:
   votes.
 - **Sources** — document URLs from `get_documents` or `get_latest_bill_document`.
 
-Close with what the data does not cover: absent roll calls, missing document text, or a status
-that may have advanced since the last data load. State these plainly rather than implying the
-brief is exhaustive.
+Close with what the brief could not establish — text that was unavailable, unresolved ids, or
+pages not fetched — and the date of the latest status. State these plainly rather than implying
+the brief is exhaustive.
 
 Offer `show_bill` at the end when the host renders cards and the user may want to look at the bill
 directly.

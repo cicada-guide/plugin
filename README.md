@@ -1,4 +1,4 @@
-# Cicada Guide
+# cicada.guide
 
 Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look
 up legislators, and trace roll-call and individual voting records.
@@ -47,14 +47,13 @@ Two packaged skills drive longer workflows:
 ## Scope
 
 Research briefs distinguish the latest available status from conflicting document labels: an
-enrolled document alone does not confirm enactment. Missing vote records are reported as coverage
-gaps. Latest-vote lookups confirm the legislator's jurisdiction and report the date, measure,
-recorded position, roll-call tallies, and source when available. Pass or fail is reported only
-where the record states it, since the tools return tallies rather than results.
+enrolled document alone does not confirm enactment. Latest-vote lookups confirm the legislator's
+jurisdiction and report the date, measure, recorded position, roll-call tallies, and source when
+available. Pass or fail is reported only where the record states it, since the tools return tallies
+rather than results.
 
 **U.S. state legislatures only.** The dataset holds no federal congressional bills, no municipal
-ordinances, and no ballot measures. Coverage varies by state and session — `list_states` reports
-which jurisdictions are present.
+ordinances, and no ballot measures. `list_states` reports which jurisdictions are present.
 
 Everything is read-only. The tools retrieve legislative records and cannot send messages, contact
 officials, file documents, or change anything.
@@ -146,7 +145,7 @@ change when you make one.
 | `get_person` | Name, party, and contact details for one legislator |
 | `show_person_record` | Display a resolved legislator and recorded votes |
 | `get_rollcalls` | Floor-vote summaries for a bill |
-| `get_rollcall_breakdown` | Metadata and aggregate counts for one roll call; member rows go to the workspace view |
+| `get_rollcall_breakdown` | One roll call's counts, per-party tally, and every member's name, party, and vote |
 | `get_votes` | Individual positions on a roll call |
 | `get_person_votes` | One legislator's voting history, with bill context joined |
 | `list_states` | Available jurisdictions |
