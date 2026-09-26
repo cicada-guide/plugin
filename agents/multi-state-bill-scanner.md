@@ -55,15 +55,11 @@ the conversation that asked for it. You absorb that traffic and return one conso
    and the fetch failed — report that and cite `item.url` rather than treating an empty string as
    the bill's contents.
 7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id` for floor votes. Their
-   `counts` are recorded tallies, not a pass/fail result.
-   - `get_rollcalls` can omit roll calls stored without their bill link, whether it returns rows or
-     none. Page `get_votes` with `bill_id` and `limit: 100` to the end with `cursor`, collect the
-     distinct `rollcall_id` values, and describe any `get_rollcalls` lacks with
-     `get_rollcall_breakdown`. Past about 20 pages, stop and list that bill's roll calls as possibly
-     incomplete under Coverage and caveats.
-   - Rows can duplicate. Treat a shared (date, description, counts) tuple as a signal only:
-     corroborate with identical fully paginated member votes before collapsing. For a corroborated
-     group, use one row and never add sibling counts.
+   `counts` are recorded tallies, not a pass/fail result. Report each roll call's own `counts`;
+   never add counts across roll calls.
+   - `get_rollcalls` includes roll calls linked through their recorded votes (`linked_via:
+     "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while
+     `has_more` is true, and list anything in `warnings` under Coverage and caveats.
    - For individual positions, `get_votes` with `rollcall_id`, then `search_people` with `ids` — in
      batches of at most 100, since that cap is schema-enforced and large chambers exceed it — to
      turn UUIDs into names. Check `unresolved_ids` on each batch.

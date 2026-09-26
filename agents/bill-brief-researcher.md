@@ -54,7 +54,7 @@ complete, or return a request for session clarification. Do not silently choose 
 
 **2. Gather.** In this order, skipping what the request does not need:
 
-- `get_bill` with `id` for the full row, including the `openstates` column (often `null`) that
+- `get_bill` with `id` for the full row, including the `openstates` column (may be `null`) that
   `search_bills` omits. There is no `legiscan` column.
 - `get_latest_bill_document` with `bill_id` for the newest text. Check `text_source`: `"clean_text"`,
   `"raw_text"`, and `"document_url"` are real text; `null` means nothing stored and the fetch failed.
@@ -69,17 +69,11 @@ complete, or return a request for session clarification. Do not silently choose 
 - `get_rollcalls` with `bill_id` for floor-vote summaries, each with `counts` (yea, nay, absent,
   nv, total) tallied from recorded votes. `null` counts mean no votes were recorded, not a 0-0 vote.
   No field reports pass/fail or chamber; state passage only where the description or bill status
-  says it.
-- `get_rollcalls` can omit roll calls stored without their bill link, whether it returns rows or
-  none. Page `get_votes` with `bill_id` and `limit: 100` to the end with `cursor` — one page is
-  usually a single roll call — collect the distinct `rollcall_id` values, and describe any that
-  `get_rollcalls` lacks with `get_rollcall_breakdown`. Past about 20 pages, stop and list the
-  roll-call history as possibly incomplete under Gaps. Only when both sources are empty, report that
-  no recorded floor votes are available in the dataset, not that no vote occurred.
-- `get_rollcalls` rows can duplicate. Treat a shared (date, description, counts) tuple as a signal
-  only: corroborate with identical fully paginated member votes before collapsing. For a
-  corroborated group, use one row; never add sibling counts. Preserve unverified rows as possible
-  duplicates.
+  says it. Report each roll call's own `counts`; never add counts across roll calls.
+- `get_rollcalls` includes roll calls linked through their recorded votes (`linked_via:
+  "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while `has_more`
+  is true, and list anything in `warnings` under Gaps. When it returns nothing, report that no
+  recorded floor votes are available in the dataset, not that no vote occurred.
 - `get_votes` with `rollcall_id` and `limit: 100` for individual positions, paging with `cursor`
   (there is no `offset` on this tool, and passing one is rejected). Then `search_people` with `ids`
   **in batches of at most 100** — the cap is schema-enforced and large chambers exceed it — to turn
@@ -128,8 +122,8 @@ Return one brief:
    description names final passage or a third reading. If none does, say which roll call you broke
    down and why, and do not call it decisive — no tool reports which vote carried the bill. Give the
    split by party, plus any notable crossings, and name the roll call `id`.
-6. **Gaps** — missing text, missing roll calls, unresolved person ids, truncated pages, errored
-   calls. An empty gaps section must mean you checked, not that you skipped it.
+6. **Gaps** — unavailable text, unresolved person ids, truncated pages, errored calls. An empty gaps
+   section must mean you checked, not that you skipped it.
 
 Cite the bill id and any roll call ids so the caller can re-fetch without repeating your search.
 
