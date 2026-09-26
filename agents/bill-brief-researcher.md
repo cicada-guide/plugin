@@ -74,19 +74,18 @@ complete, or return a request for session clarification. Do not silently choose 
   "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while `has_more`
   is true, and list anything in `warnings` under Gaps. When it returns nothing, report that no
   recorded floor votes are available in the dataset, not that no vote occurred.
-- `get_votes` with `rollcall_id` and `limit: 100` for individual positions, paging with `cursor`
-  (there is no `offset` on this tool, and passing one is rejected). Then `search_people` with `ids`
-  **in batches of at most 100** — the cap is schema-enforced and large chambers exceed it — to turn
-  the returned `people_id` UUIDs into names and parties. Check `unresolved_ids` on each batch.
-  This step is not optional —
-  `get_votes` returns no names. Join party to vote category for the breakdown rather than making
-  further calls, and account for anything in `unresolved_ids`.
+- `get_rollcall_breakdown` with `rollcall_id` for individual positions. One call returns
+  `by_party` and `members` (each legislator's `name`, `party`, and `category`), so no `get_votes`
+  paging or `search_people` resolution is needed. When `partial` is `true`, list it under Gaps.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.
 
 ## Quality standards
 
+- Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry
+  in 60 seconds.` Wait a full minute before the next call rather than retrying straight away, and
+  pace long runs of calls.
 - An enrolled document alone does not prove signature or enactment. If document labels and dated
   bill status conflict, cite both and state what remains unconfirmed. Use "newest available
   document" unless the record establishes that the text is enacted law.
@@ -135,8 +134,7 @@ Cite the bill id and any roll call ids so the caller can re-fetch without repeat
   substitute an adjacent bill.
 - **Bill exists, no documents.** Report the record and status, and state plainly that no text is
   attached.
-- **Bill exists, no roll calls.** After fully paged `get_votes` with `bill_id` also comes back empty,
-  that is a real finding about the recorded data — report it as such, and do not infer that no vote
-  occurred.
+- **Bill exists, no roll calls.** When `get_rollcalls` comes back empty, report that no recorded
+  floor votes are available, and do not infer that no vote occurred.
 - **Request is federal, municipal, or non-U.S.** Return immediately saying the dataset does not
   cover it.

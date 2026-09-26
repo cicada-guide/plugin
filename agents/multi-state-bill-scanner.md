@@ -60,15 +60,17 @@ the conversation that asked for it. You absorb that traffic and return one conso
    - `get_rollcalls` includes roll calls linked through their recorded votes (`linked_via:
      "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while
      `has_more` is true, and list anything in `warnings` under Coverage and caveats.
-   - For individual positions, `get_votes` with `rollcall_id`, then `search_people` with `ids` — in
-     batches of at most 100, since that cap is schema-enforced and large chambers exceed it — to
-     turn UUIDs into names. Check `unresolved_ids` on each batch.
+   - For individual positions, `get_rollcall_breakdown` with `rollcall_id`. One call returns
+     `by_party` and `members` with each legislator's name, party, and vote.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put personal data or first-person phrasing in it.
 
 ## Quality standards
 
+- Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry
+  in 60 seconds.` Wait a full minute before the next call rather than retrying straight away, and
+  pace long runs of calls.
 - Schemas are strict. An unknown parameter is rejected outright, not ignored. Pass only documented
   parameters; when unsure, read
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.

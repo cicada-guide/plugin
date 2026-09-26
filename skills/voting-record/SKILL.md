@@ -83,22 +83,23 @@ not positions — count them separately and do not fold them into a yes/no tally
    is needed. Page with `next_offset` while `has_more` is true, and relay anything in `warnings`.
 2. Pick the roll call the user means. When several remain, name them by date and description and
    confirm.
-3. `get_votes` with the chosen `rollcall_id` and `limit: 100`, paging with `cursor` until
-   `has_more` is false.
-4. Collect every `people_id` and resolve in batches of up to 100 through `search_people` `ids`.
-   Check `unresolved_ids` and account for anyone listed.
-5. Join party from step 4 to category from step 3 for the breakdown.
+3. `get_rollcall_breakdown` with the chosen `rollcall_id`. One call returns `counts`, `by_party`
+   (each party's `YEA`, `NAY`, `ABSENT`, `NV`, `total`), and `members` (each legislator's `name`,
+   `party`, and `category`). Keys are upper-case. `party: null` means no party is recorded.
+4. When `partial` is `true`, the 500-row cap was reached and `by_party` covers only the rows
+   returned; say so.
+
+A roll call with `counts: null` has no recorded member votes. Say the member-by-member breakdown
+is unavailable in this dataset. Do not present it as nobody having voted.
+
+Report each roll call's own `counts`; never add counts across roll calls.
 
 Markdown output truncates at 25,000 characters with a pagination hint appended. A truncated page
 is not a complete page — keep paging rather than tallying what arrived, and prefer
 `response_format: "json"` so the structured envelope carries the full page.
 
-A roll call with `counts: null` has no recorded member votes. Say the member-by-member breakdown
-is unavailable in this dataset. Do not present it as nobody having voted.
-
-Report the `counts` from `get_rollcalls` alongside the computed breakdown. They are tallied from the
-same vote rows, so a disagreement means a page was missed or truncated — re-page before reporting,
-and say so if it persists. Report each roll call's own `counts`; never add counts across roll calls.
+Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in 60
+seconds.` Wait a full minute before the next call rather than retrying straight away.
 
 ## Constraints
 

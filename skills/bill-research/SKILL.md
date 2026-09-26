@@ -65,8 +65,13 @@ Call in this order, skipping what the request does not need:
    never add counts across roll calls. It includes roll calls linked through
    their recorded votes (`linked_via: "votes"`), so no `get_votes` reconciliation is needed. Page
    with `next_offset` while `has_more` is true, and relay anything in `warnings`.
-5. `get_votes` — only when the request asks who voted how. Resolve `people_id` values through
-   `search_people` `ids` **in batches of up to 100** and check every batch's `unresolved_ids`.
+5. `get_rollcall_breakdown` — only when the request asks who voted how. One call per roll call
+   returns `by_party` and `members` (name, party, and vote for each legislator). When `partial` is
+   `true`, say the breakdown covers only the rows returned.
+
+Calls to the server are rate limited to 60 a minute. Past that a call fails with `Rate limit
+exceeded. Retry in 60 seconds.` Wait a full minute before the next call rather than retrying
+straight away.
 
 ## 3. Write the brief
 
