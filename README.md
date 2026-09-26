@@ -205,6 +205,10 @@ research support, not as an authoritative legal record.
 - Tool reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md)
 - Call sequences for multi-step research: [`skills/state-legislation/references/workflows.md`](skills/state-legislation/references/workflows.md)
 - Project settings contract: [`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md)
+- Troubleshooting: [`docs/troubleshooting.md`](docs/troubleshooting.md)
+- Documentation index: [`docs/README.md`](docs/README.md)
+- Contributing, changelog, and security policy: [`CONTRIBUTING.md`](CONTRIBUTING.md),
+  [`CHANGELOG.md`](CHANGELOG.md), [`SECURITY.md`](SECURITY.md)
 
 ## License
 

@@ -48,6 +48,8 @@ every release.
   `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and *both* `metadata.version` and
   `plugins[0].version` in `.claude-plugin/marketplace.json`. They are independent fields and drift
   silently if one is missed. `node scripts/check.mjs` fails until all four match.
+- **Date the changelog.** Move the `Unreleased` entries in `CHANGELOG.md` under a heading for the
+  new version, and add its compare link at the bottom.
 - **Confirm the server is healthy.** `curl https://public.cicada.guide/health` returns
   `{"status":"ok"}`.
 - **Land on `main` before announcing.** The marketplace resolver reads the default branch, not a

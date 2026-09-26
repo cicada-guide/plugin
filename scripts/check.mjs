@@ -51,8 +51,15 @@ const skillFiles = skillDirs.map((d) => `skills/${d}/SKILL.md`).filter((file) =>
 const agentFiles = walk("agents", (p) => p.endsWith(".md"));
 const entryPoints = [...skillFiles, ...agentFiles];
 const docFiles = [...walk("skills", (p) => p.endsWith(".md")), ...agentFiles, "README.md"];
+// Human-facing project docs. They link with ../ legitimately and never load into a session, so they
+// skip the runtime-path rules on docFiles but still get the link, count, number and critique checks.
+const projectDocs = [
+  ...["CONTRIBUTING.md", "CHANGELOG.md", "SECURITY.md"].filter((f) => existsSync(join(ROOT, f))),
+  ...(existsSync(join(ROOT, "docs")) ? walk("docs", (p) => p.endsWith(".md")) : []),
+];
 const allMarkdown = [
   ...docFiles,
+  ...projectDocs,
   ...["CLAUDE.md", "PUBLISHING.md", "cicada-guide.local.md.example"].filter((f) => existsSync(join(ROOT, f))),
 ];
 
@@ -177,7 +184,7 @@ for (const file of docFiles) {
   }
 }
 
-for (const file of docFiles) {
+for (const file of [...docFiles, ...projectDocs]) {
   const text = read(file);
   for (const m of text.matchAll(/\b\d+ (?:MCP )?tools\b/g)) {
     fail(file, lineOf(text, m.index), `tool count "${m[0]}" in prose goes stale; describe the tools instead`);
@@ -186,7 +193,7 @@ for (const file of docFiles) {
 
 // The repo is public and does not critique the dataset's quality (CLAUDE.md, Product constraints).
 const CRITIQUE = /duplicat|unreliab|coverage gap|coverage varies|stored without (?:its|their) bill|may be missing|missing roll call/gi;
-for (const file of [...docFiles, ".codex-plugin/plugin.json"]) {
+for (const file of [...docFiles, ...projectDocs, ".codex-plugin/plugin.json"]) {
   const text = read(file);
   for (const m of text.matchAll(CRITIQUE)) {
     fail(file, lineOf(text, m.index), `"${m[0]}" critiques the dataset's quality; describe what the tools return instead`);
@@ -211,7 +218,7 @@ const CANONICAL = [
   },
   { pattern: /Retry-After: (\d+)/g, value: "60", rule: "rate-limit Retry-After header" },
 ];
-for (const file of docFiles) {
+for (const file of [...docFiles, ...projectDocs]) {
   const text = flat(read(file));
   const original = read(file);
   for (const { pattern, value, rule } of CANONICAL) {

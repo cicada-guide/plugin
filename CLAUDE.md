@@ -20,9 +20,10 @@ node scripts/check.mjs
 They cover the invariants below: the four version fields, manifest names and `source`, the pinned
 endpoint and server key, skill and agent frontmatter, `${CLAUDE_PLUGIN_ROOT}` and Markdown links,
 tool counts in prose, the numbers in each restated dataset rule, each entry point carrying the
-rules it relies on, and phrases that critique the dataset. `.github/workflows/check.yml` runs them
-on every pull request. When a rule changes on purpose, change `scripts/check.mjs` in the same
-commit.
+rules it relies on, and phrases that critique the dataset. The project docs (`CONTRIBUTING.md`,
+`CHANGELOG.md`, `SECURITY.md`, `docs/`) get the link, tool-count, number and critique checks too.
+`.github/workflows/check.yml` runs them on every pull request. When a rule changes on purpose,
+change `scripts/check.mjs` in the same commit.
 
 `node scripts/check-live-tools.mjs` reconciles the tool documentation against the live
 `tools/list`: every live tool documented in the three tool lists, no documented tool the server
@@ -56,6 +57,8 @@ deployment or its private repo; treat the endpoint as a fixed external dependenc
 | `skills/*/SKILL.md` | Other skills are slash commands, one directory each |
 | `agents/` | Subagents, one Markdown file each |
 | `cicada-guide.local.md.example` | Template users copy to `.claude/cicada-guide.local.md` |
+| `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md` | Human-facing project docs. CONTRIBUTING points here rather than restating the rules |
+| `docs/` | `README.md` index, `architecture.md`, `troubleshooting.md` — human-facing, never loaded into a session |
 | `docs/solutions/` | Documented solutions to past problems, organized by category with YAML frontmatter (`module`, `tags`, `problem_type`). Relevant when implementing or debugging in documented areas |
 | `scripts/` | `check.mjs` (offline invariants) and `check-live-tools.mjs` (docs against the live server) |
 | `.github/workflows/` | `check.yml` on every pull request; `live-tools.yml` nightly |
