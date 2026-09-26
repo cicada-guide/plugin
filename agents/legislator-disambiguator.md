@@ -92,6 +92,8 @@ never copy file contents into a tool argument.
   return AMBIGUOUS with each row's party, state, and vote date range, and ask which one the request
   means.
 - U.S. state legislators only. Members of Congress are not in this dataset.
+- When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
+  before the first call; never guess its parameters.
 - When a parameter, constraint, or response field is unclear, read
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 

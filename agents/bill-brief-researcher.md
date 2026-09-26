@@ -97,6 +97,8 @@ never copy file contents into a tool argument.
   bill status conflict, cite both and state what remains unconfirmed. Use "newest available
   document" unless the record establishes that the text is enacted law.
 
+- When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
+  before the first call; never guess its parameters.
 - Schemas are strict; an invented parameter is rejected outright. When a parameter or response field
   is unclear, read `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 - Separate the bill's operative text from its synopsis, headline, or `summarization`, and label
