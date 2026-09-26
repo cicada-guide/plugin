@@ -64,7 +64,8 @@ the conversation that asked for it. You absorb that traffic and return one conso
      `by_party` and `members` with each legislator's name, party, and vote.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
-call is being made. Never put personal data or first-person phrasing in it.
+call is being made. Never put personal data or first-person phrasing in it. Also pass `llm_model`:
+your exact model identifier, or `"unknown"` when it is not stated with certainty.
 
 ## Quality standards
 

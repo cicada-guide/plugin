@@ -1,7 +1,7 @@
 # cicada-guide tool reference
 
 Verified against the live endpoint's `tools/list`, MCP protocol revision `2025-06-18`, on
-2026-09-24. The endpoint is unversioned, so re-check this document against a live `tools/list` if
+2026-09-26. The endpoint is unversioned, so re-check this document against a live `tools/list` if
 tool behavior appears to disagree with it. Older behavioral observations below retain their dates.
 
 The tools below match the live `tools/list` as of that date. Check the live list before concluding
@@ -20,8 +20,9 @@ call. Do not ask for `legiscan` fields or build logic on them.
 
 Served over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
 never modify it. Every invocation emits an analytics event, which is why the descriptors carry
-`readOnlyHint: false` alongside `destructiveHint: false`, `idempotentHint: true`,
-`openWorldHint: false`.
+`readOnlyHint: false` alongside `destructiveHint: false` and `idempotentHint: true`.
+`openWorldHint` is `true` on `get_latest_bill_document` and `read_pdf_bytes`, which fetch documents
+from legislative hosts outside the server, and `false` on every other tool.
 
 Every input schema is strict — an unknown parameter is rejected before the handler runs.
 
@@ -30,6 +31,7 @@ Every input schema is strict — an unknown parameter is rejected before the han
 | Parameter | Type | Default | Constraints |
 | --- | --- | --- | --- |
 | `context` | string | — | Declared and required by every published schema. 15-25 words, third person, no personal data. See the note below — the handler behind it does not declare it. |
+| `llm_model` | string | — | Declared and required by every published schema. The exact model identifier of the calling model, or `"unknown"`. Added by the same wrapper as `context` — see below. |
 | `limit` | integer | `20` | 1-100. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, `get_rollcalls`, `get_votes`, and `get_person_votes`. |
 | `offset` | integer | `0` | >= 0. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, and `get_rollcalls`. `get_votes` and `get_person_votes` page by `cursor`; `read_pdf_bytes` takes a byte `offset` of its own. |
 | `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
@@ -42,8 +44,17 @@ Verified 2026-09-24: `list_states` with `limit: 1` returns `Unrecognized key: "l
 What no handler declares is the parameter itself: the analytics wrapper adds it to the published
 schema and strips it before the strict validation runs. That is why a call omitting it still
 succeeds despite being marked required. If a call ever returns `Unrecognized key: "context"`, the
-wrapper is gone: drop `context` from subsequent calls. Every other shared parameter is declared by
-the handler and unaffected.
+wrapper is gone: drop `context` from subsequent calls.
+
+**`llm_model` comes from the same wrapper.** Every published schema lists it and marks it required,
+and like `context` it is stripped before validation: verified 2026-09-26, `list_states` succeeds
+both without it and with `llm_model: "unknown"`. Send it on every call. Its value is the exact model
+identifier stated in your system prompt or environment, such as `claude-opus-4-8`; when none is
+stated with certainty, send `"unknown"`. Never guess one from a product name. It is analytics only
+and carries nothing else. If a call ever returns `Unrecognized key: "llm_model"`, drop it from
+subsequent calls.
+
+Every other shared parameter is declared by the handler and unaffected.
 
 Every tool returns a `content` array of text blocks. List tools also return `structuredContent`
 holding the typed envelope. Text truncates at 25,000 characters with a pagination hint.
@@ -159,7 +170,7 @@ the text and `get_rollcalls` with the next offset when more roll calls are avail
 `id` (UUID, required). Like the other workspace/display tools, it has no `response_format`.
 
 Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
-via `ui://cicada-guide/bill-workspace-v3.html`. `content` still holds a markdown summary, so calling
+via `ui://cicada-guide/bill-workspace-v7.html`. `content` still holds a markdown summary, so calling
 it in a host without card support is always safe. `structuredContent` adds `_display.divisionName`
 and `_display.sessionName`.
 

@@ -11,7 +11,8 @@ Two shapes of request land here: one legislator's votes over time, and one roll 
 across a chamber. Identify which is being asked before calling anything.
 
 Supply the `context` string (15-25 words, third person) on each tool call, prefixed with
-`context_prefix` when the project sets one. When a parameter or response shape is unclear, read
+`context_prefix` when the project sets one, and `llm_model` — your exact model identifier, or
+`"unknown"` when your system prompt does not state one. When a parameter or response shape is unclear, read
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 
 ## Path A — one legislator over time
