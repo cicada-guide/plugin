@@ -1,4 +1,4 @@
-# Cicada Guide
+# cicada.guide
 
 Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look
 up legislators, and trace roll-call and individual voting records.
