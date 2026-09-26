@@ -10,6 +10,8 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-09-26
+
 ### Added
 
 - `CONTRIBUTING.md`, `SECURITY.md`, and this changelog.
@@ -116,7 +118,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/752f7ec...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/30cd881...HEAD
+[0.5.4]: https://github.com/cicada-guide/plugin/compare/752f7ec...30cd881
 [0.5.3]: https://github.com/cicada-guide/plugin/commit/752f7ec
 [0.5.2]: https://github.com/cicada-guide/plugin/commit/16c5862
 [0.5.1]: https://github.com/cicada-guide/plugin/commit/2e9907c
