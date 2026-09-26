@@ -109,8 +109,7 @@ descending, nulls last.
 Items carry `id`, `bill`, `title`, `synopsis`, `status`, `type`, `date`, `subjects`, `headline`,
 `session_id`, `division_id`, `sponsors`, `count_documents`, `documents`.
 
-**`count_documents` is unreliable.** Verified 2026-09-05: Alabama HB94 reports `count_documents: 0`
-while `get_documents` returns `total: 2`. Trust `get_documents` / `get_latest_bill_document`.
+**Count a bill's documents with `get_documents`.** Report its `total`, not `count_documents`.
 
 **Bill-number matching is loose by design, and the wildcard is interior.** The pattern splits the
 alpha prefix from the digits, joins them with `%`, and appends a trailing `%` — `"HB 314"` becomes
@@ -135,7 +134,7 @@ full-text ceiling, and a long one silently ignores terms past the eighth. Narrow
 ### `get_bill`
 
 `id` (UUID, required). `structuredContent` is the full row — adding `created_at`, `modified_on`,
-and the `openstates` JSONB column (often `null`) to the `search_bills` fields — not a pagination
+and the `openstates` JSONB column (may be `null`) to the `search_bills` fields — not a pagination
 envelope. There is no `legiscan` column.
 
 A missing id is not an error: returns the text `No bill found with id=<id>.` and no
@@ -226,7 +225,7 @@ the tool returns explanatory text instead of an empty envelope.
 ### `get_person`
 
 `id` (UUID, required). Returns `id`, `created_at`, the name fields, `party`, and `contact_details`
-(often `null`) — nothing about jurisdiction, chamber, district, or role, and no `legiscan` object. A
+(may be `null`) — nothing about jurisdiction, chamber, district, or role, and no `legiscan` object. A
 missing id returns `No person found with id=<id>.` Prefer `search_people` with `ids` for more than
 one person. Call it only when contact details are wanted; it adds nothing to disambiguation.
 
@@ -243,17 +242,18 @@ person as text. It has no `response_format`.
 ### `get_rollcalls`
 
 `bill_id` (UUID, required), plus `limit` / `offset`. Aggregate floor-vote summaries, ordered by
-`date` descending, nulls last. Items carry `id`, `bill_id`, `date`, `description`, `counts`.
+`date` descending, nulls last. Items carry `id`, `bill_id`, `date`, `description`, `counts`,
+`linked_via`; the envelope adds `warnings`, normally empty.
 
 ```json
 { "id": "...", "bill_id": "...", "date": "2025-05-06",
   "description": "Motion to Read a Third Time and Pass - Roll Call 943",
-  "counts": { "yea": 34, "nay": 0, "absent": 0, "nv": 0, "total": 34 } }
+  "counts": { "yea": 34, "nay": 0, "absent": 0, "nv": 0, "total": 34 }, "linked_via": "bill" }
 ```
 
 **`counts` is tallied from the recorded individual votes, not from an official tally.** It is `null`
-when no individual votes are recorded for the roll call — common for older and voice votes — which
-means "not recorded", never a 0-0 vote. Tally values are numbers. Verified 2026-09-24.
+when no individual votes are recorded for the roll call, which means "not recorded", never a 0-0
+vote. Tally values are numbers. Verified 2026-09-24.
 
 **No field says whether the measure passed, and no field names the chamber.** Do not derive
 passage from `yea > nay`: thresholds vary (supermajorities, majorities of members elected), and
@@ -262,24 +262,10 @@ when the `description` or the bill's `status` says it.
 
 Start here for "how was this bill voted on", then pass a rollcall `id` to `get_votes`.
 
-**An empty result does not mean the bill had no recorded votes.** A roll call row can be stored
-without its `bill_id`, so `get_rollcalls` never returns it. Verified 2026-09-24 on Texas HB7 (89th
-Legislature 2nd Special Session): `get_rollcalls` returned nothing, while `get_votes` with the same
-`bill_id` returned votes on several roll calls, and `get_rollcall_breakdown` on one of those reported
-`bill_id: null` with 30 recorded votes.
-
-**A bill can have some roll calls linked and others not**, so a non-empty `get_rollcalls` can also
-be incomplete. Whenever an answer presents a bill's roll calls as its full voting history — or
-says it has none — reconcile against the votes:
-
-1. `get_votes` with `bill_id` and `limit: 100`, paging with `cursor` until `has_more` is false.
-   One page usually holds a single roll call's votes, so stopping early misses roll calls.
-2. Collect the distinct `rollcall_id` values and drop the ones `get_rollcalls` already returned.
-3. Describe each remaining id with `get_rollcall_breakdown` (date, description, counts).
-
-When paging would run past about 20 pages, stop, present what was found, and say the list may omit
-roll calls stored without their bill link. Roll calls with `counts: null` have no votes and can
-only appear through `get_rollcalls`.
+**Roll calls linked through their votes are included.** A roll call can be tied to the bill
+directly or through its recorded votes; both come back here, and `linked_via` is `"bill"` or
+`"votes"`. On a `"votes"` item `bill_id` is `null`. No reconciliation through `get_votes` is needed.
+Relay anything in `warnings` alongside the list. Verified 2026-09-26.
 
 ### `get_votes`
 
@@ -288,7 +274,7 @@ One row per legislator per rollcall.
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `rollcall_id` | UUID | Preferred filter |
-| `bill_id` | UUID | Votes across every rollcall on a bill — including roll calls `get_rollcalls` misses. Page to the end before collecting roll-call ids |
+| `bill_id` | UUID | Votes across every rollcall on a bill |
 | `people_id` | UUID | One legislator's votes |
 | `category` | `YEA` \| `NAY` \| `ABSENT` \| `NV` | Not sufficient on its own |
 | `limit` | integer 1-100 | |

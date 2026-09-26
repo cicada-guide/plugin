@@ -78,10 +78,9 @@ not positions — count them separately and do not fold them into a yes/no tally
 
 ## Path B — one roll call across the chamber
 
-1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. It can omit roll calls
-   stored without their bill link, whether it returns rows or none. When the roll call the user
-   means is not there, page `get_votes` with `bill_id` to the end with `cursor`, collect the
-   distinct `rollcall_id` values, and describe the extra ones with `get_rollcall_breakdown`.
+1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. It includes roll calls
+   linked through their recorded votes (`linked_via: "votes"`), so no `get_votes` reconciliation
+   is needed. Page with `next_offset` while `has_more` is true.
 2. Pick the roll call the user means. When several remain, name them by date and description and
    confirm.
 3. `get_votes` with the chosen `rollcall_id` and `limit: 100`, paging with `cursor` until
@@ -104,8 +103,8 @@ and say so if it persists.
 ## Constraints
 
 - Never generalize from a single vote. One `NAY` is one vote, not a position on an issue.
-- Report the coverage window. Absence of a vote in the dataset is not evidence the legislator did
-  not vote; roll calls may be missing.
+- Report the date range the results cover. A vote absent from the results is not evidence the
+  legislator did not vote.
 - Do not score, grade, or rate a legislator, and do not compare them to an ideological baseline.
   Report what was voted and when.
 - Attribute every claim to the bill and roll call it came from, with the source URL when present.

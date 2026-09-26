@@ -24,8 +24,8 @@ ordinances, and no ballot measures. For a question about Congress, an act of Par
 council, say the dataset does not cover it rather than searching and reporting an empty result as
 if it were an answer.
 
-Coverage varies by state and session. Call `list_states` to see which jurisdictions are present
-before asserting that a state has no matching bills.
+Call `list_states` to see which jurisdictions are present before asserting that a state has no
+matching bills.
 
 ## Project settings
 
@@ -95,7 +95,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
 | Who voted which way on one roll call | `get_votes` |
-| Describe one roll call by id — date, description, counts — including one `get_rollcalls` misses | `get_rollcall_breakdown` |
+| Describe one roll call by id — date, description, counts | `get_rollcall_breakdown` |
 | One legislator's voting history over time | `get_person_votes` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
@@ -128,12 +128,9 @@ none were recorded, not a 0-0 vote. No tool reports whether a measure passed or 
 State passage only when the roll-call `description` or the bill's `status` says so — never from
 `yea > nay`, since thresholds vary.
 
-**`get_rollcalls` can miss roll calls, whether it returns rows or none.** Some roll calls are stored
-without a `bill_id` and never appear there. Before presenting a bill's roll calls as complete, or
-saying it has none, page `get_votes` with `bill_id` to the end with `cursor`, collect the distinct
-`rollcall_id` values, and describe any `get_rollcalls` lacks with `get_rollcall_breakdown`. When
-that is too many pages to finish, say the list may be incomplete. The call sequence is in
-`references/tool-reference.md` under `get_rollcalls`.
+**`get_rollcalls` needs no reconciliation through `get_votes`.** It returns roll calls linked to
+the bill directly and through their recorded votes; each item's `linked_via` says which (`"bill"`
+or `"votes"`). Page with `next_offset` while `has_more` is true, and relay anything in `warnings`.
 
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
@@ -209,11 +206,12 @@ call sequence.
 ## Answering well
 
 Preserve conflicting evidence. An enrolled document is not proof of signature or enactment; report
-its version label separately from the bill's dated status when they disagree. Missing roll calls
-mean no recorded votes are available in the dataset, not that no vote occurred. A failed tool call
-is unavailable evidence, not an empty search result. Never infer chronology from UUID ordering.
+its version label separately from the bill's dated status when they disagree. When no roll calls
+come back, say no recorded votes are available in the dataset, not that no vote occurred. A failed
+tool call is unavailable evidence, not an empty search result. Never infer chronology from UUID
+ordering.
 
 Cite the bill number, jurisdiction, and session with any claim about legislation, and link the
-source document when one exists. Distinguish what the data says from what it omits: a legislator
-with no recorded votes on a bill may have been absent, or the roll call may simply not be in the
-dataset. Never characterize a legislator's overall record from a single vote.
+source document when one exists. Report only what the tools returned: a legislator with no recorded
+vote on a bill has no recorded vote, which is not the same as abstaining. Never characterize a
+legislator's overall record from a single vote.

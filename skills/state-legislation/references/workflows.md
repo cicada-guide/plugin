@@ -71,7 +71,7 @@ For a specific version rather than the newest:
 // 1. the floor votes that happened
 { "tool": "get_rollcalls", "arguments": { "bill_id": "<bill uuid>" } }
 // → items carry date, description, and counts { yea, nay, absent, nv, total } — null when unrecorded
-// → may be incomplete, even when non-empty: reconcile with get_votes by bill_id (see below)
+// → includes roll calls linked through their votes; linked_via says "bill" or "votes"
 
 // 2. individual positions on one roll call
 { "tool": "get_votes", "arguments": { "rollcall_id": "<rollcall uuid>", "limit": 100 } }
@@ -93,22 +93,7 @@ the vote categories from step 2 rather than making further calls.
 `counts` are the recorded votes, not a result — nothing returns pass/fail or the chamber. Say a
 measure passed only when the roll-call `description` or the bill's `status` says so.
 
-Some roll calls are stored without their `bill_id`, so `get_rollcalls` can omit them whether it
-returns rows or none. Before presenting the list as complete, or saying there are none:
-
-```jsonc
-{ "tool": "get_votes", "arguments": { "bill_id": "<bill uuid>", "limit": 100 } }
-// page with cursor until has_more is false — one page is usually a single roll call's votes
-{ "tool": "get_votes", "arguments": { "bill_id": "<bill uuid>", "limit": 100, "cursor": "<next_cursor>" } }
-// collect the distinct rollcall_id values, drop those get_rollcalls returned, then for each:
-{ "tool": "get_rollcall_breakdown", "arguments": { "rollcall_id": "<rollcall uuid>" } }
-// → rollcall date and description, counts { YEA, NAY, ABSENT, NV, total }
-```
-
-Past about 20 pages, stop and say the roll-call list may omit roll calls stored without their bill
-link.
-
-Only when that also returns nothing is "no recorded floor votes in this dataset" the answer.
+When `get_rollcalls` returns nothing, "no recorded floor votes in this dataset" is the answer.
 
 ## How did one legislator vote
 
@@ -173,7 +158,6 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | Wrong legislator | `search_people` and `get_person` return no state or chamber, so a common surname is ambiguous | Confirm jurisdiction from `bill.division_id` in `get_person_votes`; ask when still tied |
 | Two identical-looking candidates | Two legislators with the same name | List both with party, state, and vote dates, and ask; never combine their records |
 | A sitting legislator appears to have no votes | The chosen row may be a different legislator with the same name | Surface other rows with the same name as candidates and ask |
-| Roll-call list is short a vote the bill clearly had | Roll calls stored without their `bill_id` | Page `get_votes` by `bill_id` to the end and describe the extra `rollcall_id` values |
 | Right bill number, wrong bill | Interior-wildcard match (`HB 314` → `HB 3140`, `HB 5314`) | Read the `bill` field; scope by `division_id` and `session_id`; the exact match may not be on page one |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Batch-resolve with `search_people` `ids` |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` have no `total` | Report "at least N", or paginate to exhaustion |
