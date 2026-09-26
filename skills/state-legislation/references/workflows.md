@@ -74,22 +74,14 @@ For a specific version rather than the newest:
 // → includes roll calls linked through their votes; linked_via says "bill" or "votes"
 // → relay anything in the envelope's warnings array
 
-// 2. individual positions on one roll call
-{ "tool": "get_votes", "arguments": { "rollcall_id": "<rollcall uuid>", "limit": 100 } }
-
-// 3. next page — cursor, never offset
-{ "tool": "get_votes", "arguments": { "rollcall_id": "<rollcall uuid>", "limit": 100, "cursor": "<next_cursor>" } }
-
-// 4. turn people_id values into names, in batches of up to 100 (hard schema cap)
-{ "tool": "search_people", "arguments": { "ids": ["<people_id>", "<people_id>", "..."] } }
+// 2. who voted which way, and the split by party, in one call
+{ "tool": "get_rollcall_breakdown", "arguments": { "rollcall_id": "<rollcall uuid>" } }
+// → counts, by_party [{ party, YEA, NAY, ABSENT, NV, total }], members [{ name, party, category }]
 ```
 
-Step 4 is not optional — `get_votes` returns UUIDs only. Batch them in groups of at most 100 and
-repeat step 4 per batch; a 400-member chamber needs four calls. Never loop `get_person`. Check
-`unresolved_ids` on each response and account for anyone it lists.
-
-For a party-line breakdown, the `party` field arrives with the `search_people` batch; join it to
-the vote categories from step 2 rather than making further calls.
+Step 2 needs no `get_votes` paging or `search_people` resolution: `members` already carries each
+legislator's name and party. When `partial` is `true`, the 500-row cap was reached and `by_party`
+covers only the rows returned; say so.
 
 `counts` are the recorded votes, not a result — nothing returns pass/fail or the chamber. Say a
 measure passed only when the roll-call `description` or the bill's `status` says so. Report each
@@ -161,10 +153,11 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | Two identical-looking candidates | Two legislators with the same name | List both with party, state, and vote dates, and ask; never combine their records |
 | A sitting legislator appears to have no votes | The chosen row may be a different legislator with the same name | Surface other rows with the same name as candidates and ask |
 | Right bill number, wrong bill | Interior-wildcard match (`HB 314` → `HB 3140`, `HB 5314`) | Read the `bill` field; scope by `division_id` and `session_id`; the exact match may not be on page one |
-| Names missing from a vote breakdown | `get_votes` returns UUIDs only | Batch-resolve with `search_people` `ids` |
+| Names missing from a vote breakdown | `get_votes` returns UUIDs only | Use `get_rollcall_breakdown`, whose `members` carry names and party |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` have no `total` | Report "at least N", or paginate to exhaustion |
 | A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills and 8 terms, silently | Narrow by `division_id` / `subject`; do not report absence from one broad query |
-| `ids` rejected on a big roll call | `search_people` `ids` caps at 100; large chambers exceed it | Chunk into batches of 100 |
+| `ids` rejected on a big batch | `search_people` `ids` caps at 100 | Chunk into batches of 100 |
+| `Rate limit exceeded. Retry in 60 seconds.` | More than 60 calls in a minute | Wait a full minute, then continue at a slower pace |
 | Response ends mid-sentence | 25,000-character truncation | Paginate; do not treat it as the full answer |
 | `No bill found with id=...` | Valid UUID, no row | Not an error — re-derive the id from `search_bills` |
 | `counts: null`, or `No votes found` on a roll call | No individual votes recorded for that roll call | Report the breakdown as unavailable, never as nobody voting |

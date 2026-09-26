@@ -60,6 +60,10 @@ Neither shape throws. Both carry `isError: true` and no `structuredContent`.
 The distinction matters when recovering: a schema-level failure means the *argument set* is wrong
 and must change, while a handler-level failure often means a required filter is merely missing.
 
+**Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in
+60 seconds.`** The HTTP status is 429 with `Retry-After: 60`. Wait out the minute before the next
+call; an immediate retry fails the same way.
+
 ### The offset envelope
 
 ```json
@@ -299,18 +303,23 @@ member-by-member breakdown as unavailable. Never present it as nobody having vot
 ### `get_rollcall_breakdown`
 
 `rollcall_id` (UUID, required), from `get_rollcalls`, `get_bill_dossier`, or `get_votes`. It has no
-`response_format`. Returns roll-call metadata and aggregate counts to the model; named member rows go
-to host-only metadata for the bill workspace UI.
+`response_format`. Returns the whole breakdown for one roll call in one call. Verified 2026-09-26.
 
 ```json
-{ "rollcall": { "id": "...", "bill_id": null, "date": "2025-09-03", "description": "Read 3rd time" },
-  "counts": { "YEA": 17, "NAY": 8, "ABSENT": 4, "NV": 1, "total": 30 },
-  "returned": 30, "unresolved_people": 0, "partial": false }
+{ "rollcall": { "id": "...", "bill_id": "...", "date": "2025-08-28", "description": "Amendment tabled RV#121" },
+  "counts": { "YEA": 83, "NAY": 47, "ABSENT": 18, "NV": 2, "total": 150 },
+  "by_party": [ { "party": "D", "YEA": 0, "NAY": 47, "ABSENT": 15, "NV": 0, "total": 62 },
+                { "party": "R", "YEA": 83, "NAY": 0, "ABSENT": 3, "NV": 2, "total": 88 } ],
+  "members": [ { "vote_id": "...", "people_id": "...", "name": "...", "party": "R", "category": "YEA" } ],
+  "returned": 150, "unresolved_people": 0, "partial": false }
 ```
 
-The `counts` keys are upper-case here and lower-case in `get_rollcalls`. The member list is capped at
-500 rows and reports `partial: true` at the cap. For a complete model-visible breakdown, page
-`get_votes` and resolve people ids.
+- `by_party` is the per-party tally; `party: null` means no party is recorded.
+- `members` names every legislator with their `party` and `category`, so no `get_votes` paging or
+  `search_people` resolution is needed for a breakdown.
+- The `counts` keys are upper-case here and lower-case in `get_rollcalls`.
+- The member list is capped at 500 rows. `partial: true` means the cap was reached; `by_party`
+  then covers only the rows returned, so say so.
 
 ### `get_person_votes`
 

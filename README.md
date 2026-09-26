@@ -145,7 +145,7 @@ change when you make one.
 | `get_person` | Name, party, and contact details for one legislator |
 | `show_person_record` | Display a resolved legislator and recorded votes |
 | `get_rollcalls` | Floor-vote summaries for a bill |
-| `get_rollcall_breakdown` | Metadata and aggregate counts for one roll call; member rows go to the workspace view |
+| `get_rollcall_breakdown` | One roll call's counts, per-party tally, and every member's name, party, and vote |
 | `get_votes` | Individual positions on a roll call |
 | `get_person_votes` | One legislator's voting history, with bill context joined |
 | `list_states` | Available jurisdictions |

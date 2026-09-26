@@ -94,8 +94,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Display a resolved legislator's voting record | `show_person_record` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
-| Who voted which way on one roll call | `get_votes` |
-| Describe one roll call by id — date, description, counts | `get_rollcall_breakdown` |
+| Who voted which way on one roll call, and the split by party | `get_rollcall_breakdown` |
 | One legislator's voting history over time | `get_person_votes` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
@@ -103,8 +102,8 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 
 `get_bill_dossier` omits full document text and includes only the first 100 roll calls; read its
 `warnings` before trusting a `null` section.
-`get_rollcall_breakdown` places named member rows in host-only metadata; use paginated `get_votes`
-and person resolution for a model-visible member breakdown. Resolve identity before
+`get_rollcall_breakdown` returns one roll call's whole breakdown in one call: `counts`, `by_party`,
+and every member's name, party, and vote in `members`. Resolve identity before
 `show_person_record`, and use `open_research_desk` for an exploration request rather than a known
 bill or person.
 
@@ -132,6 +131,11 @@ roll calls.
 **`get_rollcalls` needs no reconciliation through `get_votes`.** It returns roll calls linked to
 the bill directly and through their recorded votes; each item's `linked_via` says which (`"bill"`
 or `"votes"`). Page with `next_offset` while `has_more` is true, and relay anything in `warnings`.
+
+**Break a roll call down with `get_rollcall_breakdown`.** One call returns `counts`, `by_party`
+(each party's `YEA`, `NAY`, `ABSENT`, `NV`, `total`), and `members` (`name`, `party`, `category`
+per legislator). Keys are upper-case. `party: null` means no party is recorded. When `partial` is
+`true`, the 500-row cap was reached and `by_party` covers only the rows returned; say so.
 
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
@@ -175,6 +179,10 @@ but no exact count. Do not report a total for these; say "at least N" or paginat
 starting with `Error:`, and a schema-level `MCP error -32602: Input validation error:` naming the
 offending key. Both carry `isError: true`. Read either one; it names the problem. A schema-level
 failure means the argument set is wrong, not merely incomplete.
+
+**Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in
+60 seconds.`** Wait a full minute before the next call rather than retrying straight away, and pace
+long sweeps.
 
 **Output truncates at 25,000 characters** with a pagination hint appended. A truncated response is
 not the complete answer; paginate.

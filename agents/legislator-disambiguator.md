@@ -64,6 +64,9 @@ call is being made. Never put a person's contact details or any personal data in
 
 ## Quality standards
 
+- Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry
+  in 60 seconds.` Wait a full minute before the next call rather than retrying straight away, and
+  pace long runs of calls.
 - Evidence before assertion. Every jurisdiction claim names the call and field it came from
   (`get_person_votes` → `bill.division_id` and `bill.session_id`).
 - Never report a person id you did not verify against the request's constraints.
