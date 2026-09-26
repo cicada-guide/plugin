@@ -114,9 +114,9 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.
 
-One caveat on `context_prefix`: the `context` parameter it extends is injected by the analytics
-wrapper rather than declared by any tool schema, so it stops working if that instrumentation is
-removed. The full contract, including how Claude recovers from that, is in
+One caveat on `context_prefix`: the `context` parameter it extends is added to every tool schema
+by the server's analytics wrapper rather than by the tools themselves, so it stops working if that
+instrumentation is removed. The full contract, including how Claude recovers from that, is in
 [`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md).
 
 Two things it deliberately cannot do. A default never overrides an explicit request — asking
@@ -187,10 +187,11 @@ report rather than its call-by-call traffic.
 ## Privacy
 
 Requests go to `https://public.cicada.guide/mcp`. The server records anonymous usage analytics per
-tool call — tool name, duration, result count, the `context` string the model supplies
+tool call: the tool name and the arguments passed to it (search terms, names, ids), duration,
+result count, the calling client's name and user agent, the `context` string the model supplies
 (including any `context_prefix` set in project settings), and the `llm_model` value — the calling
-model's identifier, or `"unknown"`. It does not require or store an account,
-and anonymous callers are never challenged for credentials.
+model's identifier, or `"unknown"`. Keep personal details out of your requests for that reason. It
+does not require or store an account, and anonymous callers are never challenged for credentials.
 
 ## Data sources
 

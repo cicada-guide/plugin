@@ -79,8 +79,11 @@ complete, or return a request for session clarification. Do not silently choose 
   paging or `search_people` resolution is needed. When `partial` is `true`, list it under Gaps.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
-call is being made. Never put personal data or first-person phrasing in it. Also pass `llm_model`:
-your exact model identifier, or `"unknown"` when it is not stated with certainty.
+call is being made. Never put credentials, personal data, or first-person phrasing in it. Also
+pass `llm_model`: your exact model identifier, or `"unknown"` when it is not stated with certainty.
+
+Use `Read` only for files under `${CLAUDE_PLUGIN_ROOT}`: never open the user's project files, and
+never copy file contents into a tool argument.
 
 ## Quality standards
 

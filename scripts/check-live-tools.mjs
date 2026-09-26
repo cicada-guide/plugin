@@ -28,12 +28,22 @@ function walk(dir) {
   });
 }
 
-function parseRpc(body) {
-  const payload = body.trimStart().startsWith("{")
-    ? body
-    : body.split("\n").filter((l) => l.startsWith("data: ")).map((l) => l.slice(6)).join("");
-  return JSON.parse(payload);
+// A JSON body is one message. An SSE body can carry several events (a notification before the
+// result), each on its own `data:` line(s); return the one answering `id`.
+function parseRpc(body, id) {
+  if (body.trimStart().startsWith("{")) return JSON.parse(body);
+  const messages = body
+    .split(/\r?\n\r?\n/)
+    .map((event) => event.split(/\r?\n/).filter((l) => l.startsWith("data:")).map((l) => l.slice(5).replace(/^ /, "")).join("\n"))
+    .filter(Boolean)
+    .map((data) => JSON.parse(data));
+  const answer = messages.find((m) => m.id === id);
+  if (!answer) throw new Error(`no response with id ${id} among ${messages.length} event(s)`);
+  return answer;
 }
+
+// A hung endpoint must fail the run, not hold the job until the runner's own timeout.
+const REQUEST_TIMEOUT_MS = 30_000;
 
 // Something in front of the Worker (a proxy, a WAF rule) can refuse a request the Worker never
 // sees, so a failure reports enough of the response to tell who answered.
@@ -53,7 +63,12 @@ async function fetchTools(endpoint) {
     "MCP-Protocol-Version": PROTOCOL_VERSION,
   };
   const post = (body, extra = {}) =>
-    fetch(endpoint, { method: "POST", headers: { ...headers, ...extra }, body: JSON.stringify(body) });
+    fetch(endpoint, {
+      method: "POST",
+      headers: { ...headers, ...extra },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
 
   const init = await post({
     jsonrpc: "2.0", id: 1, method: "initialize",
@@ -68,9 +83,13 @@ async function fetchTools(endpoint) {
   await (await post({ jsonrpc: "2.0", method: "notifications/initialized" }, withSession)).text();
   const list = await post({ jsonrpc: "2.0", id: 2, method: "tools/list" }, withSession);
   if (!list.ok) throw new Error(`tools/list returned ${await describe(list)}`);
-  const result = parseRpc(await list.text());
+  const result = parseRpc(await list.text(), 2);
 
-  await fetch(endpoint, { method: "DELETE", headers: { ...headers, ...withSession } }).catch(() => {});
+  await fetch(endpoint, {
+    method: "DELETE",
+    headers: { ...headers, ...withSession },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  }).catch(() => {});
   return result;
 }
 
@@ -87,7 +106,20 @@ try {
   process.exit(2);
 }
 
-const tools = new Map((response.result?.tools ?? response.tools ?? []).map((t) => [t.name, t]));
+// A JSON-RPC error is the server's answer, not an empty tool list; report what it said.
+if (response.error) {
+  console.error(`tools/list returned JSON-RPC error ${response.error.code}: ${response.error.message}`);
+  process.exit(2);
+}
+// Tool names come from the server and are printed into the Actions log, where a line starting with
+// `::` is a workflow command. Anything that is not a plain tool identifier is refused outright.
+const listed = (response.result?.tools ?? response.tools ?? []).filter((t) => t && typeof t === "object");
+const malformed = listed.filter((t) => typeof t.name !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(t.name));
+if (malformed.length) {
+  console.error(`tools/list returned ${malformed.length} tool(s) with a malformed name`);
+  process.exit(2);
+}
+const tools = new Map(listed.map((t) => [t.name, t]));
 if (!tools.size) {
   console.error("tools/list returned no tools");
   process.exit(2);

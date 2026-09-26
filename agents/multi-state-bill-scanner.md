@@ -65,8 +65,11 @@ the conversation that asked for it. You absorb that traffic and return one conso
      `by_party` and `members` with each legislator's name, party, and vote.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
-call is being made. Never put personal data or first-person phrasing in it. Also pass `llm_model`:
-your exact model identifier, or `"unknown"` when it is not stated with certainty.
+call is being made. Never put credentials, personal data, or first-person phrasing in it. Also
+pass `llm_model`: your exact model identifier, or `"unknown"` when it is not stated with certainty.
+
+Use `Read` only for files under `${CLAUDE_PLUGIN_ROOT}`: never open the user's project files, and
+never copy file contents into a tool argument.
 
 ## Quality standards
 
@@ -81,6 +84,8 @@ your exact model identifier, or `"unknown"` when it is not stated with certainty
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 - `search_bills` returns no `total`. Report counts as "at least N", or paginate to exhaustion and
   say that you did.
+- Text output truncates at 25,000 characters. A response ending mid-sentence is a paging signal, not
+  the end of the record.
 - Never assert a state has no legislation on a topic from one narrow query. Say which query ran.
 - Report zero-result jurisdictions as rows, not omissions. A silent gap reads as a finding.
 - Failed calls come back as results in two shapes, never exceptions: a text block beginning with

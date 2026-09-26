@@ -99,6 +99,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Display a resolved legislator's voting record | `show_person_record` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
+| Page through individual vote rows for a roll call, bill, or legislator | `get_votes` |
 | Who voted which way on one roll call, and the split by party | `get_rollcall_breakdown` |
 | One legislator's voting history over time | `get_person_votes` |
 | Available jurisdictions | `list_states` |

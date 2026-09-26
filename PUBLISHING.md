@@ -26,8 +26,8 @@ every release.
   verified against. The endpoint is unversioned, so nothing else signals drift. A bare `tools/list`
   POST returns 400 — the transport requires a session, so `initialize` first, echo the
   `mcp-session-id` response header on the next call, and send `notifications/initialized` between
-  the two. Reconcile against the server, never against the other copies: the count and tool names
-  are repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three agreeing
+  the two. Reconcile against the server, never against the other copies: the tool names are
+  repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three agreeing
   with each other is exactly the state drift leaves behind. `node scripts/check-live-tools.mjs`
   does the handshake and the reconciliation in one step, and the `live-tools` workflow runs it
   nightly. To inspect the raw list by hand, this writes it to `tools-list.json` (bash):

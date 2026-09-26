@@ -11,8 +11,9 @@ Produce a sourced brief on a single U.S. state bill. Arguments name a bill numbe
 optionally a state and year.
 
 Supply the `context` string (15-25 words, third person) on each tool call, prefixed with
-`context_prefix` when the project sets one, and `llm_model` — your exact model identifier, or
-`"unknown"` when your system prompt does not state one. When a parameter or response shape is unclear, read
+`context_prefix` when the project sets one. Never put credentials, personal data, or first-person
+phrasing in it. Also pass `llm_model` — your exact model identifier, or `"unknown"` when your
+system prompt does not state one. When a parameter or response shape is unclear, read
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 
 ## 1. Identify the bill
@@ -114,6 +115,9 @@ directly.
   and never infer a provision from the title.
 - Distinguish a bill's own text from a summary field. `synopsis` and `headline` are secondary
   descriptions, not statutory language.
+- Failed calls come back as results, never exceptions, in two shapes: a text block beginning with
+  `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. The second means the
+  argument set is wrong, not merely incomplete.
 - A truncated response (25,000 characters) is not the whole document — paginate or say what was
   cut.
 - Do not characterize the bill's politics or predict its passage. Report status and votes.
