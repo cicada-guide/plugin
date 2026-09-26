@@ -28,8 +28,9 @@ every release.
   `mcp-session-id` response header on the next call, and send `notifications/initialized` between
   the two. Reconcile against the server, never against the other copies: the count and tool names
   are repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three agreeing
-  with each other is exactly the state drift leaves behind. This writes the live list to
-  `tools-list.json` (bash):
+  with each other is exactly the state drift leaves behind. `node scripts/check-live-tools.mjs`
+  does the handshake and the reconciliation in one step, and the `live-tools` workflow runs it
+  nightly. To inspect the raw list by hand, this writes it to `tools-list.json` (bash):
 
   ```bash
   E=https://public.cicada.guide/mcp
@@ -46,8 +47,7 @@ every release.
 - **Bump all four `version` fields together.** They live in three files:
   `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and *both* `metadata.version` and
   `plugins[0].version` in `.claude-plugin/marketplace.json`. They are independent fields and drift
-  silently if one is missed. Verify with `grep -rn '"version"' .claude-plugin .codex-plugin` and
-  confirm four matching values before committing.
+  silently if one is missed. `node scripts/check.mjs` fails until all four match.
 - **Confirm the server is healthy.** `curl https://public.cicada.guide/health` returns
   `{"status":"ok"}`.
 - **Land on `main` before announcing.** The marketplace resolver reads the default branch, not a

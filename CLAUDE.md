@@ -1,7 +1,7 @@
 # cicada-guide plugin
 
 A Claude Code / Codex **plugin**, not an application. Every file here is Markdown or JSON read by a
-plugin loader: there is no build step, no test suite, no dependencies, and nothing to compile. The
+plugin loader: there is no build step, no dependencies, and nothing to compile. The
 MCP server the plugin points at is a separate, private repo (`cicada-guide/mcp`) — its source is
 not in this tree and cannot be changed from here.
 
@@ -11,7 +11,27 @@ here — prefer fixing those files over growing this one.
 
 ## Verifying a change
 
-There is no automated check. Load the checkout into a real session:
+Run the offline checks before every commit. They need only Node 22, no install and no network:
+
+```bash
+node scripts/check.mjs
+```
+
+They cover the invariants below: the four version fields, manifest names and `source`, the pinned
+endpoint and server key, skill and agent frontmatter, `${CLAUDE_PLUGIN_ROOT}` and Markdown links,
+tool counts in prose, the numbers in each restated dataset rule, each entry point carrying the
+rules it relies on, and phrases that critique the dataset. `.github/workflows/check.yml` runs them
+on every pull request. When a rule changes on purpose, change `scripts/check.mjs` in the same
+commit.
+
+`node scripts/check-live-tools.mjs` reconciles the tool documentation against the live
+`tools/list`: every live tool documented in the three tool lists, no documented tool the server
+lacks, and no example or parameter table passing a parameter the schema does not declare.
+`.github/workflows/live-tools.yml` runs it nightly and on demand, never on a pull request, so a
+server outage cannot block a merge. `--file tools-list.json` checks a saved response instead.
+
+Neither script can tell whether Claude follows the guidance. For that, load the checkout into a
+real session:
 
 ```bash
 claude --plugin-dir /path/to/plugin
@@ -36,11 +56,13 @@ deployment or its private repo; treat the endpoint as a fixed external dependenc
 | `skills/*/SKILL.md` | Other skills are slash commands, one directory each |
 | `agents/` | Subagents, one Markdown file each |
 | `cicada-guide.local.md.example` | Template users copy to `.claude/cicada-guide.local.md` |
+| `scripts/` | `check.mjs` (offline invariants) and `check-live-tools.mjs` (docs against the live server) |
+| `.github/workflows/` | `check.yml` on every pull request; `live-tools.yml` nightly |
 
 ## Invariants
 
-These break installed users silently — no error, no failing check, sometimes no symptom until
-someone reports a wrong answer.
+These break installed users silently — no error, sometimes no symptom until someone reports a
+wrong answer. `scripts/check.mjs` catches the mechanical ones; the rest need a reviewer.
 
 **Version is four fields in three files.** `.claude-plugin/plugin.json`,
 `.codex-plugin/plugin.json`, and *both* `metadata.version` and `plugins[0].version` in
