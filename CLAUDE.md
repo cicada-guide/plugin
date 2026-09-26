@@ -56,6 +56,7 @@ deployment or its private repo; treat the endpoint as a fixed external dependenc
 | `skills/*/SKILL.md` | Other skills are slash commands, one directory each |
 | `agents/` | Subagents, one Markdown file each |
 | `cicada-guide.local.md.example` | Template users copy to `.claude/cicada-guide.local.md` |
+| `docs/solutions/` | Documented solutions to past problems, organized by category with YAML frontmatter (`module`, `tags`, `problem_type`). Relevant when implementing or debugging in documented areas |
 | `scripts/` | `check.mjs` (offline invariants) and `check-live-tools.mjs` (docs against the live server) |
 | `.github/workflows/` | `check.yml` on every pull request; `live-tools.yml` nightly |
 
