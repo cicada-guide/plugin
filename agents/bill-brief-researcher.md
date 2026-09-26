@@ -64,8 +64,8 @@ complete, or return a request for session clarification. Do not silently choose 
   `read_pdf_bytes` — `offset` there is a byte offset, and the next call resumes at
   `offset + byteCount`. Those are equal only for the first chunk; treating `byteCount` alone as the
   next offset re-reads the same chunk forever.
-- `search_people` with `ids` to resolve the `sponsors` UUID array in one call. Never loop
-  `get_person` over sponsors.
+- `search_people` with `ids` to resolve the `sponsors` UUID array, in batches of at most 100 — the
+  cap is schema-enforced. Never loop `get_person` over sponsors.
 - `get_rollcalls` with `bill_id` for floor-vote summaries, each with `counts` (yea, nay, absent,
   nv, total) tallied from recorded votes. `null` counts mean no votes were recorded, not a 0-0 vote.
   No field reports pass/fail or chamber; state passage only where the description or bill status
