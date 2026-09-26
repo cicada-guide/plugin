@@ -4,6 +4,7 @@
 //
 //   node scripts/check-live-tools.mjs                     # fetch tools/list from the live endpoint
 //   node scripts/check-live-tools.mjs --file tools.json   # use a saved tools/list response instead
+//   node scripts/check-live-tools.mjs --endpoint <url>    # a different endpoint, e.g. a local mock
 //
 // Exits 1 and lists every mismatch. Runs nightly, never on a pull request: a server outage must
 // not block a merge.
@@ -34,8 +35,19 @@ function parseRpc(body) {
   return JSON.parse(payload);
 }
 
+// Something in front of the Worker (a proxy, a WAF rule) can refuse a request the Worker never
+// sees, so a failure reports enough of the response to tell who answered.
+async function describe(response) {
+  const headers = ["server", "cf-ray", "cf-mitigated", "content-type"]
+    .map((h) => response.headers.get(h) && `${h}: ${response.headers.get(h)}`)
+    .filter(Boolean);
+  const body = (await response.text()).replace(/\s+/g, " ").trim().slice(0, 300);
+  return `HTTP ${response.status}${headers.length ? ` (${headers.join("; ")})` : ""}${body ? ` — ${body}` : ""}`;
+}
+
 async function fetchTools(endpoint) {
   const headers = {
+    "User-Agent": "cicada-guide-plugin-live-tools (+https://github.com/cicada-guide/plugin)",
     "Content-Type": "application/json",
     Accept: "application/json, text/event-stream",
     "MCP-Protocol-Version": PROTOCOL_VERSION,
@@ -47,7 +59,7 @@ async function fetchTools(endpoint) {
     jsonrpc: "2.0", id: 1, method: "initialize",
     params: { protocolVersion: PROTOCOL_VERSION, capabilities: {}, clientInfo: { name: "plugin-docs-check", version: "0" } },
   });
-  if (!init.ok) throw new Error(`initialize returned HTTP ${init.status}`);
+  if (!init.ok) throw new Error(`initialize returned ${await describe(init)}`);
   const session = init.headers.get("mcp-session-id");
   if (!session) throw new Error("initialize returned no mcp-session-id header");
   await init.text();
@@ -55,7 +67,7 @@ async function fetchTools(endpoint) {
   const withSession = { "Mcp-Session-Id": session };
   await (await post({ jsonrpc: "2.0", method: "notifications/initialized" }, withSession)).text();
   const list = await post({ jsonrpc: "2.0", id: 2, method: "tools/list" }, withSession);
-  if (!list.ok) throw new Error(`tools/list returned HTTP ${list.status}`);
+  if (!list.ok) throw new Error(`tools/list returned ${await describe(list)}`);
   const result = parseRpc(await list.text());
 
   await fetch(endpoint, { method: "DELETE", headers: { ...headers, ...withSession } }).catch(() => {});
@@ -63,7 +75,10 @@ async function fetchTools(endpoint) {
 }
 
 const fileArg = process.argv.indexOf("--file");
-const endpoint = Object.values(JSON.parse(read(".mcp.json")).mcpServers)[0].url;
+const endpointArg = process.argv.indexOf("--endpoint");
+const endpoint = endpointArg > 0
+  ? process.argv[endpointArg + 1]
+  : Object.values(JSON.parse(read(".mcp.json")).mcpServers)[0].url;
 let response;
 try {
   response = fileArg > 0 ? JSON.parse(readFileSync(process.argv[fileArg + 1], "utf8")) : await fetchTools(endpoint);
