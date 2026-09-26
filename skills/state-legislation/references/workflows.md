@@ -19,9 +19,10 @@ Bill numbers repeat across states and sessions, so scope the search before trust
 { "tool": "search_bills", "arguments": { "bill": "HB 314", "division_id": "<division uuid>", "session_id": "<resolved session uuid>" } }
 ```
 
-Read the `bill` field on every result before reporting. The wildcard is interior, so `"HB 314"` also
-matches `HB 3140` **and** `HB 5314`, `HB 1314`. Page with `next_offset` while `has_more` is true until
-the normalized exact number is found or every page is exhausted; results order by date descending.
+`bill` matches the exact number in either stored spelling (`HB 314` or `HB314`), but the same number
+repeats across sessions, so read each result's session before reporting. When the user named a year
+but not a session, `session_name: "2025"` filters to every 2025 session without a UUID; it is a
+partial match, so it can return regular and special sessions together.
 
 Omit `session_id` only when the session has not been resolved. In that case, the first exact-number
 match is not enough: finish paging for other sessions or ask which session the user intends.
@@ -152,7 +153,7 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | Wrong legislator | `search_people` and `get_person` return no state or chamber, so a common surname is ambiguous | Confirm jurisdiction from `bill.division_id` in `get_person_votes`; ask when still tied |
 | Two identical-looking candidates | Two legislators with the same name | List both with party, state, and vote dates, and ask; never combine their records |
 | A sitting legislator appears to have no votes | The chosen row may be a different legislator with the same name | Surface other rows with the same name as candidates and ask |
-| Right bill number, wrong bill | Interior-wildcard match (`HB 314` → `HB 3140`, `HB 5314`) | Read the `bill` field; scope by `division_id` and `session_id`; the exact match may not be on page one |
+| Right bill number, wrong bill | The same number exists in another session or state | Scope by `division_id` and `session_id` (or `session_name`); read each result's session |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Use `get_rollcall_breakdown`, whose `members` carry names and party |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` have no `total` | Report "at least N", or paginate to exhaustion |
 | A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills and 8 terms, silently | Narrow by `division_id` / `subject`; do not report absence from one broad query |

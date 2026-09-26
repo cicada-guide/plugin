@@ -160,12 +160,11 @@ plausible, list them and ask rather than picking one.
 different chambers or years. Never combine their records. List the candidates with party, state,
 and vote date ranges, and ask which one the user means.
 
-**Bill-number matching is deliberately loose, and the wildcard is interior.** `search_bills` with
-`bill: "HB 314"` matches both `HB 314` and `HB314` storage forms, and also `HB 3140` **and**
-`HB 5314`, `HB 1314` — the wildcard sits between the letter prefix and the digits, not only after
-them. Alabama `bill: "HB94"` returns 21 rows of which three are actually HB94. Page with
-`next_offset` while `has_more` is true until the normalized exact number is found or every page is
-exhausted; results order by date descending, so the match may not be on page one.
+**Bill numbers match exactly, but repeat across sessions.** `search_bills` with `bill: "HB 314"`
+matches the `HB 314` and `HB314` storage forms and no other number. The same number exists in many
+sessions and states, so scope by `division_id` and a session, and read each result's session. To
+filter by a year without resolving a UUID, pass `session_name` (partial match: `"2025"` covers every
+2025 session, regular and special); `session_id` pins exactly one.
 
 **A broad `query` silently loses bills.** `search_bills` full-text resolves at most 50 distinct
 bills, and only the first 8 terms of the query string are used. Nothing in the response signals

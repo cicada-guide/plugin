@@ -32,10 +32,10 @@ Then search:
   distinct bills and uses only the first 8 terms, silently — a thin result is not proof the topic
   is unlegislated. Narrow by `subject` or `session_id` and say which query ran.
 
-Bill-number matching carries an interior wildcard, so `HB 314` matches `HB 3140` and also `HB 5314`,
-`HB 1314`. Read the `bill` field on every candidate. For a numbered-bill lookup, page with
-`next_offset` while `has_more` is true until the normalized exact bill number is found or every
-page is exhausted — results order by date descending, so an exact match may not be on page one.
+Bill-number matching is exact in either stored spelling (`HB 314` or `HB314`), but the same number
+repeats across sessions and states. When the user gave a year but no session, `session_name` with
+the year (partial match, so regular and special sessions both match) narrows without a UUID. Read
+each candidate's session before reporting.
 
 Stop and ask when the search returns several plausible bills and nothing in the request
 distinguishes them. List the candidates with number, title, session, and status rather than

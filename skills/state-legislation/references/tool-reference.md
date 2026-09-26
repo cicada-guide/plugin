@@ -107,6 +107,7 @@ descending, nulls last.
 | `subject` | string | Exact match against an entry in the `subjects` array |
 | `status` | string | Partial, case-insensitive |
 | `session_id` | UUID | From `list_sessions` |
+| `session_name` | string, max 200 | Partial, case-insensitive match on the session name, e.g. `"2025"` |
 | `division_id` | UUID | From `list_states` |
 | `sponsor_id` | UUID | From `search_people`; matches the `sponsors` array |
 
@@ -115,16 +116,18 @@ Items carry `id`, `bill`, `title`, `synopsis`, `status`, `type`, `date`, `subjec
 
 **Count a bill's documents with `get_documents`.** Report its `total`, not `count_documents`.
 
-**Bill-number matching is loose by design, and the wildcard is interior.** The pattern splits the
-alpha prefix from the digits, joins them with `%`, and appends a trailing `%` — `"HB 314"` becomes
-`HB%314%`. Because that first wildcard sits **between** the prefix and the digits, this is not merely
-a longer-number match: `"HB 314"` matches `HB 314` and `HB314`, but also `HB 3140` **and** `HB 5314`,
-`HB 1314`, `HB 2314`.
+**Bill numbers match exactly, in either stored spelling.** `bill: "HB 314"` matches `HB 314` and
+`HB314` and nothing else — not `HB 3140` or `HB 5314`. Verified 2026-09-26: `bill: "SB 8"` scoped to
+Texas returned the four SB8 bills from four sessions and no other numbers. The same number repeats
+across sessions and states, so scope by `division_id` and a session, and read each result's session
+before reporting.
 
-Verified 2026-09-06: `bill: "HB94"` scoped to Alabama returned 21 rows — HB194, HB294, HB394, HB494,
-HB594, and only three genuine HB94s. Results order by `date` descending, so the nine most recent rows
-were all the wrong bill and the exact match landed tenth. Confirm every `bill` field and page with
-`next_offset` while `has_more` is true until the normalized exact number is found or pages end.
+**`session_name` filters by session name without a UUID.** It is a partial match, so `"2025"` covers
+every 2025 session, regular and special; use `session_id` from `list_sessions` to pin one session.
+Add `division_id` to scope the name to one state. Verified 2026-09-26: `bill: "SB 8"`, Texas,
+`session_name: "Regular Session"` returned the two regular-session SB8s. A name matching no
+session returns a message naming `list_sessions` instead of results; one matching more than 100
+sessions asks for a `division_id` or a more specific name.
 
 **`query` runs two searches and ORs them.** Document text is searched with PostgreSQL `websearch`
 full-text search, capped at 200 document rows resolving to at most 50 distinct bills. Separately
@@ -194,6 +197,7 @@ binary content types yield `null`.
 | --- | --- | --- |
 | `ids` | UUID array, **1-100** | Resolve a batch of person ids in one call. Hard cap — split larger sets across calls |
 | `name` | string | Partial match across `full_name`, `first_name`, `last_name` |
+| `query` | string | Alias for `name`. When both are set, `name` wins |
 | `party` | string | Partial, case-insensitive: `"D"`, `"R"`, `"Democratic"` |
 
 Ordered by `last_name`. Returns `id`, `full_name`, `first_name`, `middle_name`, `last_name`,
