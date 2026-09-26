@@ -66,12 +66,8 @@ Call in this order, skipping what the request does not need:
    as complete. So page `get_votes` with `bill_id` to the end with `cursor`, collect the distinct
    `rollcall_id` values, and describe any `get_rollcalls` lacks with `get_rollcall_breakdown`. Past
    about 20 pages, stop and note in the brief that the list may be incomplete.
-5. `get_votes` — only when the request asks who voted how. Treat matching (date, description,
-   counts) values as a duplicate signal, not proof: corroborate with identical fully paginated
-   member votes before collapsing rows. Distinct or unverified rows remain separate and are labeled
-   as possible duplicates. For a corroborated group, use one row and never add sibling counts.
-   Resolve `people_id` values through `search_people` `ids` **in batches of up to 100** and check
-   every batch's `unresolved_ids`.
+5. `get_votes` — only when the request asks who voted how. Resolve `people_id` values through
+   `search_people` `ids` **in batches of up to 100** and check every batch's `unresolved_ids`.
 
 ## 3. Write the brief
 

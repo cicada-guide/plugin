@@ -12,9 +12,6 @@ divisions (50 states + DC, no territories); `search_people.ids` carries `minItem
 `show_bill` declares only `id` and `context`, with no `response_format`; `get_votes` has `cursor` and
 no `offset`, and its cursor is a UUID while `get_person_votes` takes a 512-character string.
 
-No response envelope observed on any tool carries a `duplicate_ids` or `merged_person_ids` field. Do
-not write logic that waits for one.
-
 **Source `legiscan` objects are no longer returned.** Re-checked with live calls on 2026-09-24:
 `get_bill`, `get_person`, `get_documents`, and `get_rollcalls` carry no `legiscan` field. Roll-call
 tallies now arrive as a top-level `counts` object computed from recorded individual votes. No tool
@@ -213,26 +210,12 @@ Texas's 150. Chunk the id list into batches of up to 100 and check `unresolved_i
 A bill's `sponsors` array is small enough that one call is normally sufficient; a chamber's voters
 are not.
 
-**Two rows with one name may be one person stored twice — or two people — and no tool can tell
-which.** With `legiscan.people_id` gone there is no shared source id to compare. Vote history can
-prove two rows are *different* people — both appearing on the same roll call (a shared
-`rollcall.id`), since a roll call holds one vote per legislator — but nothing proves two rows are
-the *same* person. Same name, party, and `bill.division_id` with no shared roll call is equally
-consistent with two legislators in different chambers or different years, and a partial page of
-votes cannot establish "no shared roll call" anyway.
-
-Never merge rows on your own. List the candidates with the evidence found for each — party,
-jurisdiction, and the date range of their recorded votes — and ask. Merge only when the user
-confirms the rows are one person, and then union the records.
-
-Duplication is not the default reading. Verified 2026-09-24: `search_people` for "Reynolds" returns
-three distinct people, and a `name` search for "Smith" returns 24 rows — including two Charles
-Smiths, one `D` and one `R`, who are different legislators. Sponsor arrays can duplicate the same way
-as person rows, so the length of `sponsors` can overstate how many legislators sponsored a bill.
-
-**When the user confirms rows are one person, union the records; never add counts across
-siblings.** Until then, a candidate with no recorded votes is reported as such, not treated as proof
-that another same-name row is the same legislator.
+**Same-name rows are different people.** Verified 2026-09-24: `search_people` for "Reynolds"
+returns three distinct people, and a `name` search for "Smith" returns 24 rows — including two
+Charles Smiths, one `D` and one `R`. Matching name, party, and `bill.division_id` fits two
+legislators in different chambers or years. Never combine their records. List the candidates with
+the evidence found for each — party, jurisdiction, and the date range of their recorded votes — and
+ask which one the user means.
 
 **`ids` is how vote records become names.** When `ids` is present the effective page size widens to
 `max(limit, ids.length)`, so one call returns the whole batch instead of silently paginating. The
@@ -298,23 +281,6 @@ When paging would run past about 20 pages, stop, present what was found, and say
 roll calls stored without their bill link. Roll calls with `counts: null` have no votes and can
 only appear through `get_rollcalls`.
 
-**Rows can duplicate per real floor vote.** Verified 2026-09-06 on Texas SB8 (regular session):
-three rows with identical date, description ("Senate concurs in House amendment(s)"), and tallies
-but different source roll-call ids, so a bill with 19 floor votes returned `total: 21`. The source
-id is no longer returned, and duplicates also surface in `get_person_votes` — on 2026-09-24 Texas
-HB7 showed two "Read 3rd time" roll calls on the same date with the same counts.
-
-**Treat the (date, description, counts) tuple as a duplicate signal, not a unique key.** Corroborate
-matching rows with identical fully paginated member votes before collapsing them. Preserve
-unverified rows and label them as possible duplicates. `total` counts rows, so it can overstate how
-many floor votes occurred.
-
-**Never accumulate votes across duplicate rows.** Each sibling with non-`null` `counts` carries its
-own full copy of the votes; summing them double- or triple-counts the chamber. Report from one row.
-
-Duplication is not universal. Alabama HB94 (2025 session) returns 4 rows for 4 distinct floor votes.
-Treat a repeated tuple as a prompt to corroborate, not proof.
-
 ### `get_votes`
 
 One row per legislator per rollcall.
@@ -340,10 +306,8 @@ the envelope has no `total`.
 Items carry `id`, `category`, `people_id`, `rollcall_id`, `bill_id` — no names.
 
 **`No votes found` on a roll call matches `counts: null`.** Because `counts` is tallied from these
-same rows, a roll call with `null` counts has no member votes to page. Check the roll call's
-possible duplicates first — a sibling row may carry the votes — and only then report the
-member-by-member breakdown as unavailable for that jurisdiction. Never present it as nobody having
-voted.
+same rows, a roll call with `null` counts has no member votes to page. Report the
+member-by-member breakdown as unavailable. Never present it as nobody having voted.
 
 ### `get_rollcall_breakdown`
 

@@ -135,14 +135,6 @@ saying it has none, page `get_votes` with `bill_id` to the end with `cursor`, co
 that is too many pages to finish, say the list may be incomplete. The call sequence is in
 `references/tool-reference.md` under `get_rollcalls`.
 
-**Roll-call rows can duplicate.** `get_rollcalls` may return several rows for one real floor vote
-with the same date, description, and counts. Treat that tuple as a duplicate signal, not a unique
-key: corroborate with identical fully paginated member votes before collapsing. `total` counts rows,
-so it can overstate floor votes.
-
-**Never accumulate votes across duplicate rows.** Each sibling with non-`null` counts carries its own
-full copy of the votes, so summing them double- or triple-counts the chamber. Report from one row.
-
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
 chambers exceed it (a routine Alabama House roll call is 103 legislators). Never loop `get_person`.
@@ -162,12 +154,9 @@ legislators across many states. The only jurisdiction evidence is vote history: 
 Never state a legislator's chamber or district — no tool returns either. When two candidates remain
 plausible, list them and ask rather than picking one.
 
-**Never merge two same-name rows on your own.** There is no shared source id, so nothing can prove
-two rows are one person — matching name, party, and state fits two legislators in different
-chambers or years just as well. Both rows voting on the same roll call proves they are two people.
-Otherwise list the candidates with party, state, and vote date ranges, and ask; union their records
-only after the user confirms they are one person, and never add counts across them. Most names
-resolve to one row. Sponsor arrays can duplicate the same way.
+**Same-name rows are different people.** Matching name, party, and state fits two legislators in
+different chambers or years. Never combine their records. List the candidates with party, state,
+and vote date ranges, and ask which one the user means.
 
 **Bill-number matching is deliberately loose, and the wildcard is interior.** `search_bills` with
 `bill: "HB 314"` matches both `HB 314` and `HB314` storage forms, and also `HB 3140` **and**

@@ -76,10 +76,6 @@ complete, or return a request for session clarification. Do not silently choose 
   `get_rollcalls` lacks with `get_rollcall_breakdown`. Past about 20 pages, stop and list the
   roll-call history as possibly incomplete under Gaps. Only when both sources are empty, report that
   no recorded floor votes are available in the dataset, not that no vote occurred.
-- `get_rollcalls` rows can duplicate. Treat a shared (date, description, counts) tuple as a signal
-  only: corroborate with identical fully paginated member votes before collapsing. For a
-  corroborated group, use one row; never add sibling counts. Preserve unverified rows as possible
-  duplicates.
 - `get_votes` with `rollcall_id` and `limit: 100` for individual positions, paging with `cursor`
   (there is no `offset` on this tool, and passing one is rejected). Then `search_people` with `ids`
   **in batches of at most 100** — the cap is schema-enforced and large chambers exceed it — to turn

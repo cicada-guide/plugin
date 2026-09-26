@@ -31,12 +31,9 @@ against when the request names none — see **Project settings** in
 `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/SKILL.md`. It narrows the candidate list; it does
 not on its own confirm an identification.
 
-**Never merge two same-name rows on your own.** There is no source id to compare, so nothing proves
-two rows are one legislator — matching name, party, and state fits two people in different chambers
-or years just as well. Both rows voting on the same roll call proves they are two people. Otherwise,
-list the candidates with party, state, and the date range of their recorded votes, and ask. When the
-user confirms the rows are one legislator, union their `get_person_votes` records, say the record
-was assembled that way, and never add counts across them. Most names resolve to a single row.
+**Same-name rows are different people.** Matching name, party, and state fits two legislators in
+different chambers or years. Never combine their records. List the candidates with party, state,
+and the date range of their recorded votes, and ask which one the user means.
 
 Never pick one candidate silently — attributing a vote to the wrong person is the worst failure this
 skill can produce.
@@ -61,11 +58,9 @@ Page with `cursor`. There is no `offset`.
 For a latest-vote request, confirm jurisdiction before attributing the result, even when the name
 search has only one candidate. Do not rely on `latest: true` alone: within one date the tool sorts
 by UUID, so it returns an arbitrary one of that day's votes. Page through the whole newest date as
-above, and compare roll-call dates across user-confirmed duplicate person rows; UUID order is not
-chronology. If dates tie
-and no description establishes the order, report the tied records rather than claiming one occurred
-last. Call it the latest recorded vote in the available data, and state any session, date, or
-category filter that limits that claim.
+above; UUID order is not chronology. If dates tie and no description establishes the order, report
+the tied records rather than claiming one occurred last. Call it the latest recorded vote in the
+available data, and state any session, date, or category filter that limits that claim.
 
 Call `get_person` only when the request also asks for contact details; it returns no biography,
 role, or jurisdiction.
@@ -87,13 +82,10 @@ not positions — count them separately and do not fold them into a yes/no tally
    stored without their bill link, whether it returns rows or none. When the roll call the user
    means is not there, page `get_votes` with `bill_id` to the end with `cursor`, collect the
    distinct `rollcall_id` values, and describe the extra ones with `get_rollcall_breakdown`.
-2. Treat a shared (date, description, counts) tuple as a duplicate signal, not a unique key.
-   Corroborate it with identical fully paginated member votes before collapsing rows; otherwise
-   retain each row and label the possible duplication. Pick the roll call the user means, and when
-   several remain, name them by date and description and confirm.
+2. Pick the roll call the user means. When several remain, name them by date and description and
+   confirm.
 3. `get_votes` with the chosen `rollcall_id` and `limit: 100`, paging with `cursor` until
-   `has_more` is false. For a corroborated duplicate group, use one row; never add counts across
-   siblings.
+   `has_more` is false.
 4. Collect every `people_id` and resolve in batches of up to 100 through `search_people` `ids`.
    Check `unresolved_ids` and account for anyone listed.
 5. Join party from step 4 to category from step 3 for the breakdown.
@@ -102,9 +94,8 @@ Markdown output truncates at 25,000 characters with a pagination hint appended. 
 is not a complete page — keep paging rather than tallying what arrived, and prefer
 `response_format: "json"` so the structured envelope carries the full page.
 
-A roll call with `counts: null` has no recorded member votes. When no row in its duplicate group
-has votes either, say the member-by-member breakdown is unavailable in this dataset. Do not present
-it as nobody having voted.
+A roll call with `counts: null` has no recorded member votes. Say the member-by-member breakdown
+is unavailable in this dataset. Do not present it as nobody having voted.
 
 Report the `counts` from `get_rollcalls` alongside the computed breakdown. They are tallied from the
 same vote rows, so a disagreement means a page was missed or truncated — re-page before reporting,

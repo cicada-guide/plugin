@@ -61,9 +61,6 @@ the conversation that asked for it. You absorb that traffic and return one conso
      distinct `rollcall_id` values, and describe any `get_rollcalls` lacks with
      `get_rollcall_breakdown`. Past about 20 pages, stop and list that bill's roll calls as possibly
      incomplete under Coverage and caveats.
-   - Rows can duplicate. Treat a shared (date, description, counts) tuple as a signal only:
-     corroborate with identical fully paginated member votes before collapsing. For a corroborated
-     group, use one row and never add sibling counts.
    - For individual positions, `get_votes` with `rollcall_id`, then `search_people` with `ids` — in
      batches of at most 100, since that cap is schema-enforced and large chambers exceed it — to
      turn UUIDs into names. Check `unresolved_ids` on each batch.
