@@ -49,12 +49,16 @@ every release.
   `plugins[0].version` in `.claude-plugin/marketplace.json`. They are independent fields and drift
   silently if one is missed. `node scripts/check.mjs` fails until all four match.
 - **Date the changelog.** Move the `Unreleased` entries in `CHANGELOG.md` under a heading for the
-  new version, and add its compare link at the bottom.
+  new version. At the bottom, add its link (`compare/v<previous>...v<new>`) and point `Unreleased`
+  at `compare/v<new>...HEAD`.
 - **Confirm the server is healthy.** `curl https://public.cicada.guide/health` returns
   `{"status":"ok"}`.
 - **Land on `main` before announcing.** The marketplace resolver reads the default branch, not a
   feature branch. An install command shared against unmerged work resolves a stale manifest, or
   none at all.
+- **Tag the release.** Once the bump is on `main`, tag the commit that bumped the version with an
+  annotated `v<version>` tag and push it: `git tag -a v0.5.5 <bump-commit> -m "cicada-guide plugin
+  0.5.5"`, then `git push origin v0.5.5`. The changelog's links resolve only once the tag exists.
 
 ## Verifying an install
 

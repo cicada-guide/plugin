@@ -2,8 +2,8 @@
 
 All notable changes to the plugin. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
-[Semantic Versioning](https://semver.org/). There are no git tags, so each version is dated by the
-commit that bumped it.
+[Semantic Versioning](https://semver.org/). Each version is tagged `v<version>` on the commit that
+bumped it, and dated by that commit.
 
 The hosted server is unversioned and changes independently. Entries here record changes to the
 plugin's guidance, including updates made to match what the server returns.
@@ -118,13 +118,13 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/30cd881...HEAD
-[0.5.4]: https://github.com/cicada-guide/plugin/compare/752f7ec...30cd881
-[0.5.3]: https://github.com/cicada-guide/plugin/commit/752f7ec
-[0.5.2]: https://github.com/cicada-guide/plugin/commit/16c5862
-[0.5.1]: https://github.com/cicada-guide/plugin/commit/2e9907c
-[0.5.0]: https://github.com/cicada-guide/plugin/commit/5830595
-[0.4.0]: https://github.com/cicada-guide/plugin/commit/e40b14a
-[0.3.0]: https://github.com/cicada-guide/plugin/commit/0749ab9
-[0.2.0]: https://github.com/cicada-guide/plugin/commit/e566e53
-[0.1.0]: https://github.com/cicada-guide/plugin/commit/b39343d
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.5.4...HEAD
+[0.5.4]: https://github.com/cicada-guide/plugin/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/cicada-guide/plugin/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/cicada-guide/plugin/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/cicada-guide/plugin/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/cicada-guide/plugin/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/cicada-guide/plugin/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/cicada-guide/plugin/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/cicada-guide/plugin/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/cicada-guide/plugin/releases/tag/v0.1.0
