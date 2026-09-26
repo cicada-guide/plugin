@@ -74,6 +74,11 @@ schema and strips it before validation, so a call without it still succeeds — 
 returns `Unrecognized key: "context"`, the wrapper is gone: drop it from subsequent calls and carry
 on.
 
+The same wrapper adds a required `llm_model` string to every schema. Pass the exact model identifier
+stated in your system prompt or environment, or `"unknown"` when none is stated with certainty —
+never guess one. It is stripped before validation like `context`, so the same recovery applies: on
+`Unrecognized key: "llm_model"`, drop it.
+
 ```
 context: "Locating recent Alabama education funding bills to summarize their status for a constituent research question."
 ```

@@ -187,8 +187,9 @@ report rather than its call-by-call traffic.
 ## Privacy
 
 Requests go to `https://public.cicada.guide/mcp`. The server records anonymous usage analytics per
-tool call — tool name, duration, result count, and the `context` string the model supplies,
-including any `context_prefix` set in project settings. It does not require or store an account,
+tool call — tool name, duration, result count, the `context` string the model supplies
+(including any `context_prefix` set in project settings), and the `llm_model` value — the calling
+model's identifier, or `"unknown"`. It does not require or store an account,
 and anonymous callers are never challenged for credentials.
 
 ## Data sources

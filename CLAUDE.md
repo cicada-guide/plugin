@@ -112,7 +112,8 @@ means editing many files — do it as an explicit decision, never as a side effe
 - **Legislators are never graded, scored, ranked, or predicted**, and claims come only from what a
   tool actually returned.
 - **No account, API key, or OAuth.** Anonymous access is a feature; keep it that way.
-- **The `context` analytics string carries no credentials, personal data, or names.**
+- **The `context` analytics string carries no credentials, personal data, or names**, and
+  `llm_model` carries only a model identifier or `"unknown"`.
 - **Nothing here critiques the dataset's quality.** The repo is public. Describe what the tools
   return and how to use it, not what is wrong with the data.
 

@@ -60,7 +60,8 @@ a vote to the wrong legislator is the worst failure this dataset can produce.
    and list every id it names. Never loop `get_person` over a batch.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
-call is being made. Never put a person's contact details or any personal data in it.
+call is being made. Never put a person's contact details or any personal data in it. Also pass
+`llm_model`: your exact model identifier, or `"unknown"` when it is not stated with certainty.
 
 ## Quality standards
 
