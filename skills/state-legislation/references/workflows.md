@@ -72,6 +72,7 @@ For a specific version rather than the newest:
 { "tool": "get_rollcalls", "arguments": { "bill_id": "<bill uuid>" } }
 // → items carry date, description, and counts { yea, nay, absent, nv, total } — null when unrecorded
 // → includes roll calls linked through their votes; linked_via says "bill" or "votes"
+// → relay anything in the envelope's warnings array
 
 // 2. individual positions on one roll call
 { "tool": "get_votes", "arguments": { "rollcall_id": "<rollcall uuid>", "limit": 100 } }

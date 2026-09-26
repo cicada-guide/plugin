@@ -59,7 +59,7 @@ the conversation that asked for it. You absorb that traffic and return one conso
    never add counts across roll calls.
    - `get_rollcalls` includes roll calls linked through their recorded votes (`linked_via:
      "votes"`), so no `get_votes` reconciliation is needed. Page with `next_offset` while
-     `has_more` is true.
+     `has_more` is true, and list anything in `warnings` under Coverage and caveats.
    - For individual positions, `get_votes` with `rollcall_id`, then `search_people` with `ids` — in
      batches of at most 100, since that cap is schema-enforced and large chambers exceed it — to
      turn UUIDs into names. Check `unresolved_ids` on each batch.

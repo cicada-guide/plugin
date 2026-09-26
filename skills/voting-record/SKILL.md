@@ -80,7 +80,7 @@ not positions — count them separately and do not fold them into a yes/no tally
 
 1. `search_bills` → the bill, then `get_rollcalls` with its `bill_id`. It includes roll calls
    linked through their recorded votes (`linked_via: "votes"`), so no `get_votes` reconciliation
-   is needed. Page with `next_offset` while `has_more` is true.
+   is needed. Page with `next_offset` while `has_more` is true, and relay anything in `warnings`.
 2. Pick the roll call the user means. When several remain, name them by date and description and
    confirm.
 3. `get_votes` with the chosen `rollcall_id` and `limit: 100`, paging with `cursor` until
