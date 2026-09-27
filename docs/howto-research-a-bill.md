@@ -152,8 +152,7 @@ renders MCP Apps, the card shows the bill number, a title plate with Claude's pl
 headline (tap it to toggle to the official title and back), and the status, above four tabs:
 
 - **Overview:** the path to becoming law, the recorded status, and a summary box holding Claude's
-  plain-language summary, labeled "Summary · your AI assistant", with a note that the AI wrote it
-  and can miss details;
+  plain-language summary, labeled "Summary · your AI assistant";
 - **Sponsors:** the bill's sponsors;
 - **Documents:** each version with a "Read" button that opens a viewer, or the document's link with
   a "Copy link" button where the host blocks the preview;

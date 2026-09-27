@@ -95,9 +95,8 @@ a bill card never appears without one.
 
 Three rules shape it, each for a reason:
 
-- **It is labelled as AI-written.** The card shows it under "Summary · your AI assistant", with a
-  note that the AI wrote it in this chat and can miss details. A reader can't tell
-  a summary's source from its position on a card, so the label keeps the assistant's words
+- **It is labelled as AI-written.** The card shows it under "Summary · your AI assistant". A
+  reader can't tell a summary's source from its position on a card, so the label keeps the assistant's words
   separate from the legislature's.
 - **It never infers passage or an outcome.** Passage thresholds vary by chamber and question, and
   a status such as `Passed` can record one chamber or a committee. The summary states the recorded

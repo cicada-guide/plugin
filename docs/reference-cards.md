@@ -131,9 +131,8 @@ official title, and tapping again toggles back.
 
 ### The summary box
 
-The box is labeled "Summary · your AI assistant" and shows the `summary`, with the note "Written by
-the AI in this chat. It can miss details." Without a `summary`, it shows the bill's synopsis and no
-note. The box has no button; the bill card posts no user turn.
+The box is labeled "Summary · your AI assistant" and shows the `summary`, with no note under it.
+Without a `summary`, it shows the bill's synopsis under "Official synopsis". The box has no button; the bill card posts no user turn.
 
 ### The show-bill request
 

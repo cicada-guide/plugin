@@ -306,8 +306,7 @@ then write them.
   title alone.
 - Never infer passage or an outcome; state the recorded `status`.
 - Plain prose only. The card renders both as text, so markdown does not render.
-- The card labels the summary "Summary · your AI assistant", with the note "Written by the AI in
-  this chat. It can miss details."
+- The card labels the summary "Summary · your AI assistant".
 
 **"Show HB 314 … with show_bill" requests.** Tapping a bill in the `search_bills` results card, a
 vote in the `show_person_record` card, or a sponsored bill's "Show in the conversation" button
