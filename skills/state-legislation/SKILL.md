@@ -1,6 +1,6 @@
 ---
 name: state-legislation
-description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find my state representative", "what party is she"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only.
+description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find state representative Jane Smith", "what party is she"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only.
 ---
 
 # Researching U.S. state legislation with cicada-guide
@@ -16,6 +16,9 @@ approval prompt. That is expected, not a sign the tool writes.
 When a parameter name, constraint, or response field is unclear, read
 `references/tool-reference.md`. Before a multi-step task — a bill brief, a roll-call breakdown, a
 legislator's record — read `references/workflows.md` for the call sequence.
+
+If no cicada-guide tools are available, say the `guide-public` server isn't connected, suggest
+checking `/mcp` and starting a new session, and don't answer from general knowledge.
 
 ## Scope — check this before calling anything
 
@@ -97,7 +100,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Display a bill visually ("show me", "pull it up") | `show_bill` |
 | Read the newest attached document's text | `get_latest_bill_document` |
 | List every document on a bill | `get_documents` |
-| Stream a large PDF in chunks | `read_pdf_bytes` |
+| Stream a PDF's raw bytes in base64 chunks (not text) | `read_pdf_bytes` |
 | Find legislators by name or party | `search_people` |
 | Read one legislator's contact details (no jurisdiction or role) | `get_person` |
 | Display a resolved legislator's voting record | `show_person_record` |
@@ -116,6 +119,8 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 and every member's name, party, and vote in `members`. Resolve identity before
 `show_person_record`, and use `open_research_desk` for an exploration request rather than a known
 bill or person.
+`read_pdf_bytes` returns base64 PDF bytes, not readable text. For a bill's text use
+`get_latest_bill_document`; for an older version, report its document URL from `get_documents`.
 
 UUIDs flow between tools. `list_states` yields `division_id`; `list_sessions` yields `session_id`;
 `search_bills` yields bill `id`; `search_people` yields person `id`; `get_rollcalls` and `get_votes`
@@ -145,7 +150,10 @@ or `"votes"`). Page with `next_offset` while `has_more` is true, and relay anyth
 **Break a roll call down with `get_rollcall_breakdown`.** One call returns `counts`, `by_party`
 (each party's `YEA`, `NAY`, `ABSENT`, `NV`, `total`), and `members` (`name`, `party`, `category`
 per legislator). Keys are upper-case. `party: null` means no party is recorded. When `partial` is
-`true`, the 500-row cap was reached and `by_party` covers only the rows returned; say so.
+`true`, the 500-row cap was reached and `by_party` covers only the rows returned; say so. When
+`members` is empty, the text reads `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No
+individual votes are recorded for this roll call.` That is not a 0-0 vote: report the counts as
+not recorded.
 
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
@@ -166,6 +174,10 @@ legislators across many states. The only jurisdiction evidence is vote history: 
 Never state a legislator's chamber or district — no tool returns either. When two candidates remain
 plausible, list them and ask rather than picking one.
 
+**"My senator" needs a name.** When the user asks about "my senator" or "my representative"
+without naming them, ask for the legislator's name and state before calling anything. No tool maps
+an address or district to a legislator.
+
 **Same-name rows are different people.** Matching name, party, and state fits two legislators in
 different chambers or years. Never combine their records. List the candidates with party, state,
 and vote date ranges, and ask which one the user means.
@@ -176,13 +188,23 @@ sessions and states, so scope by `division_id` and a session, and read each resu
 filter by a year without resolving a UUID, pass `session_name` (partial match: `"2025"` covers every
 2025 session, regular and special); `session_id` pins exactly one.
 
-**A broad `query` silently loses bills.** `search_bills` full-text resolves at most 50 distinct
-bills, and only the first 8 terms of the query string are used. Nothing in the response signals
-either cap. Never conclude a state has no legislation on a topic from one broad query — narrow with
-`division_id`, `subject`, `session_id`, or `status`, and say which query actually ran.
+**`query` words are matched separately, so more words widen the results.** `search_bills` splits
+`query` into words and ORs a title/synopsis substring match on each; only the first 8 terms are
+used. Separately, a full-text search over attached document text resolves at most 50 distinct
+bills across every state, and `division_id`, `session_id`, and the other filters apply after that
+cap — a filter narrows those 50 bills but never reaches past them. Nothing in the response signals
+either cap. Prefer one distinctive word (`"voucher"`, not `"school choice programs"`), narrow with
+`subject`, `session_id`, or `division_id`, and say which query actually ran. Never conclude a state
+has no legislation on a topic from one query.
 
-**Three tools omit `total`.** `search_bills`, `search_people`, and `get_votes` return `has_more`
-but no exact count. Do not report a total for these; say "at least N" or paginate.
+**`status` is a partial match on the recorded status text.** `status: "Passed"` matches every
+status containing that word, which can record passage of one chamber or a committee rather than
+enactment. Report each bill's `status` as recorded, and never present a `status` filter as proof
+that a bill became law.
+
+**Some tools omit `total`.** `search_bills`, `search_people`, `get_votes`, and `get_person_votes`
+return `has_more` but no exact count. Do not report a total for these; say "at least N" or
+paginate.
 
 **Errors come back as results, not exceptions,** in two shapes: a handler-level text block
 starting with `Error:`, and a schema-level `MCP error -32602: Input validation error:` naming the
@@ -190,17 +212,21 @@ offending key. Both carry `isError: true`. Read either one; it names the problem
 failure means the argument set is wrong, not merely incomplete.
 
 **Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in
-60 seconds.`** Wait a full minute before the next call rather than retrying straight away, and pace
-long sweeps.
+60 seconds.`** Tell the user the rate limit was hit and that you will resume after a minute. Wait
+a full minute before the next call rather than retrying straight away, and pace long sweeps.
 
 **Output truncates at 25,000 characters** with a pagination hint appended. A truncated response is
-not the complete answer; paginate.
+not the complete answer, and its `next_offset` or `next_cursor` points past the whole page,
+including the items cut from the text — following it skips them. Re-request the same `offset` or
+`cursor` (none, for a first page) with a smaller `limit` instead. `response_format: "json"` text is
+capped the same way.
 
 **An empty result is a valid answer.** Report that nothing matched and suggest a broader filter,
-rather than retrying the same query. The exception is a page past the end: at a nonzero `offset`,
-an empty page — even one saying the bill "may not have had a recorded floor vote" — or a `Requested
-range not satisfiable` error means the list ended. Page with `next_offset` while `has_more` is true
-and never compute an offset beyond it.
+rather than retrying the same query. The exception is a page past the end: `get_rollcalls` at an
+offset past its last item answers `No roll calls at offset <n>; bill <id> has <total>.`, and an
+offset past the end of a tool that reports `total` can come back as `Error: Database error.` Both
+mean the list ended, not anything about the bill. Page with `next_offset` only while `has_more` is
+true and never compute an offset beyond it.
 
 **A `null` `text_source` from `get_latest_bill_document` means the text is unavailable** — the
 document may be a scan, or the fetch may have timed out. Say so and offer the document URL; do not
@@ -212,9 +238,10 @@ Two slash commands cover multi-step research. Either can be invoked by name or r
 own when a request matches one. Name the command either way — a user who does not know it exists
 cannot ask for it next time:
 
-- `/cicada-guide:bill-research <bill or topic> [state] [year]` — a full sourced brief on one bill.
-- `/cicada-guide:voting-record <legislator> [state] [session]` — a legislator's history, or one
-  roll call broken down by party.
+- `/cicada-guide:bill-research <bill number or topic> [state] [year]` — a full sourced brief on
+  one bill, or a list of matching bills for a topic.
+- `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]` — a
+  legislator's history or vote on one bill, or one roll call broken down by party.
 
 Three subagents handle work whose intermediate tool traffic would bury the conversation:
 `bill-brief-researcher`, `legislator-disambiguator`, and `multi-state-bill-scanner`. Dispatch
@@ -235,5 +262,9 @@ ordering.
 
 Cite the bill number, jurisdiction, and session with any claim about legislation, and link the
 source document when one exists. Report only what the tools returned: a legislator with no recorded
-vote on a bill has no recorded vote, which is not the same as abstaining. Never characterize a
-legislator's overall record from a single vote.
+vote on a bill has no recorded vote, which is not the same as abstaining. Say "did not vote" for
+an `NV` category, and report `ABSENT` as absent. Never characterize a legislator's overall record
+from a single vote.
+
+UUIDs are for chaining calls: keep them out of the answer unless the user asks for them. Name
+bills by number, jurisdiction, and session, and legislators by name and party.

@@ -31,20 +31,28 @@ match is not enough: finish paging for other sessions or ask which session the u
 ## Research a topic
 
 ```jsonc
-{ "tool": "search_bills", "arguments": { "query": "school funding", "division_id": "<uuid>", "limit": 50 } }
+{ "tool": "search_bills", "arguments": { "query": "voucher", "division_id": "<uuid>", "limit": 25 } }
 ```
 
 `query` searches title and synopsis *and* the full text of attached documents, then ORs the two
 result sets. Skip `division_id` for a nationwide sweep. There is no `total` on this envelope — use
 `has_more` and `next_offset`, and describe counts as "at least N".
 
-**A broad `query` silently loses bills.** Full-text resolves at most 50 distinct bills, and only the
-first 8 terms of the string are used — and neither cap shows up in the response. A `limit: 50` that
-comes back short is not evidence the state has no such legislation. Narrow by `division_id`,
-`subject`, or `session_id` and say which query ran, rather than lengthening the query string.
+**More words widen the results.** The title/synopsis half splits `query` into words, matches each
+as a separate substring, and ORs them; only the first 8 terms of the string are used. Prefer one
+distinctive word over a phrase: `"school choice"` matches every bill with "school" in its title or
+synopsis.
 
-To narrow further, add `status` (partial match, e.g. `"Passed"`), `subject` (exact match against
-the `subjects` array), or `sponsor_id`.
+**A filter does not extend full-text recall.** The document full-text half resolves at most 50
+distinct bills across every state, and `division_id`, `session_id`, and the other filters apply
+after that cap. Neither cap shows up in the response, so a short page is not evidence the state has
+no such legislation. Narrow by `subject` or `session_id`, try another distinctive word, and say
+which query ran.
+
+To narrow further, add `status`, `subject` (exact match against the `subjects` array), or
+`sponsor_id`. `status` is a partial match on the recorded status text: `"Passed"` matches every
+status containing that word, which can record one chamber's passage rather than enactment. Report
+each bill's status as recorded; a `status` filter is not proof a bill became law.
 
 ## Read what a bill actually says
 
@@ -56,16 +64,16 @@ the `subjects` array), or `sponsor_id`.
 Check `text_source`. A `null` means no stored text and no successful fetch — report that the text
 is unavailable and offer `item.url`, rather than treating the empty string as the bill's contents.
 
-For a specific version rather than the newest:
+For a specific version rather than the newest, list the documents and report the version's URL:
 
 ```jsonc
 { "tool": "get_documents", "arguments": { "bill_id": "<bill uuid>" } }
-// pick an item, then stream it if it is a large PDF
-{ "tool": "read_pdf_bytes", "arguments": { "url": "<item url>", "response_format": "json" } }
-// next offset = previous offset + byteCount (equal to byteCount only on the first chunk)
-{ "tool": "read_pdf_bytes", "arguments": { "url": "<item url>", "offset": 750000, "response_format": "json" } }
-// ...and chunk 3 starts at 1500000, not at 750000 again
+// → items carry status, date, url, format — metadata only, no text
 ```
+
+`read_pdf_bytes` is not a way to read a bill: it returns base64 PDF bytes, not text. Read text
+through `get_latest_bill_document`, and give the user an older version's `url` from
+`get_documents`.
 
 ## How did the legislature vote on this bill
 
@@ -83,7 +91,9 @@ For a specific version rather than the newest:
 
 Step 2 needs no `get_votes` paging or `search_people` resolution: `members` already carries each
 legislator's name and party. When `partial` is `true`, the 500-row cap was reached and `by_party`
-covers only the rows returned; say so.
+covers only the rows returned; say so. When `members` is empty, the text reads `0 yea, 0 nay, 0
+absent, 0 not voting` followed by `No individual votes are recorded for this roll call.` That is
+not a 0-0 vote: report the counts as not recorded.
 
 `counts` are the recorded votes, not a result — nothing returns pass/fail or the chamber. Say a
 measure passed only when the roll-call `description` or the bill's `status` says so. Report each
@@ -107,7 +117,7 @@ When `get_rollcalls` returns nothing, "no recorded floor votes in this dataset" 
 
 // 4. or a filtered history
 { "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "category": "NAY",
-  "start_date": "2024-01-01", "end_date": "2024-12-31", "limit": 50 } }
+  "start_date": "2024-01-01", "end_date": "2024-12-31", "limit": 25 } }
 ```
 
 Each `get_person_votes` item nests `vote` (category), `rollcall` (date, description, and `outcome`
@@ -119,6 +129,33 @@ Each `get_person_votes` item nests `vote` (category), `rollcall` (date, descript
 several matches for a common surname cannot be separated from those results. Check which candidate
 has votes whose `bill.division_id` is the expected jurisdiction. Chamber and district cannot be
 confirmed from any tool. Ask rather than guessing when two remain equally plausible.
+
+When the user says "my senator" or "my representative" without a name, ask for the legislator's
+name and state. No tool maps an address or district to a legislator.
+
+## How did one legislator vote on one bill
+
+```jsonc
+// 1. resolve the bill, scoped
+{ "tool": "search_bills", "arguments": { "bill": "HB 314", "division_id": "<division uuid>", "session_name": "2025" } }
+
+// 2. resolve the person and confirm jurisdiction, as in the section above
+{ "tool": "search_people", "arguments": { "name": "Rex Reynolds" } }
+
+// 3. both filters together: that legislator's votes on that bill, one row per roll call
+{ "tool": "get_votes", "arguments": { "bill_id": "<bill uuid>", "people_id": "<person uuid>" } }
+// → items carry id, category, people_id, rollcall_id, bill_id; page with cursor while has_more
+
+// 4. date and description for each roll call
+{ "tool": "get_rollcalls", "arguments": { "bill_id": "<bill uuid>" } }
+// → match each vote's rollcall_id to an item's id; page with next_offset while has_more
+// → a rollcall_id that matches no item: get_rollcall_breakdown with it returns its date and description
+```
+
+Report each vote with its roll call's date, description, and own `counts`. When step 3 returns no
+rows, the data holds no recorded vote by that legislator on that bill — say so, not that they
+abstained. When several bills or legislators remain plausible after steps 1 and 2, list them and
+ask.
 
 ## Show a bill visually
 
@@ -142,7 +179,7 @@ the contents read back.
 The reverse direction — every bill a legislator sponsored — goes through `search_bills`:
 
 ```jsonc
-{ "tool": "search_bills", "arguments": { "sponsor_id": "<person uuid>", "limit": 50 } }
+{ "tool": "search_bills", "arguments": { "sponsor_id": "<person uuid>", "limit": 25 } }
 ```
 
 ## Recovering from the common errors
@@ -156,11 +193,13 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | A sitting legislator appears to have no votes | The chosen row may be a different legislator with the same name | Surface other rows with the same name as candidates and ask |
 | Right bill number, wrong bill | The same number exists in another session or state | Scope by `division_id` and `session_id` (or `session_name`); read each result's session |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Use `get_rollcall_breakdown`, whose `members` carry names and party |
-| A count looks wrong | `search_bills` / `search_people` / `get_votes` have no `total` | Report "at least N", or paginate to exhaustion |
-| A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills and 8 terms, silently | Narrow by `division_id` / `subject`; do not report absence from one broad query |
+| A count looks wrong | `search_bills` / `search_people` / `get_votes` / `get_person_votes` have no `total` | Report "at least N", or paginate to exhaustion |
+| A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills before any filter, and uses 8 terms, silently | Try one distinctive word, narrow by `subject` / `session_id`; do not report absence from one query |
+| A topic search returns many off-topic bills | Each `query` word is matched separately and ORed | Use one distinctive word rather than a phrase |
 | `ids` rejected on a big batch | `search_people` `ids` caps at 100 | Chunk into batches of 100 |
-| `Rate limit exceeded. Retry in 60 seconds.` | More than 60 calls in a minute | Wait a full minute, then continue at a slower pace |
-| Response ends mid-sentence | 25,000-character truncation | Paginate; do not treat it as the full answer |
+| `Rate limit exceeded. Retry in 60 seconds.` | More than 60 calls in a minute | Tell the user the limit was hit and that you will resume after a minute; wait a full minute, then continue at a slower pace |
+| Response ends mid-sentence | 25,000-character truncation | Re-request the same `offset` or `cursor` with a smaller `limit`; `next_offset` / `next_cursor` point past the cut items |
+| `No roll calls at offset <n>; bill <id> has <total>.`, or `Error: Database error.` on a later page | An `offset` past the end of the list | The list ended; page only while `has_more` is true |
 | `No bill found with id=...` | Valid UUID, no row | Not an error — re-derive the id from `search_bills` |
-| `counts: null`, or `No votes found` on a roll call | No individual votes recorded for that roll call | Report the breakdown as unavailable, never as nobody voting |
+| `counts: null`, `No votes found`, or a breakdown reading `0 yea, 0 nay` with `No individual votes are recorded` | No individual votes recorded for that roll call | Report the counts as not recorded and the breakdown as unavailable, never as nobody voting or a 0-0 vote |
 | Code reads `legiscan` and finds nothing | The server no longer returns `legiscan` objects (absent as of 2026-09-24) | Use `counts` on roll calls and `bill.division_id` from `get_person_votes` |

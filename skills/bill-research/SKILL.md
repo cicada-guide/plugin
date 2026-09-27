@@ -8,7 +8,11 @@ disable-model-invocation: false
 # Research one state bill
 
 Produce a sourced brief on a single U.S. state bill. Arguments name a bill number or topic, and
-optionally a state and year.
+optionally a state and year. With no argument, ask which bill and which state before calling
+anything.
+
+If no cicada-guide tools are available, say the `guide-public` server isn't connected, suggest
+checking `/mcp` and starting a new session, and don't answer from general knowledge.
 
 Supply the `context` string (15-25 words, third person) on each tool call, prefixed with
 `context_prefix` when the project sets one. Never put credentials, personal data, or first-person
@@ -33,16 +37,25 @@ came from the project default rather than from the request.
 Then search:
 
 - A bill number → `search_bills` with `bill` plus `division_id`, adding `session_id` when resolved.
-- A topic → `search_bills` with `query` plus `division_id`. Full-text resolves at most 50
-  distinct bills and uses only the first 8 terms, silently — a thin result is not proof the topic
-  is unlegislated. Narrow by `subject` or `session_id` and say which query ran.
+- A topic → `search_bills` with `query` plus `division_id`. Each `query` word is matched
+  separately against title and synopsis and the matches are ORed, so more words widen the results;
+  only the first 8 terms are used. The document full-text half resolves at most 50 distinct bills
+  across every state before `division_id` or any other filter applies. Neither cap is signalled —
+  a thin result is not proof the topic is unlegislated. Prefer one distinctive word, narrow by
+  `subject` or `session_id`, and say which query ran.
+- `status` is a partial match on the recorded status text: `"Passed"` matches every status
+  containing it, which can record one chamber's passage rather than enactment. Report each bill's
+  status as recorded; a `status` filter is not proof a bill became law.
 
 Bill-number matching is exact in either stored spelling (`HB 314` or `HB314`), but the same number
 repeats across sessions and states. When the user gave a year but no session, `session_name` with
 the year (partial match, so regular and special sessions both match) narrows without a UUID. Read
 each candidate's session before reporting.
 
-Stop and ask when the search returns several plausible bills and nothing in the request
+A topic argument usually returns several bills. Answer with the topic list below and offer a brief
+on one; do not pick one to brief unasked.
+
+Stop and ask when a bill-number search returns several plausible bills and nothing in the request
 distinguishes them. List the candidates with number, title, session, and status rather than
 picking one silently. Proceed without asking only when one result clearly matches.
 
@@ -61,11 +74,10 @@ Call in this order, skipping what the request does not need:
 2. `search_people` with `ids` set to the `sponsors` array, in batches of at most 100 — the cap is
    schema-enforced. Never loop `get_person`. Skip this when `sponsors` is null or empty; `ids`
    requires at least one entry and rejects an empty array.
-3. `get_latest_bill_document` — the newest available document, not necessarily enacted law. Check
-   `text_source`; a `null` means the text
-   is unavailable, not empty. For a large PDF, stream it with `read_pdf_bytes` — see the streaming
-   sequence in `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/workflows.md`. The next
-   offset there is `offset + byteCount`, not `byteCount`.
+3. `get_latest_bill_document` — the newest available document, not necessarily enacted law, with
+   its text. Check `text_source`; a `null` means the text is unavailable, not empty — say so and
+   give `item.url`. For an older version, list it with `get_documents` and report its URL.
+   `read_pdf_bytes` returns base64 PDF bytes, not text; do not use it to read a bill.
 4. `get_rollcalls` — floor votes, each with `counts` (yea, nay, absent, nv, total) tallied from
    recorded votes; `null` counts mean none were recorded. Report each roll call's own `counts`;
    never add counts across roll calls. It includes roll calls linked through
@@ -73,11 +85,13 @@ Call in this order, skipping what the request does not need:
    with `next_offset` while `has_more` is true, and relay anything in `warnings`.
 5. `get_rollcall_breakdown` — only when the request asks who voted how. One call per roll call
    returns `by_party` and `members` (name, party, and vote for each legislator). When `partial` is
-   `true`, say the breakdown covers only the rows returned.
+   `true`, say the breakdown covers only the rows returned. When `members` is empty, the text reads
+   `0 yea, 0 nay, 0 absent, 0 not voting` then `No individual votes are recorded for this roll
+   call.` That is not a 0-0 vote: report the counts as not recorded.
 
 Calls to the server are rate limited to 60 a minute. Past that a call fails with `Rate limit
-exceeded. Retry in 60 seconds.` Wait a full minute before the next call rather than retrying
-straight away.
+exceeded. Retry in 60 seconds.` Tell the user the rate limit was hit and that you will resume after
+a minute. Wait a full minute before the next call rather than retrying straight away.
 
 ## 3. Write the brief
 
@@ -102,6 +116,12 @@ Structure:
   votes.
 - **Sources** — document URLs from `get_documents` or `get_latest_bill_document`.
 
+For a topic, answer with a list instead of a brief:
+
+- One line per bill: number, title, session, and status as recorded, newest first.
+- The query that ran, and "at least N" when `has_more` is true — `search_bills` returns no `total`.
+- An offer to brief any one of them.
+
 Close with what the brief could not establish — text that was unavailable, unresolved ids, or
 pages not fetched — and the date of the latest status. State these plainly rather than implying
 the brief is exhaustive.
@@ -121,6 +141,9 @@ directly.
 - Failed calls come back as results, never exceptions, in two shapes: a text block beginning with
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. The second means the
   argument set is wrong, not merely incomplete.
-- A truncated response (25,000 characters) is not the whole document — paginate or say what was
-  cut.
+- A truncated response (25,000 characters) is not the whole page. Its `next_offset` points past
+  every item on the page, including the ones cut from the text, so following it skips them.
+  Re-request the same `offset` with a smaller `limit`, or say what was cut.
+- Keep UUIDs out of the brief unless the user asks for them. Say "did not vote" for an `NV`
+  category.
 - Do not characterize the bill's politics or predict its passage. Report status and votes.
