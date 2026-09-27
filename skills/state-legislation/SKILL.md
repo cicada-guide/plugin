@@ -96,7 +96,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | --- | --- |
 | Find bills by number, topic, subject, status, sponsor | `search_bills` |
 | Read one bill's full record | `get_bill` |
-| Open a normalized bill workspace with sponsors and initial roll calls | `get_bill_dossier` |
+| One bill with sponsor names, documents, and floor votes in one call | `get_bill_dossier` |
 | Display a bill visually ("show me", "pull it up") | `show_bill` |
 | Read the newest attached document's text | `get_latest_bill_document` |
 | List every document on a bill | `get_documents` |
@@ -114,7 +114,8 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Open an exploratory research workspace | `open_research_desk` |
 
 `get_bill_dossier` omits full document text and includes only the first 100 roll calls; read its
-`warnings` before trusting a `null` section.
+`warnings` before trusting a `null` section. Its markdown lists the sponsors, documents, and roll
+calls with their counts; pass `response_format: "json"` for the same data as JSON.
 `get_rollcall_breakdown` returns one roll call's whole breakdown in one call: `counts`, `by_party`,
 and every member's name, party, and vote in `members`. Resolve identity before
 `show_person_record`, and use `open_research_desk` for an exploration request rather than a known
@@ -129,7 +130,7 @@ yield `rollcall_id`. Do not invent a UUID — obtain it from the tool that produ
 ## Rules that prevent the common failures
 
 **`get_votes` requires a filter.** Pass at least one of `rollcall_id`, `bill_id`, or `people_id`.
-The votes table holds ~4.8M rows; omitting all three returns an error message, not results.
+The votes table holds ~5.6M rows; omitting all three returns an error message, not results.
 `category` alone does not satisfy this.
 
 **`get_votes` paginates by cursor, not offset.** It has no `offset` parameter, so passing one is
@@ -151,9 +152,8 @@ or `"votes"`). Page with `next_offset` while `has_more` is true, and relay anyth
 (each party's `YEA`, `NAY`, `ABSENT`, `NV`, `total`), and `members` (`name`, `party`, `category`
 per legislator). Keys are upper-case. `party: null` means no party is recorded. When `partial` is
 `true`, the 500-row cap was reached and `by_party` covers only the rows returned; say so. When
-`members` is empty, the text reads `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No
-individual votes are recorded for this roll call.` That is not a 0-0 vote: report the counts as
-not recorded.
+`members` is empty, the text reads `no individual votes recorded (not a 0-0 vote).` and `counts`
+holds zeros: report the counts as not recorded, never as a 0-0 vote.
 
 **`get_votes` returns `people_id` UUIDs, never names.** Collect the ids and resolve them through
 `search_people` with `ids`, **in batches of up to 100** — that cap is enforced by the schema, and
@@ -191,11 +191,12 @@ filter by a year without resolving a UUID, pass `session_name` (partial match: `
 **`query` words are matched separately, so more words widen the results.** `search_bills` splits
 `query` into words and ORs a title/synopsis substring match on each; only the first 8 terms are
 used. Separately, a full-text search over attached document text resolves at most 50 distinct
-bills across every state, and `division_id`, `session_id`, and the other filters apply after that
-cap — a filter narrows those 50 bills but never reaches past them. Nothing in the response signals
-either cap. Prefer one distinctive word (`"voucher"`, not `"school choice programs"`), narrow with
-`subject`, `session_id`, or `division_id`, and say which query actually ran. Never conclude a state
-has no legislation on a topic from one query.
+bills. `division_id`, `session_id`, and `session_name` scope that search before the cap, so a
+scoped search finds up to 50 bills in that state or session; with none of them, the 50 are drawn
+from every state. `subject`, `status`, and `sponsor_id` apply after the cap and only narrow those
+bills. Nothing in the response signals either cap. Prefer one distinctive word (`"voucher"`, not
+`"school choice programs"`), scope by `division_id` and a session, narrow with `subject`, and say
+which query actually ran. Never conclude a state has no legislation on a topic from one query.
 
 **`status` is a partial match on the recorded status text.** `status: "Passed"` matches every
 status containing that word, which can record passage of one chamber or a committee rather than
@@ -215,22 +216,39 @@ failure means the argument set is wrong, not merely incomplete.
 60 seconds.`** Tell the user the rate limit was hit and that you will resume after a minute. Wait
 a full minute before the next call rather than retrying straight away, and pace long sweeps.
 
-**Output truncates at 25,000 characters** with a pagination hint appended. A truncated response is
-not the complete answer, and its `next_offset` or `next_cursor` points past the whole page,
-including the items cut from the text — following it skips them. Re-request the same `offset` or
-`cursor` (none, for a first page) with a smaller `limit` instead. `response_format: "json"` text is
-capped the same way.
+**List pages are fitted under 25,000 characters.** When a full page would run longer,
+`search_bills`, `search_people`, `get_documents`, `get_rollcalls`, `list_sessions`, `get_votes`, and
+`get_person_votes` return fewer items than `limit`, set `has_more` to `true`, and add a line
+beginning `_Showing N of the requested M to stay under the 25,000-character limit`. Follow
+`next_offset` or `next_cursor` as usual: it resumes at the first item left out. A `count` below
+`limit` does not mean the list ended; only `has_more` says that. Any other output — a single item
+longer than that, or a tool that returns no list — truncates at 25,000 characters with a pagination
+hint appended, in `response_format: "json"` as in markdown. A response ending in that hint was
+cut: it is not the complete answer, so say what it lacks.
 
 **An empty result is a valid answer.** Report that nothing matched and suggest a broader filter,
-rather than retrying the same query. The exception is a page past the end: `get_rollcalls` at an
-offset past its last item answers `No roll calls at offset <n>; bill <id> has <total>.`, and an
-offset past the end of a tool that reports `total` can come back as `Error: Database error.` Both
-mean the list ended, not anything about the bill. Page with `next_offset` only while `has_more` is
-true and never compute an offset beyond it.
+rather than retrying the same query. The exception is a page past the end: `get_documents`,
+`list_sessions`, and `get_rollcalls` answer an offset past their last item with `Error: Offset past
+end.`, and `get_rollcalls` can instead answer `No roll calls at offset <n>; bill <id> has <total>.`
+Both mean the list ended, not anything about the bill. Page with `next_offset` only while
+`has_more` is true and never compute an offset beyond it.
+
+**Pass `get_person_votes` a `cursor` only from its own `next_cursor`, exactly as given.** A
+cursor it cannot place fails with `Error: cursor is not a next_cursor from get_person_votes. Omit
+cursor to restart from the newest vote.` rather than returning an empty page; omit `cursor` to
+start over. `latest: true` ignores `cursor`.
 
 **A `null` `text_source` from `get_latest_bill_document` means the text is unavailable** — the
 document may be a scan, or the fetch may have timed out. Say so and offer the document URL; do not
 treat the empty text as the bill's contents.
+
+**Long bill text comes in parts.** `get_latest_bill_document` returns as much text as fits under
+25,000 characters, with `text_total_chars` (the full length) and `next_text_offset`. Until
+`next_text_offset` is `null`, call it again with the same `bill_id` and `text_offset` set to
+`next_text_offset`. Markdown marks a part with a line such as
+`_Characters 0–24410 of 61234. Continue with text_offset=24410._`. Read every part before
+describing what the bill does; if you stop early — a very long document, or the rate limit — say
+which characters the answer rests on.
 
 ## Longer workflows have dedicated entry points
 

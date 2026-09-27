@@ -5,7 +5,7 @@ up legislators, and trace roll-call and individual voting records.
 
 The plugin connects compatible AI hosts to the hosted cicada-guide MCP server at
 `https://public.cicada.guide/mcp`, which serves state legislative data — bills, documents,
-legislators, sessions, roll calls, and ~4.8M individual vote records.
+legislators, sessions, roll calls, and ~5.6M individual vote records.
 
 ## Installation
 
@@ -126,7 +126,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `default_division` | Jurisdiction assumed when a question names no state |
 | `default_session` | Session assumed within that jurisdiction. Left commented out in the template, so copying it as-is pins no session |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
-| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, or `get_rollcall_breakdown`, which lack the parameter |
+| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `open_research_desk`, or `get_rollcall_breakdown`, which lack the parameter |
 
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.

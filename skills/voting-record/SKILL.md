@@ -65,7 +65,10 @@ calls attached to no bill; report those by description and date. Resolve `sessio
 - A period → `start_date` and `end_date` as `YYYY-MM-DD`.
 - Only one side → `category` of `YEA`, `NAY`, `ABSENT`, or `NV`.
 
-Page with `cursor`. There is no `offset`.
+Page with `cursor`. There is no `offset`. Pass each `next_cursor` back exactly as given: a cursor
+the tool cannot place fails with `Error: cursor is not a next_cursor from get_person_votes. Omit
+cursor to restart from the newest vote.` — omit `cursor` and start over rather than reading it as
+an empty record. `latest: true` ignores `cursor`.
 
 For a latest-vote request, confirm jurisdiction before attributing the result, even when the name
 search has only one candidate. Do not rely on `latest: true` alone: within one date the tool sorts
@@ -107,8 +110,8 @@ session.
 
 A roll call with `counts: null` has no recorded member votes. Say the member-by-member breakdown
 is unavailable in this dataset. Do not present it as nobody having voted. `get_rollcall_breakdown`
-on such a roll call prints `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No individual votes
-are recorded for this roll call.` That is not a 0-0 vote: report the counts as not recorded.
+on such a roll call prints `no individual votes recorded (not a 0-0 vote).` and returns zero
+`counts`: report the counts as not recorded.
 
 Report each roll call's own `counts`; never add counts across roll calls.
 
@@ -132,11 +135,16 @@ Report each roll call's own `counts`; never add counts across roll calls.
 
 ## Paging and limits
 
-Output truncates at 25,000 characters with a pagination hint appended, and `response_format:
-"json"` text is capped the same way. A truncated page is not a complete page, and its
-`next_cursor` or `next_offset` points past every item on it, including the ones cut from the text
-— following it skips them. Re-request the same `cursor` or `offset` (none, for a first page) with
-a smaller `limit` rather than tallying what arrived.
+List pages are fitted under 25,000 characters. When a full page would run longer, it holds fewer
+items than `limit`, `has_more` is `true`, and the markdown adds a line beginning `_Showing N of the
+requested M to stay under the 25,000-character limit`. Follow `next_cursor` or `next_offset` as
+usual — it resumes at the first item left out — and keep paging while `has_more` is true before
+tallying. A `count` below `limit` does not mean the record ended. Other output truncates at 25,000
+characters with a pagination hint appended, in `response_format: "json"` as in markdown; only a
+response ending in that hint was cut, so say what it lacks.
+
+An `offset` past the end of `get_rollcalls` returns `Error: Offset past end.` or `No roll calls at
+offset <n>; bill <id> has <total>.` The list ended; page only while `has_more` is true.
 
 Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in 60
 seconds.` Tell the user the rate limit was hit and that you will resume after a minute. Wait a full

@@ -59,7 +59,9 @@ complete, or return a request for session clarification. Do not silently choose 
 - `get_latest_bill_document` with `bill_id` for the newest text. Check `text_source`: `"clean_text"`,
   `"raw_text"`, and `"document_url"` are real text; `null` means nothing stored and the fetch failed.
   On `null`, report the text as unavailable and cite `item.url`. Never treat an empty string as the
-  bill's contents.
+  bill's contents. Long text comes in parts: until `next_text_offset` is `null`, call again with
+  `text_offset` set to it, and read every part before writing what the bill does. List any part
+  not read under Gaps.
 - `get_documents` with `bill_id` when an earlier version matters. It returns metadata only; cite
   that version's `url` rather than reading it. `read_pdf_bytes` returns base64 PDF bytes, not
   text, so it is not a way to read a bill.
@@ -76,9 +78,8 @@ complete, or return a request for session clarification. Do not silently choose 
 - `get_rollcall_breakdown` with `rollcall_id` for individual positions. One call returns
   `by_party` and `members` (each legislator's `name`, `party`, and `category`), so no `get_votes`
   paging or `search_people` resolution is needed. When `partial` is `true`, list it under Gaps.
-  When `members` is empty, the text reads `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No
-  individual votes are recorded for this roll call.` That is not a 0-0 vote: report the counts as
-  not recorded.
+  When `members` is empty, the text reads `no individual votes recorded (not a 0-0 vote).` and
+  `counts` holds zeros: report the counts as not recorded.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put credentials, personal data, or first-person phrasing in it. Also
@@ -108,10 +109,11 @@ never copy file contents into a tool argument.
   which one you are quoting.
 - `search_bills` and `get_votes` carry no `total`. Report counts as "at least N" unless you
   paginated to exhaustion.
-- Text output truncates at 25,000 characters, in `response_format: "json"` as in markdown. A
-  response ending mid-sentence is not the end of the record, but its `next_offset` or `next_cursor`
-  points past the items cut from the text — following it skips them. Re-request the same `offset`
-  or `cursor` with a smaller `limit`.
+- List pages are fitted under 25,000 characters in either `response_format`: a page can hold
+  fewer items than `limit`, with `has_more` true and, in markdown, a line beginning `_Showing N of
+  the requested M`. Follow `next_offset` or `next_cursor` while `has_more` is true; it resumes at
+  the first item left out. Other text truncates at 25,000 characters with a pagination hint
+  appended; only a response ending in that hint was cut, so list it under Gaps.
 - Failed calls come back as results, never exceptions, in two shapes: a text block beginning with
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. The second means the
   argument set is wrong, not merely incomplete. A valid UUID with no row returns
