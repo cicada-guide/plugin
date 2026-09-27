@@ -104,6 +104,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Find legislators by name or party | `search_people` |
 | Read one legislator's contact details (no jurisdiction or role) | `get_person` |
 | Display a resolved legislator's voting record | `show_person_record` |
+| Display a resolved legislator's office, district, and how to reach them | `show_official` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
 | Page through individual vote rows for a roll call, bill, or legislator | `get_votes` |
@@ -118,7 +119,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 calls with their counts; pass `response_format: "json"` for the same data as JSON.
 `get_rollcall_breakdown` returns one roll call's whole breakdown in one call: `counts`, `by_party`,
 and every member's name, party, and vote in `members`. Resolve identity before
-`show_person_record`, and use `open_research_desk` for an exploration request rather than a known
+`show_person_record` or `show_official`, and use `open_research_desk` for an exploration request rather than a known
 bill or person.
 `read_pdf_bytes` returns base64 PDF bytes, not readable text. For a bill's text use
 `get_latest_bill_document`; for an older version, report its document URL from `get_documents`.

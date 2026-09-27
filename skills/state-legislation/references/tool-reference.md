@@ -38,7 +38,7 @@ Every input schema is strict — an unknown parameter is rejected before the han
 | `llm_model` | string | — | Declared and required by every published schema. The exact model identifier of the calling model, or `"unknown"`. Added by the same wrapper as `context` — see below. |
 | `limit` | integer | `20` | 1-100. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, `get_rollcalls`, `get_votes`, and `get_person_votes`. |
 | `offset` | integer | `0` | 0-10000. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, and `get_rollcalls`. `get_votes` and `get_person_votes` page by `cursor`; `read_pdf_bytes` takes a byte `offset` of its own. |
-| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, and `get_rollcall_breakdown`. |
+| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `show_official`, `open_research_desk`, and `get_rollcall_breakdown`. |
 
 Every tool not listed in the `limit` and `offset` rows takes neither, `list_states` included.
 Verified 2026-09-24: `list_states` with `limit: 1` returns `Unrecognized key: "limit"`.
@@ -321,6 +321,30 @@ one person. Call it only when contact details are wanted; it adds nothing to dis
 `id` (UUID, required), from `search_people` after resolving identity. Opens an interactive
 legislator record with enriched voting history. Hosts without MCP Apps support receive the resolved
 person as text. It has no `response_format`.
+
+### `show_official`
+
+`id` (UUID, required), from `search_people` after resolving identity. Opens a contact card for one
+elected official: office title, state chamber and district, party, term, and Email, Website, and
+Call buttons for whichever contact details are recorded. Hosts without MCP Apps support receive the
+same facts as text:
+
+```text
+## Rex Reynolds
+State Representative · AL House · District 21
+**Term**: 2022-11-08 to 2026-11-03 (2022 General Election)
+**Party**: R
+No email, website or phone number is on record.
+```
+
+The term line appears only when dates are recorded, and `Office and district: not recorded.`
+replaces the office line when the person has no recorded seat. A person with more than one seat gets
+the current one, with the others under `**Also held**:`. `structuredContent` carries `person`,
+`office` (`title`, `chamber`, `state`, `district`, `division_name`, `term_start`, `term_end`,
+`election_name`, `election_date`, `current`), `other_offices`, and `contact` (`email`, `phone`,
+`website`, each `null` when none is recorded). Report only the contact details it returns; never
+supply one from elsewhere. It has no `response_format`. For how the person voted, use
+`get_person_votes` or `show_person_record`.
 
 ---
 

@@ -126,7 +126,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `default_division` | Jurisdiction assumed when a question names no state |
 | `default_session` | Session assumed within that jurisdiction. Left commented out in the template, so copying it as-is pins no session |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
-| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `open_research_desk`, or `get_rollcall_breakdown`, which lack the parameter |
+| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `show_official`, `open_research_desk`, or `get_rollcall_breakdown`, which lack the parameter |
 
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.
@@ -161,6 +161,7 @@ change when you make one.
 | `search_people` | Find legislators by name or party, or batch-resolve up to 100 ids |
 | `get_person` | Name, party, and contact details for one legislator |
 | `show_person_record` | Display a resolved legislator and recorded votes |
+| `show_official` | Display a resolved legislator's office, district, term, and recorded contact details as a card |
 | `get_rollcalls` | Floor-vote summaries for a bill |
 | `get_rollcall_breakdown` | One roll call's counts, per-party tally, and every member's name, party, and vote |
 | `get_votes` | Individual positions on a roll call |
