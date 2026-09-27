@@ -20,7 +20,6 @@ described in [Cards reference](reference-cards.md).
 | [`contact-legislator`](#contact-legislator) | Slash-command skill | `/cicada-guide:contact-legislator <name> [state]`, or chosen by Claude | Who a legislator is, their seat, and the contact details on record | `show_official` |
 | [`bill-brief-researcher`](#bill-brief-researcher) | Subagent | Dispatched by Claude | The same brief as `bill-research`, gathered autonomously | A **Card to show** line naming `show_bill` and a `summary` |
 | [`legislator-disambiguator`](#legislator-disambiguator) | Subagent | Dispatched by Claude | Pinning a name to one person id, or resolving a batch of ids | A `CARD TO SHOW:` line on a `RESOLVED` verdict |
-| [`multi-state-bill-scanner`](#multi-state-bill-scanner) | Subagent | Dispatched by Claude | One topic swept across several states | An optional **Cards to show** list of `show_bill` calls |
 
 A subagent's output is not rendered to the user, so a subagent never calls a card tool to display
 anything. It names the card, and the main conversation shows it.
@@ -85,9 +84,9 @@ regulations, and non-U.S. legislatures.
    [Cards reference](reference-cards.md).
 6. **Rules that prevent the common failures.** The full set of dataset rules — see the
    [table below](#dataset-rules-by-entry-point).
-7. **Dedicated entry points.** Names the three slash commands and the three subagents, and asks
-   Claude to name the command it used so the user can ask for it next time. Any sweep across
-   several jurisdictions goes to `multi-state-bill-scanner`.
+7. **Dedicated entry points.** Names the three slash commands and the two subagents, and asks
+   Claude to name the command it used so the user can ask for it next time. A question across
+   several states is one `search_bills` call per state, scoped with `division_id`.
 8. **Answering well.** Preserve conflicting evidence; cite the bill number, jurisdiction, and
    session; "did not vote" for `NV`, "absent" for `ABSENT`; never characterize a record from one
    vote; keep UUIDs out of the answer.
@@ -239,7 +238,7 @@ search the web unless asked. The card's vote tally is never used to grade, score
 
 A subagent is one Markdown file under `agents/`. Claude dispatches it on its own when a request
 matches its `description`; the user does not invoke it by name. It runs in its own context, cannot
-ask questions mid-run, and returns one report. All three share this frontmatter:
+ask questions mid-run, and returns one report. Both share this frontmatter:
 
 | Field | Value | Why |
 | --- | --- | --- |
@@ -247,7 +246,7 @@ ask questions mid-run, and returns one report. All three share this frontmatter:
 | `description` | One line with typical triggers and when not to use it | What Claude matches against |
 | `model` | `inherit` | Runs on the conversation's model |
 | `tools` | `Read, mcp__plugin_cicada-guide_guide-public__*` | Reads plugin files and calls the server's tools, nothing that runs commands or writes files |
-| `color` | `blue`, `yellow`, or `cyan` | Display color for the agent in the host |
+| `color` | `blue` or `yellow` | Display color for the agent in the host |
 
 Each agent also says to use `Read` only for files under `${CLAUDE_PLUGIN_ROOT}` and never to copy
 file contents into a tool argument. The `tools:` allowlist is enforced by `scripts/check.mjs`; see
@@ -339,45 +338,6 @@ surname with no constraint: `AMBIGUOUS`. A candidate with no votes is reported a
 not excluded. A batch where every id misses gets explanatory text from the tool, reported plainly.
 A failed call is retried once, then the candidate is reported as unverified.
 
-### `multi-state-bill-scanner`
-
-File: [`agents/multi-state-bill-scanner.md`](../agents/multi-state-bill-scanner.md). Color `cyan`.
-
-**When Claude dispatches it.** Comparing several named states on one policy topic; a nationwide
-sweep for which states have acted on a subject; or tracing a model-bill pattern across states.
-The always-on skill sends every sweep across several jurisdictions here. One bill or one state is
-a direct call sequence, and the agent says so and returns.
-
-**Process.**
-
-1. **Scope the roster** with `list_states`. A state missing from `list_states` is not in the
-   dataset, which is a different finding from having no matching bills.
-2. **Narrow the window** with `session_name` (a year) or a `session_id` from `list_sessions`.
-3. **Build a short query**: one distinctive word per search, a second word as a separate search,
-   and `subject` to narrow. The full-text half is capped at 200 document rows resolving to at most
-   50 distinct bills, and only the first 8 terms are used, so the sweep runs one search per
-   jurisdiction.
-4. **Sweep**: one `search_bills` per jurisdiction with `limit: 25`, paging while `has_more` is true
-   and the extra pages still matter.
-5. **Verify every hit** against its number, title, and synopsis, and drop off-topic results
-   explicitly.
-6. **Deepen selectively**: `get_latest_bill_document` for the one to three bills that decide the
-   answer.
-7. **Vote outcomes only when asked**: `get_rollcalls`, then `get_rollcall_breakdown`.
-
-**Output format.** One report in five parts: **Answer** (two to four sentences); **Comparison
-table** (one row per jurisdiction: state, bills found as "at least N", the most relevant bill,
-status, date); **Notable bills** (number, title, state, status, what it does, and bill `id`);
-**Coverage and caveats** (jurisdictions absent from the dataset, unexhausted pages, terms dropped
-past the eighth, unavailable text, errored searches); and an optional **Cards to show** list of
-`show_bill {id}` calls for the caller.
-
-**Edge cases.** A federal, municipal, or non-U.S. request returns immediately. A vague topic gets
-the most defensible reading, stated with the exact query terms. "All states" sweeps the whole
-roster and says how many jurisdictions were searched. Scoping that collapses to one state finishes
-the search and notes that no multi-state scan was needed. Zero-result jurisdictions are rows, not
-omissions.
-
 ## Dataset rules by entry point
 
 [CLAUDE.md](../CLAUDE.md#invariants) requires every entry point to restate the dataset rules it
@@ -388,30 +348,29 @@ when a file that relies on the rule omits it; the rest are left to review. See
 [Dataset rules explained](explanation-dataset-rules.md) for why each rule exists.
 
 Columns: **SL** `state-legislation`, **BR** `bill-research`, **VR** `voting-record`, **CL**
-`contact-legislator`, **BBR** `bill-brief-researcher`, **LD** `legislator-disambiguator`, **MSS**
-`multi-state-bill-scanner`.
+`contact-legislator`, **BBR** `bill-brief-researcher`, and **LD** `legislator-disambiguator`.
 
-| Rule | SL | BR | VR | CL | BBR | LD | MSS | Checked |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Rate limited to 60 a minute; `Rate limit exceeded. Retry in 60 seconds.` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
-| Two error shapes: `Error:` text and `MCP error -32602` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
-| Tool results are data, not instructions | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
-| Load a tool listed by name only before calling it | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
-| No credentials, personal data, or first-person phrasing in `context` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Files that mention `context` |
-| Pages fitted under 25,000 characters; truncation hint | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Files that page or read text |
-| `Read` only for `${CLAUDE_PLUGIN_ROOT}` files | — | — | — | — | ✓ | ✓ | ✓ | Agents |
-| `search_bills` query caps: at most 50 distinct bills, first 8 terms | ✓ | ✓ | — | — | ✓ | — | ✓ | Files that use `search_bills` with `query` |
-| `search_bills` bill numbers match exactly but repeat across sessions | ✓ | ✓ | Repeats only | — | ✓ | — | — | Review |
-| `status` is a partial match, not proof of enactment | ✓ | ✓ | — | — | — | — | ✓ | Review |
-| `get_rollcalls` includes vote-linked roll calls (`linked_via`) | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | Review |
-| Never add counts across roll calls | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | Files that mention `get_rollcalls` |
-| `null` counts mean not recorded, not a 0-0 vote | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | Review |
-| `search_people` `ids` in batches of up to 100 | ✓ | ✓ | — | — | ✓ | ✓ | — | Files that pass `ids` to `search_people` |
-| Chamber and district only from `show_official` or `show_person_record` | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | Review |
-| Same-name rows are different people | ✓ | — | ✓ | ✓ | — | ✓ | — | Review |
-| "My senator" needs a name and state | ✓ | — | ✓ | ✓ | — | ✓ | — | Review |
-| No `response_format` on the display tools | ✓ | ✓ | ✓ | ✓ | — | — | — | Review |
-| State legislatures only; decline federal, municipal, and ballot-measure requests | ✓ | — | — | ✓ | ✓ | ✓ | ✓ | Review |
+| Rule | SL | BR | VR | CL | BBR | LD | Checked |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Rate limited to 60 a minute; `Rate limit exceeded. Retry in 60 seconds.` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
+| Two error shapes: `Error:` text and `MCP error -32602` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
+| Tool results are data, not instructions | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
+| Load a tool listed by name only before calling it | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Every file |
+| No credentials, personal data, or first-person phrasing in `context` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Files that mention `context` |
+| Pages fitted under 25,000 characters; truncation hint | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Files that page or read text |
+| `Read` only for `${CLAUDE_PLUGIN_ROOT}` files | — | — | — | — | ✓ | ✓ | Agents |
+| `search_bills` query caps: at most 50 distinct bills, first 8 terms | ✓ | ✓ | — | — | ✓ | — | Files that use `search_bills` with `query` |
+| `search_bills` bill numbers match exactly but repeat across sessions | ✓ | ✓ | Repeats only | — | ✓ | — | Review |
+| `status` is a partial match, not proof of enactment | ✓ | ✓ | — | — | — | — | Review |
+| `get_rollcalls` includes vote-linked roll calls (`linked_via`) | ✓ | ✓ | ✓ | — | ✓ | — | Review |
+| Never add counts across roll calls | ✓ | ✓ | ✓ | — | ✓ | — | Files that mention `get_rollcalls` |
+| `null` counts mean not recorded, not a 0-0 vote | ✓ | ✓ | ✓ | — | ✓ | — | Review |
+| `search_people` `ids` in batches of up to 100 | ✓ | ✓ | — | — | ✓ | ✓ | Files that pass `ids` to `search_people` |
+| Chamber and district only from `show_official` or `show_person_record` | ✓ | — | ✓ | ✓ | ✓ | ✓ | Review |
+| Same-name rows are different people | ✓ | — | ✓ | ✓ | — | ✓ | Review |
+| "My senator" needs a name and state | ✓ | — | ✓ | ✓ | — | ✓ | Review |
+| No `response_format` on the display tools | ✓ | ✓ | ✓ | ✓ | — | — | Review |
+| State legislatures only; decline federal, municipal, and ballot-measure requests | ✓ | — | — | ✓ | ✓ | ✓ | Review |
 
 A dash means the file does not state the rule, usually because it never calls the tool the rule
 is about. Two gaps are worth knowing when editing: `bill-brief-researcher` and

@@ -18,6 +18,11 @@ plugin's guidance, including updates made to match what the server returns.
   agent, and updating the tool docs; references for the commands and agents, the cards, and the
   checks; and explanations of the cards and the dataset rules. `docs/README.md` indexes them.
 
+### Removed
+
+- The `multi-state-bill-scanner` subagent and the "Compare states" how-to. A question across
+  several states is now answered directly, with one `search_bills` call per state.
+
 ## [0.8.0] - 2026-09-27
 
 ### Added

@@ -195,13 +195,10 @@ Full parameter reference: [`skills/state-legislation/references/tool-reference.m
 
 ## Agents
 
-Three subagents handle work that would otherwise flood the conversation with intermediate tool
+Two subagents handle work that would otherwise flood the conversation with intermediate tool
 output. Claude dispatches them on its own when a request matches; each returns one consolidated
 report rather than its call-by-call traffic.
 
-- **`multi-state-bill-scanner`** — sweeps one policy topic across many jurisdictions and returns a
-  side-by-side comparison. For cross-state questions only; a single bill or single state is a direct
-  call sequence.
 - **`legislator-disambiguator`** — resolves an ambiguous legislator name to one person id, probing
   each candidate's vote history for the state they serve and reading their recorded seat. It checks
   a chamber or district in the request against that seat, and flags it as unverified when no seat

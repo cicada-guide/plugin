@@ -187,6 +187,7 @@ and [How cards work](explanation-cards.md).
 - **Long lists come in pages** fitted under 25,000 characters, and Claude pages on from where it
   stopped. An answer marked as cut short is not complete; ask Claude to continue or narrow the
   request.
-- **Across several states?** See [Compare states](howto-compare-states.md).
+- **Across several states?** Ask about each state in turn, or name them all in one question;
+  Claude searches each state separately.
 - Data comes from LegiScan and Open States, and a bill's status may have moved on since the last
   data load. Treat answers as research support, not an authoritative legal record.

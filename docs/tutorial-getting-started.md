@@ -180,7 +180,6 @@ Run any command with no argument and it asks which bill or legislator you mean, 
   bill, or one roll call by party.
 - [Contact a legislator](howto-contact-a-legislator.md): the contact card and what to do when
   details are not on record.
-- [Compare states](howto-compare-states.md): sweep one topic across many legislatures.
 - [Configure a project](howto-configure-a-project.md): stop restating the same state and session.
 - [Commands and agents reference](reference-commands-and-agents.md) and
   [Cards reference](reference-cards.md).

@@ -116,7 +116,6 @@ another. These questions exercise each one:
 | `/cicada-guide:voting-record` | `/cicada-guide:voting-record Rex Reynolds Alabama` | Identity is resolved before votes are reported, and the answer ends with `show_person_record` |
 | `/cicada-guide:contact-legislator` | `/cicada-guide:contact-legislator Rex Reynolds Alabama` | A `show_official` call without asking, and only the seat and contact details it returned |
 | Any command, no argument | `/cicada-guide:contact-legislator` | A question back asking which legislator and which state, before any tool call |
-| `multi-state-bill-scanner` | "Compare how Alabama, Georgia and Texas have legislated school choice" | The agent is dispatched, and its report names the cards to show rather than calling them |
 
 Also watch for:
 

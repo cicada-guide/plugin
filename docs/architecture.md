@@ -53,14 +53,14 @@ below exists.
 
 ## Skills and agents
 
-The plugin ships four skills and three subagents. There are three kinds of entry point, and each
+The plugin ships four skills and two subagents. There are three kinds of entry point, and each
 reaches the model differently:
 
 | Kind | Where | How it loads |
 | --- | --- | --- |
 | Always-on skill | `skills/state-legislation/` | Loads automatically on any state-legislation question. Its `references/` hold the tool reference, workflows and project-settings contract |
 | Slash-command skills | `skills/bill-research/`, `skills/voting-record/`, `skills/contact-legislator/` | Run as `/cicada-guide:<name>`, or when Claude judges a request needs the full workflow |
-| Subagents | `agents/*.md`: `bill-brief-researcher`, `legislator-disambiguator`, `multi-state-bill-scanner` | Dispatched by Claude for long, autonomous jobs; each returns one consolidated report |
+| Subagents | `agents/*.md`: `bill-brief-researcher`, `legislator-disambiguator` | Dispatched by Claude for long, autonomous jobs; each returns one consolidated report |
 
 The three slash commands each own one workflow and end with a card when the answer fits one:
 `bill-research` writes a sourced brief on one bill and ends with `show_bill`, or lists the bills

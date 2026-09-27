@@ -83,7 +83,6 @@ report with the card that fits its result, and the main conversation makes the c
 - `legislator-disambiguator` names `show_official` or `show_person_record`, and only for a
   `RESOLVED` verdict. An ambiguous result names no card, because showing one would present a
   guess as an identification.
-- `multi-state-bill-scanner` may list `show_bill {id}` for each notable bill.
 
 `legislator-disambiguator` does call `show_official`, but only to read a candidate's recorded
 seat, never to display it. That is the one exception, and the agent's prose says so.
