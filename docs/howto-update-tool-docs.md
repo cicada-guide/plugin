@@ -85,7 +85,7 @@ you confirmed with a live call as dated, the way the existing notes do.
 
 | Parameter | Type | Notes |
 | --- | --- | --- |
-| `bill` | string, max 50 | Bill number, whitespace-insensitive |
+| `bill` | string, max 50 | Bill number with its chamber prefix ("HB 314"); exact match ignoring case, spaces and dots. A number alone ("314") returns no bills and a prompt to add the prefix |
 | `query` | string, max 500 | ... |
 ````
 

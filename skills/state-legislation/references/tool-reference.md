@@ -178,7 +178,7 @@ descending, nulls last.
 
 | Parameter | Type | Notes |
 | --- | --- | --- |
-| `bill` | string, max 50 | Bill number, whitespace-insensitive |
+| `bill` | string, max 50 | Bill number with its chamber prefix ("HB 314"); exact match ignoring case, spaces and dots. A number alone ("314") returns no bills and a prompt to add the prefix |
 | `query` | string, max 500 | Each word a separate title/synopsis substring, ORed, plus full-text search over attached documents |
 | `subject` | string | Exact match against an entry in the `subjects` array |
 | `status` | string, max 100 | Partial, case-insensitive match on the recorded status text |

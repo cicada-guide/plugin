@@ -35,6 +35,9 @@ plugin's guidance, including updates made to match what the server returns.
   synopsis and calling `show_bill` with a summary, with a short chat answer optional.
 - The legislator record's session picker lists only sessions with the legislator's votes, newest
   first, and its header tally no longer carries an "In the N votes loaded" caption.
+- `search_bills`' `bill` matches the number exactly, ignoring case, spaces and dots, and needs the
+  chamber prefix: a number alone ("314") returns no bills. Matches the server's fix for bill-number
+  lookups that timed out.
 - Card resource URIs: `bill-results-v10`, `bill-workspace-v10`, `legislator-record-v11`, and
   `official-card-v4`.
 
