@@ -151,16 +151,21 @@ rather than implying the brief is exhaustive.
 
 ## 4. Show the bill
 
-After writing the brief, call `show_bill` with the bill's `id` and a `summary`, without asking.
-Always pass `summary`: a call without it fails with -32602. Hosts without card support get the bill
-as text, so the call is always safe. Write the `summary` for a voter:
+After writing the brief, call `show_bill` with the bill's `id`, a `headline`, and a `summary`,
+without asking. Always pass both: a call without either fails with -32602. Hosts without card
+support get the bill as text, so the call is always safe. Write both for a voter, drawn from the
+brief and from the bill text or synopsis it read. Both are rendered as text, so markdown does not
+render.
 
-- Plain prose, 1-1,500 characters. It is rendered as text, so markdown does not render.
-- What the bill does, who it affects, and where it stands as recorded — drawn from the brief and
-  from the bill text or synopsis it read.
-- Never infer passage or outcome; give the status as recorded. Leave out anything the brief could
-  not establish rather than guess. When neither text nor synopsis is on record, say so in the
-  summary rather than guess.
+- `headline`: plain text, 1-120 characters, saying what the bill does, e.g. "Bans buying soda and
+  candy with SNAP benefits". No trailing period needed. The card's title plate shows it first;
+  tapping the plate toggles to the official title and back.
+- `summary`: plain prose, 1-1,500 characters: what the bill does, who it affects, and where it
+  stands as recorded.
+- Never infer or claim passage or an outcome in either; give the status as recorded. Leave out
+  anything the brief could not establish rather than guess. When neither text nor synopsis is on
+  record, say so in the summary rather than guess, and write the headline from the official title
+  alone.
 
 The card labels the summary as written by the AI assistant. For a topic list, skip this step until
 the user picks a bill.
@@ -169,14 +174,14 @@ the user picks a bill.
 
 Tapping a bill in the results card, a vote in the legislator record, or a sponsored bill's "Show
 in the conversation" button posts a user turn like `Show HB 314 (bill id <uuid>) with show_bill.
-First read its text with get_latest_bill_document, or its synopsis, and pass a plain-language
-summary for a voter as summary: what it does, who it affects, and where it stands.` Handle it
-without a full brief:
+First read its text with get_latest_bill_document, or its synopsis, and pass a short
+plain-language headline as headline and a plain-language summary for a voter as summary: what it
+does, who it affects, and where it stands.` Handle it without a full brief:
 
 1. Read the text with `get_latest_bill_document` (every part), or the synopsis when no text is
    available.
-2. Call `show_bill` with that `id` and a `summary`, under the rules above. A short chat answer
-   alongside is optional.
+2. Call `show_bill` with that `id`, a `headline`, and a `summary`, under the rules above. A short
+   chat answer alongside is optional.
 
 The card also sends context updates such as "User is viewing HB 314 votes. Selected floor vote:
 <description>, <date>." or "User is reading <document> of HB 314." They carry names and numbers,

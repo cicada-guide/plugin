@@ -108,8 +108,9 @@ enactment.
 
 Once the written answer is ready, Claude calls `show_bill` for that bill without being asked.
 
-- **In a host that renders MCP Apps**, this puts a bill card on screen: the bill number and
-  headline, the status, and tabs for Overview, Sponsors, Documents, and Votes. Overview holds a
+- **In a host that renders MCP Apps**, this puts a bill card on screen: the bill number, a title
+  plate with Claude's plain-language headline (tap it to see the official title), the status, and
+  tabs for Overview, Sponsors, Documents, and Votes. Overview holds a
   summary box with Claude's plain-language summary (labeled as written by your AI assistant), the
   Votes tab shows the floor votes with party splits, and the Documents tab opens each version in a
   viewer.

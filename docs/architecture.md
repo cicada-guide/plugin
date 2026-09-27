@@ -96,8 +96,9 @@ Four tools carry an MCP Apps resource: `search_bills`, `show_bill`, `show_offici
   such as floor votes, sponsors, and vote history, over the host bridge. Nothing in this repo draws
   a card, and a card's layout changes with the server, not with a plugin release.
 - **The plugin decides when.** The skills end each answer with the card that fits, without asking:
-  `show_bill` with an assistant-written `summary` for a bill, `show_official` for who a legislator
-  is or how to reach them, `show_person_record` for their record. `search_bills` renders a results
+  `show_bill` with an assistant-written `headline` and `summary` for a bill, `show_official` for
+  who a legislator is or how to reach them, `show_person_record` for their record. `search_bills`
+  renders a results
   card on every call.
 
 What reaches the model is thinner than what the card shows: depending on the host, either the text
@@ -108,7 +109,8 @@ short text update naming what they are viewing; it carries names, not ids.
 
 **Subagents name a card instead of calling it.** A subagent's output goes to the conversation that
 dispatched it, not to the user, so a card it opened would render nowhere. Each agent ends its report
-with the card that fits, such as `show_bill {id, summary}`, and the main conversation calls it.
+with the card that fits, such as `show_bill {id, headline, summary}`, and the main conversation
+calls it.
 `legislator-disambiguator` calls `show_official` only to read a candidate's recorded seat.
 
 A legislator's chamber and district come only from `show_official` and `show_person_record`, which

@@ -228,7 +228,7 @@ whose text contains "Passed", which can record one chamber's passage rather than
 each bill's `status` as recorded, and never treat a `status` filter as proof a bill became law.
 
 **Every call also renders a results card** in a host that supports MCP Apps, via
-`ui://cicada-guide/bill-results-v10.html`. It lists the results with a "Show more" button that
+`ui://cicada-guide/bill-results-v11.html`. It lists the results with a "Show more" button that
 pages with the same arguments. Tapping a result posts a user turn asking you to show that bill with
 `show_bill` (see [`show_bill`](#show_bill)); the card opens no bill itself. You still receive
 the full list as text or JSON, so read results from it as usual. Where the card renders, summarize
@@ -267,48 +267,55 @@ the object as text.
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `id` | UUID, required | From `search_bills` or `get_bill` |
+| `headline` | string, 1-120 characters, required | Your short plain-language headline for a voter, shown first on the card's title plate. Trimmed; a missing or empty one fails with `-32602` |
 | `summary` | string, 1-1500 characters, required | Your plain-language summary for a voter, shown on the card. Trimmed; a missing or empty one fails with `-32602` |
 
 Like the other display tools, it has no `response_format`.
 
-Renders a bill card via `ui://cicada-guide/bill-workspace-v10.html` in hosts that support MCP
-Apps. The card shows the state and session, the status, the bill number, and the headline with a
-toggle to the official title, then four tabs. Overview holds the path to becoming law (Introduced,
-Engrossed, Enrolled, Enacted), the recorded status, and your summary; Sponsors lists the sponsors;
-Documents lists each version with a Read button that opens a viewer; Votes holds the floor votes
-with party splits and who voted how. The card calls `get_bill_dossier` and
-`get_rollcall_breakdown` itself for the sponsors, documents, and votes. The viewer embeds a Google
-Docs preview only when the host allows `docs.google.com`; when the host blocks the preview or
-refuses "Open full screen", the card shows the document URL as a link with a "Copy link" button.
+Renders a bill card via `ui://cicada-guide/bill-workspace-v11.html` in hosts that support MCP Apps.
+The card shows the state and session, the status, the bill number, and a title plate that shows your
+`headline` first; tapping the plate toggles to the official title and back. Then come four tabs.
+Overview holds the path to becoming law (Introduced, Engrossed, Enrolled, Enacted), the recorded
+status, and your summary; Sponsors lists the sponsors; Documents lists each version with a Read
+button that opens a viewer; Votes holds the floor votes with party splits and who voted how. The
+card calls `get_bill_dossier` and `get_rollcall_breakdown` itself for the sponsors, documents, and
+votes. The viewer embeds a Google Docs preview only when the host allows `docs.google.com`; when the
+host blocks the preview or refuses "Open full screen", the card shows the document URL as a link
+with a "Copy link" button.
 
 **The result carries none of that.** The text fallback holds the bill number, state and session,
 title, status, type, date, synopsis (cut at 300 characters), subjects, the newest document's link,
-the document count, and the `id` — no votes, no sponsors, and no echo of your `summary`.
-`structuredContent` is the bill row plus `_display.divisionName`, `_display.sessionName`, and
-`_display.aiSummary`, your `summary`. A missing id returns
-`No bill found with id=<id>.` Read votes and sponsors from `get_bill_dossier`, `get_rollcalls`, and
-`get_rollcall_breakdown`, and the text from `get_latest_bill_document`.
+the document count, and the `id` — no votes, no sponsors, and no echo of your `headline` or
+`summary`. `structuredContent` is the bill row plus `_display.divisionName`, `_display.sessionName`,
+`_display.aiHeadline` (your `headline`), and `_display.aiSummary` (your `summary`). A missing id
+returns `No bill found with id=<id>.` Read votes and sponsors from `get_bill_dossier`,
+`get_rollcalls`, and `get_rollcall_breakdown`, and the text from `get_latest_bill_document`.
 
 Use `show_bill` when the user wants to look at a bill; `get_bill` when they want its contents read
 back.
 
-**Always pass `summary`, written for a voter.** Read the bill before calling, then write it.
+**Always pass both `headline` and `summary`, written for a voter.** Read the bill before calling,
+then write them.
 
-- Say what the bill does, who it affects, and where it stands as recorded.
-- Base it on `get_latest_bill_document` text or the synopsis. When neither text nor synopsis is on
-  record, say so in the summary rather than guess.
+- `headline`: one short line, at most 120 characters, saying what the bill does, e.g. "Bans buying
+  soda and candy with SNAP benefits". Plain text, no markdown, no trailing period needed. Never
+  claim passage or an outcome. Write your own rather than copying the bill row's `headline` field.
+- `summary`: say what the bill does, who it affects, and where it stands as recorded.
+- Base both on `get_latest_bill_document` text or the synopsis. When neither text nor synopsis is on
+  record, say so in the summary rather than guess, and write the headline from the official
+  title alone.
 - Never infer passage or an outcome; state the recorded `status`.
-- Plain prose only. The card renders it as text, so markdown does not render.
-- The card labels it "Summary · your AI assistant", with the note "Written by the AI in this chat.
-  It can miss details."
+- Plain prose only. The card renders both as text, so markdown does not render.
+- The card labels the summary "Summary · your AI assistant".
 
 **"Show HB 314 … with show_bill" requests.** Tapping a bill in the `search_bills` results card, a
 vote in the `show_person_record` card, or a sponsored bill's "Show in the conversation" button
 posts a user turn: `Show HB 314 (bill id <uuid>) with show_bill. First read its text with
-get_latest_bill_document, or its synopsis, and pass a plain-language summary for a voter as
-summary: what it does, who it affects, and where it stands.` Handle it in order: read the text with
-`get_latest_bill_document` (or the synopsis), then call `show_bill` with that `id` and your
-`summary`. A short chat answer is optional.
+get_latest_bill_document, or its synopsis, and pass a short plain-language headline as headline
+and a plain-language summary for a voter as summary: what it does, who it affects, and where it
+stands.` Handle it in order: read the text with `get_latest_bill_document` (or the synopsis), then
+call `show_bill` with that `id`, your `headline`, and your `summary`. A short chat answer is
+optional.
 
 ### `get_latest_bill_document`
 
@@ -458,7 +465,7 @@ for the rest, and never supply one from elsewhere.
 `id` (UUID, required), from `search_people` after resolving identity. It has no `response_format`.
 
 In a host that supports MCP Apps it renders a legislator record via
-`ui://cicada-guide/legislator-record-v11.html`: the seat and contact options, the vote history
+`ui://cicada-guide/legislator-record-v12.html`: the seat and contact options, the vote history
 with session, vote, and subject filters, and the bills they sponsored. The card loads the votes
 through `get_person_votes` itself; its session picker lists only sessions with the legislator's
 votes, newest first, and its tally counts only the votes loaded, so never quote it as a career

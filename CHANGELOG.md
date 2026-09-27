@@ -27,9 +27,9 @@ plugin's guidance, including updates made to match what the server returns.
 
 - The bill card always opens on its tabbed layout: a header, then Overview (the path to becoming
   law, the recorded status, and the summary), Sponsors, Documents, and Votes. The front view with
-  its floor-vote timeline, "Read bill", and "Explore bill" is gone. The summary note now reads
-  "Written by the AI in this chat. It can miss details." and no longer says the official text is
-  the record. Selecting a floor vote sends `User is viewing HB 314 votes. Selected floor vote: …`,
+  its floor-vote timeline, "Read bill", and "Explore bill" is gone. The summary box keeps its
+  "Summary · your AI assistant" label and has no note under it; it no longer says the official
+  text is the record. Selecting a floor vote sends `User is viewing HB 314 votes. Selected floor vote: …`,
   and `User opened the HB 314 workspace.` is no longer sent.
 - Updated to match the server: `show_bill`'s `summary` is now required, and a call without it
   fails with `-32602`. Every skill, agent, workflow, and example always passes one, written after
@@ -44,7 +44,13 @@ plugin's guidance, including updates made to match what the server returns.
 - `search_bills`' `bill` matches the number exactly, ignoring case, spaces and dots, and needs the
   chamber prefix: a number alone ("314") returns no bills. Matches the server's fix for bill-number
   lookups that timed out.
-- Card resource URIs: `bill-results-v10`, `bill-workspace-v10`, `legislator-record-v11`, and
+- Updated to match the server: `show_bill` takes a required `headline`, 1-120 characters, next to
+  `summary`, and a call without it fails with `-32602`. It is a short plain-language line for a
+  voter, written from the bill's text or synopsis, that never claims passage. The bill card's title
+  plate shows it first, and tapping the plate toggles to the official title and back. Every skill,
+  agent, workflow, and example passes both, and the show-bill request a tapped bill posts now asks
+  for a headline as well as a summary.
+- Card resource URIs: `bill-results-v11`, `bill-workspace-v11`, `legislator-record-v12`, and
   `official-card-v4`.
 
 ### Removed

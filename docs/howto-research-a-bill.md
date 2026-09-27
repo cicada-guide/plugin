@@ -148,12 +148,11 @@ To look at one legislator's votes on the bill instead, see
 ## Use the bill card
 
 After the written answer, Claude calls `show_bill` for the bill without being asked. In a host that
-renders MCP Apps, the card shows the bill number and headline, with a toggle to the official title,
-and the status, above four tabs:
+renders MCP Apps, the card shows the bill number, a title plate with Claude's plain-language
+headline (tap it to toggle to the official title and back), and the status, above four tabs:
 
 - **Overview:** the path to becoming law, the recorded status, and a summary box holding Claude's
-  plain-language summary, labeled "Summary · your AI assistant", with a note that the AI wrote it
-  and can miss details;
+  plain-language summary, labeled "Summary · your AI assistant";
 - **Sponsors:** the bill's sponsors;
 - **Documents:** each version with a "Read" button that opens a viewer, or the document's link with
   a "Copy link" button where the host blocks the preview;
@@ -164,16 +163,18 @@ built from the data tools either way, so it is complete without the card. In a c
 does not re-list the card's rows in chat: it writes what the card does not show, such as what the
 bill does, context, and caveats.
 
-**The assistant summary.** Claude writes it for a voter: plain prose of up to 1,500 characters
-saying what the bill does, who it affects, and where it stands as recorded. It is drawn from the
-text or synopsis Claude read, and never infers passage. Every bill card carries one: when neither
-text nor synopsis is on record, the summary says so.
+**The assistant headline and summary.** Claude writes both for a voter, from the text or synopsis
+it read. The headline is one plain-text line of up to 120 characters saying what the bill does,
+such as "Bans buying soda and candy with SNAP benefits". The summary is plain prose of up to 1,500
+characters saying what the bill does, who it affects, and where it stands as recorded. Neither
+claims passage. Every bill card carries both: when neither text nor synopsis is on record, the
+summary says so and the headline comes from the official title.
 
 **Tapping a bill in another card.** Tapping a bill in the search results card, a vote in a
 legislator record, or a sponsored bill's "Show in the conversation" button posts a request into the
 conversation: `Show HB 314 (bill id <uuid>) with show_bill. …`. Claude reads the bill text (or the
-synopsis), then shows the bill card with its plain-language summary, sometimes with a short answer
-in chat.
+synopsis), then shows the bill card with its plain-language headline and summary, sometimes with a
+short answer in chat.
 
 **Selecting on the card.** When you select a floor vote or open a document, the card tells Claude
 what you are looking at. You can then ask "which vote am I looking at?" or "break this vote down by

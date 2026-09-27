@@ -30,7 +30,7 @@ Since 0.8.0 each workflow ends with the card that fits, without asking the user 
 
 | Answer | Card |
 | --- | --- |
-| A bill brief, or a roll-call breakdown on one bill | `show_bill` with the bill's `id` and an assistant-written `summary` |
+| A bill brief, or a roll-call breakdown on one bill | `show_bill` with the bill's `id` and an assistant-written `headline` and `summary` |
 | Who a legislator is, or how to reach them | `show_official` |
 | A resolved legislator's voting record | `show_person_record` |
 | Any bill search | `search_bills` renders its own results card on every call |
@@ -52,14 +52,16 @@ A card tool returns two things, and the host decides which one the model receive
   and session, title, status, the synopsis (cut at 300 characters), subjects, the newest
   document's link, the document count, and the `id`. For `show_official` it holds the seat line,
   the term when recorded, party, and one email, phone and website each.
-- **`structuredContent`.** The typed JSON the card renders from. For `show_official` it carries
-  every recorded contact option in `contact_options`, where the text has only one of each.
+- **`structuredContent`.** The typed JSON the card renders from. For `show_bill` it is the bill
+  row plus `_display`, which echoes the `headline` and `summary` passed. For `show_official` it
+  carries every recorded contact option in `contact_options`, where the text has only one of each.
 
 Neither carries what the card fetches for itself. The bill card calls `get_bill_dossier` and
 `get_rollcall_breakdown` for its sponsors and votes; the legislator record calls
 `get_person_votes` for its vote history. None of those results reach the model through the card.
-`show_person_record` returns the person and their seat, never their votes, and `show_bill` does
-not echo back the `summary` it was given.
+`show_person_record` returns the person and their seat, never their votes. `show_bill`'s text
+fallback leaves out the `headline` and `summary` it was given; its `structuredContent` echoes them
+as `_display.aiHeadline` and `_display.aiSummary`, which are Claude's own words, not evidence.
 
 So every written claim comes from the data tools: `get_bill_dossier`, `get_rollcalls`,
 `get_rollcall_breakdown`, `get_person_votes`, and `get_latest_bill_document`. The card is the
@@ -77,9 +79,9 @@ A subagent's output goes back to the conversation that dispatched it, not to the
 opened would render nowhere, and would spend a rate-limited call on nothing. So each agent ends its
 report with the card that fits its result, and the main conversation makes the call:
 
-- `bill-brief-researcher` ends with `show_bill {id, summary}` and a `summary` the caller must
-  pass, written under the same rules as the skills' own; when neither text nor synopsis is on
-  record, the summary says so.
+- `bill-brief-researcher` ends with `show_bill {id, headline, summary}` and a `headline` and
+  `summary` the caller must pass, written under the same rules as the skills' own; when neither
+  text nor synopsis is on record, the summary says so.
 - `legislator-disambiguator` names `show_official` or `show_person_record`, and only for a
   `RESOLVED` verdict. An ambiguous result names no card, because showing one would present a
   guess as an identification.
@@ -95,9 +97,8 @@ a bill card never appears without one.
 
 Three rules shape it, each for a reason:
 
-- **It is labelled as AI-written.** The card shows it under "Summary · your AI assistant", with a
-  note that the AI wrote it in this chat and can miss details. A reader can't tell
-  a summary's source from its position on a card, so the label keeps the assistant's words
+- **It is labelled as AI-written.** The card shows it under "Summary · your AI assistant". A
+  reader can't tell a summary's source from its position on a card, so the label keeps the assistant's words
   separate from the legislature's.
 - **It never infers passage or an outcome.** Passage thresholds vary by chamber and question, and
   a status such as `Passed` can record one chamber or a committee. The summary states the recorded
@@ -109,12 +110,19 @@ Three rules shape it, each for a reason:
 The server trims the value and rejects an empty one; Markdown doesn't render, because the card
 shows it as text.
 
+`show_bill` also requires a `headline`: one plain-text line for a voter, 1 to 120 characters,
+saying what the bill does, such as "Bans buying soda and candy with SNAP benefits". The card's title
+plate shows it first, and tapping the plate toggles to the official title and back. Official
+titles are written for the statute book, so a short line in plain language comes first and the
+legislature's wording is one tap away. The headline follows the same rules as the summary: it
+comes from text the model read, and it never claims passage or an outcome.
+
 No card opens a bill by itself. Tapping a bill in the `search_bills` results card or in the
 legislator record posts an ordinary user turn, `Show HB 314 (bill id <uuid>) with show_bill. …`,
-asking the model to read the bill and call `show_bill` with a summary. Routing the tap through the
-conversation is what keeps the summary required: only the model can write one. The skills handle
-that turn as a small workflow of its own: read the text or synopsis, then call `show_bill` with the
-summary, with a short chat answer optional.
+asking the model to read the bill and call `show_bill` with a headline and a summary. Routing the
+tap through the conversation is what keeps both required: only the model can write them. The skills
+handle that turn as a small workflow of its own: read the text or synopsis, then call `show_bill`
+with the headline and summary, with a short chat answer optional.
 
 ## Model-context updates carry names, not ids
 
@@ -153,7 +161,9 @@ name the card that fits their result.
 
 After 0.8.0 the server made `summary` required and stopped opening bills inside the results card
 and the legislator record. A tapped bill now posts a request to show it with `show_bill`, and the
-bill card's own summary button went away with the optional summary. The full list is in the
+bill card's own summary button went away with the optional summary. The server then added a
+required `headline`, which the card's title plate shows before the official title. The full list
+is in the
 [changelog](../CHANGELOG.md).
 
 ## Trade-offs

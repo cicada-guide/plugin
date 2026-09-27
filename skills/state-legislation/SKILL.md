@@ -98,7 +98,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Explore a topic or browse bills (its results card pages itself; a tapped result asks you to show it) | `search_bills` |
 | Read one bill's full record | `get_bill` |
 | One bill with sponsor names, documents, and floor votes in one call | `get_bill_dossier` |
-| Show or pull up a bill, with your plain-language summary | `show_bill` with `summary` |
+| Show or pull up a bill, with your plain-language headline and summary | `show_bill` with `headline` and `summary` |
 | Read the newest attached document's text | `get_latest_bill_document` |
 | List every document on a bill | `get_documents` |
 | Stream a PDF's raw bytes in base64 chunks (not text) | `read_pdf_bytes` |
@@ -133,9 +133,9 @@ yield `rollcall_id`. Do not invent a UUID — obtain it from the tool that produ
 `show_bill`, `show_official`, and `show_person_record` put a card on screen in hosts that render
 MCP Apps; other hosts show only what the call returns. `search_bills` also renders a results card.
 
-**End with the fitting card, without asking.** End a bill answer with `show_bill` `{ id, summary }`,
-a "who is this" or contact answer with `show_official`, and an answer about a resolved legislator's
-record with `show_person_record`. Call the card after the written answer is ready.
+**End with the fitting card, without asking.** End a bill answer with `show_bill`
+`{ id, headline, summary }`, a "who is this" or contact answer with `show_official`, and an answer
+about a resolved legislator's record with `show_person_record`. Call the card after the written answer is ready.
 
 **A card tool returns less than its card shows.** Depending on the host, you receive either the
 text fallback or the `structuredContent`; neither carries what the card fetches for itself — floor
@@ -155,20 +155,28 @@ may lack card rendering, so the written answer must stand on its own, from the d
 "Show more"; tapping a result posts a request to show that bill (below). Summarize what matched
 rather than tabulating every row.
 
-**Always pass `show_bill` a `summary`, written for a voter.** It is required, 1–1500 characters,
-plain prose; a call without it fails with `-32602`. The card renders it as text, so markdown does
-not render. Read the bill first, then write it: say what the bill does, who it affects, and where
-it stands as recorded. Base it on `get_latest_bill_document` text or the synopsis. When neither
-text nor synopsis is on record, say so in the summary rather than guess. Never infer passage or an
-outcome. The card labels it as written by the AI assistant.
+**Always pass `show_bill` both a `headline` and a `summary`, written for a voter.** Both are
+required; a call without either fails with `-32602`. The card renders both as text, so markdown
+does not render. Read the bill first, then write them from `get_latest_bill_document` text or the
+synopsis:
+
+- `headline`: 1–120 characters of plain text saying what the bill does, e.g. "Bans buying soda and
+  candy with SNAP benefits". No trailing period needed. The card's title plate shows it first;
+  tapping the plate toggles to the official title and back.
+- `summary`: 1–1500 characters of plain prose: what the bill does, who it affects, and where it
+  stands as recorded. The card labels it as written by the AI assistant.
+
+When neither text nor synopsis is on record, say so in the summary rather than guess, and write the
+headline from the official title alone. Never infer or claim passage or an outcome in either.
 
 **Answer a "Show HB 314 … with show_bill" turn by reading the bill, then showing it.** Tapping a
 bill in the `search_bills` results card, a vote in the `show_person_record` card, or a sponsored
 bill's "Show in the conversation" button posts a user turn: `Show HB 314 (bill id <uuid>) with
-show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a
-plain-language summary for a voter as summary: what it does, who it affects, and where it stands.`
-Read the text with `get_latest_bill_document` (or the synopsis), then call `show_bill`
-`{ id, summary }` with that id. A short chat answer alongside is optional.
+show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a short
+plain-language headline as headline and a plain-language summary for a voter as summary: what it
+does, who it affects, and where it stands.` Read the text with `get_latest_bill_document` (or the
+synopsis), then call `show_bill` `{ id, headline, summary }` with that id. A short chat answer
+alongside is optional.
 
 **Card selections arrive as model-context updates,** in text such as `User is viewing HB 314
 votes. Selected floor vote: <description>, <date>.`, `User is reading <document> of HB 314.`, or

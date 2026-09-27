@@ -112,7 +112,7 @@ another. These questions exercise each one:
 | Entry point | Try | Look for |
 | --- | --- | --- |
 | `state-legislation` (always on) | "Which states are in the data?" | The skill loads with no command, and `list_states` answers |
-| `/cicada-guide:bill-research` | `/cicada-guide:bill-research HB 591 Alabama 2026` | The bill is scoped to one state and session, the brief cites its sources, and it ends with a `show_bill` call carrying a `summary` |
+| `/cicada-guide:bill-research` | `/cicada-guide:bill-research HB 591 Alabama 2026` | The bill is scoped to one state and session, the brief cites its sources, and it ends with a `show_bill` call carrying a `headline` and a `summary` |
 | `/cicada-guide:voting-record` | `/cicada-guide:voting-record Rex Reynolds Alabama` | Identity is resolved before votes are reported, and the answer ends with `show_person_record` |
 | `/cicada-guide:contact-legislator` | `/cicada-guide:contact-legislator Rex Reynolds Alabama` | A `show_official` call without asking, and only the seat and contact details it returned |
 | Any command, no argument | `/cicada-guide:contact-legislator` | A question back asking which legislator and which state, before any tool call |

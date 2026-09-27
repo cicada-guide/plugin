@@ -2,8 +2,8 @@
 
 This page is for anyone who needs the facts about the plugin's interactive cards: what each one
 shows, what it fetches for itself, and what the model actually receives when it calls a card tool.
-It covers the four tools that carry a card, the `show_bill` summary rules, the show-bill request a
-tapped bill posts, and the model-context updates the cards send.
+It covers the four tools that carry a card, the `show_bill` headline and summary rules, the
+show-bill request a tapped bill posts, and the model-context updates the cards send.
 
 Parameters and response shapes are in the
 [tool reference](../skills/state-legislation/references/tool-reference.md#cards); this page links
@@ -14,10 +14,10 @@ there rather than repeating them. Why the plugin ends answers with a card is in
 
 | Tool | Card | Resource URI | The card fetches | The model receives |
 | --- | --- | --- | --- | --- |
-| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v10.html` | More pages of the same search | The full result list, as text or JSON, as usual |
-| `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v10.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors, no echo of the `summary` |
+| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v11.html` | More pages of the same search | The full result list, as text or JSON, as usual |
+| `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v11.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors. The text fallback omits the `headline` and `summary`; `structuredContent` echoes them in `_display` |
 | `show_official` | Contact card | `ui://cicada-guide/official-card-v4.html` | Recent votes and their tally (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
-| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v11.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
+| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v12.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
 
 The URIs are the ones the live `tools/list` advertises in each tool's `_meta.ui.resourceUri`. The
 `-vN` suffix changes when the server changes a card's HTML shell, so a host that caches by URI
@@ -50,7 +50,8 @@ shows only the tool's result, so every card tool is safe to call everywhere.
   host.
 - **A tapped bill goes through the conversation.** No card opens a bill itself. Tapping a bill in
   the results card or the legislator record posts a user turn asking Claude to show it with
-  `show_bill` (see [below](#the-show-bill-request)), so every bill card carries a summary.
+  `show_bill` (see [below](#the-show-bill-request)), so every bill card carries a headline and a
+  summary.
 
 ## `search_bills`: bill results
 
@@ -77,13 +78,14 @@ an offer to brief one, and shows no bill card until the user picks one.
 
 ## `show_bill`: bill card
 
-Parameters: `id` and `summary`, both required —
+Parameters: `id`, `headline`, and `summary`, all required —
 [tool reference](../skills/state-legislation/references/tool-reference.md#show_bill).
 
 **The card shows** a header, then four tabs. It always opens on this layout, inline.
 
-- **Header:** the state and session, the status, the bill number, and the headline, with a toggle
-  to the official title.
+- **Header:** the state and session, the status, the bill number, and a title plate showing the
+  `headline` first (see [below](#the-title-plate)). Tapping the plate toggles to the official title
+  and back.
 - **Overview:** the path to becoming law (Introduced, Engrossed, Enrolled, Enacted), the recorded
   status, and the summary box (see [below](#the-summary-box)).
 - **Sponsors:** the bill's sponsors.
@@ -99,30 +101,38 @@ Parameters: `id` and `summary`, both required —
 - **Text fallback:** the bill number, state and session, title, status, type, date, synopsis (cut
   at 300 characters), subjects, the newest document's link, the document count, and the `id`.
 - **`structuredContent`:** the bill row, plus `_display.divisionName`, `_display.sessionName`,
-  and `_display.aiSummary`, the `summary` passed.
+  `_display.aiHeadline` (the `headline` passed), and `_display.aiSummary` (the `summary` passed).
 - A missing id returns `No bill found with id=<id>.`, and the card shows an unavailable state.
 
-### The `summary` parameter
+### The `headline` and `summary` parameters
 
-`summary` is required: a call without it fails with `-32602`. The skills always pass one, written
-for a voter after reading the bill:
+Both are required: a call without either fails with `-32602`. The skills always pass both, written
+for a voter after reading the bill.
 
-- **What it says:** what the bill does, who it affects, and where it stands as recorded.
-- **What it rests on:** the text from `get_latest_bill_document`, or the synopsis. When neither
-  text nor synopsis is on record, the summary says so rather than guess.
-- **What it never does:** infer passage or an outcome. It states the recorded status.
-- **Form:** plain prose, 1-1,500 characters. It is trimmed, and an empty string is rejected. The
-  card renders it as text, so markdown does not render.
+- **What the headline says:** what the bill does, in one short line, such as "Bans buying soda and
+  candy with SNAP benefits". It never claims passage or an outcome.
+- **What the summary says:** what the bill does, who it affects, and where it stands as recorded.
+- **What they rest on:** the text from `get_latest_bill_document`, or the synopsis. When neither
+  text nor synopsis is on record, the summary says so rather than guess, and the headline comes
+  from the official title alone.
+- **What they never do:** infer passage or an outcome. The summary states the recorded status.
+- **Form:** plain text. The headline is 1-120 characters, with no trailing period needed; the
+  summary is 1-1,500 characters of prose. Both are trimmed, and an empty string is rejected. The
+  card renders both as text, so markdown does not render.
 
-Which entry points pass it: `state-legislation`, `bill-research`, and `voting-record` whenever they
-show a bill. `bill-brief-researcher` returns a suggested summary on its **Card to show** line for
-the main conversation to pass.
+Which entry points pass them: `state-legislation`, `bill-research`, and `voting-record` whenever
+they show a bill. `bill-brief-researcher` returns a suggested headline and summary on its **Card to
+show** line for the main conversation to pass.
+
+### The title plate
+
+The header's title plate shows the `headline` first. Tapping the plate toggles it to the bill's
+official title, and tapping again toggles back.
 
 ### The summary box
 
-The box is labeled "Summary · your AI assistant" and shows the `summary`, with the note "Written by
-the AI in this chat. It can miss details." Without a `summary`, it shows the bill's synopsis and no
-note. The box has no button; the bill card posts no user turn.
+The box is labeled "Summary · your AI assistant" and shows the `summary`, with no note under it.
+Without a `summary`, it shows the bill's synopsis under "Official synopsis". The box has no button; the bill card posts no user turn.
 
 ### The show-bill request
 
@@ -131,7 +141,7 @@ bill's **Show in the conversation** button posts a user turn. These are the only
 card that post one. The turn reads:
 
 ```text
-Show HB 314 (bill id <uuid>) with show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a plain-language summary for a voter as summary: what it does, who it affects, and where it stands.
+Show HB 314 (bill id <uuid>) with show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a short plain-language headline as headline and a plain-language summary for a voter as summary: what it does, who it affects, and where it stands.
 ```
 
 After it is sent, the card's status line says the bill will appear in the conversation. If the host
@@ -142,8 +152,8 @@ cannot send the turn, the card asks the user to ask for the bill in the conversa
 
 1. Read the text with `get_latest_bill_document`, every part, or use the synopsis when no text is
    available.
-2. Call `show_bill` with that `id` and a `summary`, under the rules above. A short chat answer
-   alongside is optional.
+2. Call `show_bill` with that `id`, a `headline`, and a `summary`, under the rules above. A short
+   chat answer alongside is optional.
 
 No full brief is needed for this turn.
 

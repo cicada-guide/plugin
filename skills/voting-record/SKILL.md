@@ -122,10 +122,11 @@ at from the update without a tool call; for details, call `get_person_votes` wit
 
 Tapping a vote in the record, or a sponsored bill's "Show in the conversation" button, posts a user
 turn like `Show HB 314 (bill id <uuid>) with show_bill. First read its text with
-get_latest_bill_document, or its synopsis, and pass a plain-language summary for a voter as
-summary: what it does, who it affects, and where it stands.` Read the text with
-`get_latest_bill_document` (or the synopsis), then call `show_bill` with that `id` and a `summary`
-under the Path C rules. A short chat answer alongside is optional.
+get_latest_bill_document, or its synopsis, and pass a short plain-language headline as headline and
+a plain-language summary for a voter as summary: what it does, who it affects, and where it stands.`
+Read the text with `get_latest_bill_document` (or the synopsis), then call `show_bill` with that
+`id`, a `headline`, and a `summary` under the Path C rules. A short chat answer alongside is
+optional.
 
 For a pattern question ("does she usually vote with her party"), state the sample size and the
 window covered before drawing any characterization, and keep it descriptive. `ABSENT` and `NV` are
@@ -147,8 +148,8 @@ session.
    `party`, and `category`). Keys are upper-case. `party: null` means no party is recorded.
 4. When `partial` is `true`, the 500-row cap was reached and `by_party` covers only the rows
    returned; say so.
-5. Report the breakdown, then call `show_bill` with the bill's `id` and a `summary`, without
-   asking (the `summary` follows the Path C rules). The card shows every floor vote with its party
+5. Report the breakdown, then call `show_bill` with the bill's `id`, a `headline`, and a `summary`,
+   without asking (both follow the Path C rules). The card shows every floor vote with its party
    split; in a host that renders cards, write the answer about the chosen roll call and leave the
    other floor votes to the card.
 
@@ -176,12 +177,19 @@ Report each roll call's own `counts`; never add counts across roll calls.
 5. Report each vote in date order: date, roll-call description, the legislator's category, and that
    roll call's own `counts`. When `get_votes` returns no rows, say the data holds no recorded vote
    by that legislator on that bill — not that they abstained.
-6. Call `show_bill` with the bill's `id` and a `summary`, without asking. Always pass `summary`:
-   a call without it fails with -32602. Read the bill's text with `get_latest_bill_document`, or
-   its `synopsis` from `search_bills`, then write a plain-prose summary for a voter (1-1,500
-   characters, no markdown) of what it does, who it affects, and where it stands as recorded. When
-   neither text nor synopsis is on record, say so in the summary rather than guess. Never infer
-   passage. The card shows the floor votes with party splits: do not re-list them in chat.
+6. Call `show_bill` with the bill's `id`, a `headline`, and a `summary`, without asking. Always
+   pass both: a call without either fails with -32602. Read the bill's text with
+   `get_latest_bill_document`, or its `synopsis` from `search_bills`, then write for a voter, in
+   plain text with no markdown:
+   - `headline`: 1-120 characters saying what the bill does, e.g. "Bans buying soda and candy
+     with SNAP benefits". No trailing period needed. The card's title plate shows it first, with
+     a tap to the official title.
+   - `summary`: 1-1,500 characters of prose on what it does, who it affects, and where it stands
+     as recorded.
+
+   When neither text nor synopsis is on record, say so in the summary rather than guess, and write
+   the headline from the official title alone. Never infer or claim passage in either. The card
+   shows the floor votes with party splits: do not re-list them in chat.
 
 ## Paging and limits
 

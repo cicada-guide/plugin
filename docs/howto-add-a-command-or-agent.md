@@ -133,7 +133,7 @@ without asking:
 
 | Answer | Card |
 | --- | --- |
-| One bill | `show_bill` with `id` and a required `summary` written for a voter |
+| One bill | `show_bill` with `id` and a required `headline` and `summary` written for a voter |
 | Who a legislator is, or how to reach them | `show_official` |
 | A resolved legislator's record | `show_person_record` |
 
@@ -250,7 +250,8 @@ CARD TO SHOW: show_official {id: <person uuid>} for who they are or how to reach
   show_person_record {id: <person uuid>} for their votes
 ```
 
-`bill-brief-researcher` ends with `show_bill {id, summary}` and a `summary` the caller must pass.
+`bill-brief-researcher` ends with `show_bill {id, headline, summary}` and a `headline` and
+`summary` the caller must pass.
 The one exception is reading data a card tool returns: `legislator-disambiguator` calls
 `show_official` to read a candidate's recorded seat, and says so.
 

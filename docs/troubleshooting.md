@@ -81,17 +81,18 @@ If the error appears anyway, ask Claude to retry the call without `response_form
 happening, update the plugin: versions before 0.8.0 predate some of these rules. The settings
 contract is in [project-settings.md](../skills/state-legislation/references/project-settings.md).
 
-## The bill card's summary is rejected
+## The bill card's headline or summary is rejected
 
-`show_bill` requires a `summary` of 1 to 1,500 characters. The server trims it first, so a summary
-that is missing, empty, or only whitespace is rejected, and so is one longer than 1,500 characters.
-Either way the call fails with `MCP error -32602: Input validation error:` naming `summary`, and no
-card appears.
+`show_bill` requires a `headline` of 1 to 120 characters and a `summary` of 1 to 1,500 characters.
+The server trims both first, so a value that is missing, empty, or only whitespace is rejected, and
+so is one over its limit. Either way the call fails with `MCP error -32602: Input validation
+error:` naming `headline` or `summary`, and no card appears.
 
-Ask Claude to read the bill, write a plain-language summary under 1,500 characters, and show the
-bill again with it. When the bill has no text or synopsis on record, the summary says so. If calls
-without a summary keep happening, update the plugin: versions through 0.8.0 treated `summary` as
-optional.
+Ask Claude to read the bill, write a plain-language headline under 120 characters and a summary
+under 1,500, and show the bill again with both. When the bill has no text or synopsis on record,
+the summary says so. If calls without a headline or summary keep happening, update the plugin:
+versions through 0.8.0 treated `summary` as optional, and later ones before the `headline` change
+never passed a headline.
 
 ## Cards don't appear
 
@@ -131,6 +132,7 @@ the card.
 
 The summary on a bill card is labelled as written by the AI assistant. It is Claude's plain-language
 reading of the bill text or synopsis, not an official summary, and it never predicts passage. The
+headline on the card's title plate is Claude's too; tap the plate to see the official title. The
 vote tallies on the legislator cards cover only the votes they name; the plugin never uses them to
 grade or rank a legislator.
 
