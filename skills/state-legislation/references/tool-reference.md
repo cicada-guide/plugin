@@ -507,11 +507,13 @@ document past 1.5 MB. Accumulate: chunk 3 of the 2.4 MB example above starts at 
 Markdown output deliberately omits the base64 payload and prints only chunk metadata. Read
 `structuredContent.bytes`, or pass `response_format: "json"`.
 
-The tool refuses to fetch in four cases, each returning explanatory text:
+The tool refuses to fetch in six cases, each returning explanatory text:
 
 | Condition | Message |
 | --- | --- |
 | Scheme is not `https:` | `Unable to read PDF: Only https URLs are supported.` |
+| URL carries a username or password | `Unable to read PDF: URLs with credentials are not supported.` |
+| URL names a port | `Unable to read PDF: Only the default https port is supported.` |
 | Host not on the allowlist | `Unable to read PDF: This host is not on the allowed list of known legislative document sources.` |
 | Status is not `206` | `PDF source does not support byte-range requests (expected HTTP 206).` |
 | `Content-Type` is not `application/pdf` | `Response content-type is not a PDF (application/pdf).` |
