@@ -154,8 +154,9 @@ headline (tap it to toggle to the official title and back), and the status, abov
 - **Overview:** the path to becoming law, the recorded status, and a summary box holding Claude's
   plain-language summary, labeled "Summary · your AI assistant";
 - **Sponsors:** the bill's sponsors;
-- **Documents:** each version with a "Read" button that shows its pages inside the card, or the
-  document's link with a "Copy link" button where the card can't show it;
+- **Documents:** each version with a "Read" button. A PDF shows its pages inside the card, and the
+  latest version of a non-PDF document shows its text; an older non-PDF version, or anything else
+  the card can't show, gets the document's link with a "Copy link" button;
 - **Votes:** the floor votes with party splits, and who voted how.
 
 Hosts that cannot render cards get a short text version of the bill instead. The written answer is

@@ -140,9 +140,10 @@ grade or rank a legislator.
 
 The document viewer in the bill card's Documents tab draws a PDF's pages inside the card, and shows
 the latest version of a non-PDF document as text. It shows the document's URL as a link with a
-**Copy link** button instead when it can't: an older non-PDF version, a PDF the server can't fetch
-from the legislature's site (over 20 MB, or from a site outside its list of known sources), or a
-host that blocks the viewer's script from `public.cicada.guide`. Open the link, or copy it into a
+**Copy link** button instead when it can't: an older non-PDF version; a PDF over 20 MB, which is
+the card's own limit; a PDF the server can't fetch from the legislature's site, such as one from a
+site outside its list of known sources, or one over 20 MB from a site that can't send part of a
+file; or a host that blocks the viewer's script from `public.cicada.guide`. Open the link, or copy it into a
 browser. Claude can also
 read the text with `get_latest_bill_document`.
 
