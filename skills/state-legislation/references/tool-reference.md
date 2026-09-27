@@ -228,7 +228,7 @@ whose text contains "Passed", which can record one chamber's passage rather than
 each bill's `status` as recorded, and never treat a `status` filter as proof a bill became law.
 
 **Every call also renders a results card** in a host that supports MCP Apps, via
-`ui://cicada-guide/bill-results-v11.html`. It lists the results with a "Show more" button that
+`ui://cicada-guide/bill-results-v12.html`. It lists the results with a "Show more" button that
 pages with the same arguments. Tapping a result posts a user turn asking you to show that bill with
 `show_bill` (see [`show_bill`](#show_bill)); the card opens no bill itself. You still receive
 the full list as text or JSON, so read results from it as usual. Where the card renders, summarize
@@ -272,7 +272,7 @@ the object as text.
 
 Like the other display tools, it has no `response_format`.
 
-Renders a bill card via `ui://cicada-guide/bill-workspace-v12.html` in hosts that support MCP Apps.
+Renders a bill card via `ui://cicada-guide/bill-workspace-v13.html` in hosts that support MCP Apps.
 The card shows the state and session, the status, the bill number, and a title plate that shows your
 `headline` first; tapping the plate toggles to the official title and back. Then come four tabs.
 Overview holds the path to becoming law (Introduced, Engrossed, Enrolled, Enacted), the recorded

@@ -1,8 +1,8 @@
 # Contributing
 
-Thanks for helping. This repo is a Claude Code / Codex **plugin**. It contains only Markdown and
+Thanks for helping. This repo is a Claude Code **plugin**. It contains only Markdown and
 JSON, which a plugin loader reads at runtime. There is no build step, no dependencies, and no
-application code. The MCP server behind it (`https://public.cicada.guide/mcp`) comes from a separate,
+application code. The MCP server behind it (`https://public.cicada.guide/mcp-anthropic`) comes from a separate,
 private repository, so this repo cannot change what the tools return.
 
 For how the pieces fit together, read [docs/architecture.md](docs/architecture.md). To check your
@@ -25,7 +25,7 @@ see [Add a command or agent](docs/howto-add-a-command-or-agent.md). Every check 
 1. Fork the repo and branch from `main`.
 2. Make the change. [CLAUDE.md](CLAUDE.md) is the working guide for this repo, for people and for
    Claude alike. Read these three sections before editing:
-   - **Invariants.** These break installed users silently: the four version fields, the
+   - **Invariants.** These break installed users silently: the three version fields, the
      `${CLAUDE_PLUGIN_ROOT}` links, the mandatory `guide-public` segment in tool names, the pinned
      endpoint, the three tool lists, and the dataset rules restated in every entry point.
    - **Product constraints.** State legislatures only, read-only, and no grading of legislators.

@@ -29,8 +29,7 @@ Create `skills/<name>/SKILL.md`. The directory name is the command: `skills/cont
 becomes `/cicada-guide:contact-legislator`. Every directory under `skills/` must hold a `SKILL.md`,
 or `check.mjs` fails with `skill directory has no SKILL.md`.
 
-No manifest lists the skills one by one. The Claude plugin loader and the Codex manifest's
-`"skills": "./skills/"` both pick up the new directory.
+No manifest lists the skills one by one. The Claude plugin loader picks up the new directory.
 
 ### 2. Write the frontmatter
 
@@ -188,8 +187,6 @@ arguments. [How to verify a change](howto-verify-a-change.md) has the details.
 
 Create `agents/<name>.md`. The file name is the agent's name: `agents/legislator-disambiguator.md`
 is `legislator-disambiguator`.
-
-The Codex manifest points at `skills/` and `.mcp.json` and declares no agents.
 
 ### 2. Write the frontmatter
 

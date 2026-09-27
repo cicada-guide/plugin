@@ -37,7 +37,7 @@ Knowing the plugin's reach helps you judge whether a finding is in scope:
 - Guidance that leads Claude to put credentials, personal data, or file contents into a tool
   argument, including `context`.
 - A way to point `.mcp.json` or a manifest at an endpoint other than
-  `https://public.cicada.guide/mcp`, or to widen an agent's tool allowlist, that
+  `https://public.cicada.guide/mcp-anthropic`, or to widen an agent's tool allowlist, that
   `scripts/check.mjs` does not catch.
 - Vulnerabilities in the hosted server at `public.cicada.guide`.
 
@@ -46,5 +46,5 @@ Knowing the plugin's reach helps you judge whether a finding is in scope:
 - The content of legislative records. Report a wrong answer as an ordinary issue.
 - Rate limiting working as designed (HTTP 429 after 60 requests a minute from one anonymous
   caller).
-- Vulnerabilities in Claude Code, Codex, or other host applications. Report those to their
+- Vulnerabilities in Claude Code or other host applications. Report those to their
   vendors.

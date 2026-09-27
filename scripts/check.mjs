@@ -10,7 +10,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 // The endpoint is a published API surface (CLAUDE.md). Changing it breaks every installed user, so
 // it moves only with a version bump and a transition period — edit this constant deliberately.
-const ENDPOINT = "https://public.cicada.guide/mcp";
+const ENDPOINT = "https://public.cicada.guide/mcp-anthropic";
 const SERVER_KEY = "guide-public";
 const PLUGIN_NAME = "cicada-guide";
 
@@ -67,13 +67,11 @@ const allMarkdown = [
 
 const claude = readJson(".claude-plugin/plugin.json");
 const marketplace = readJson(".claude-plugin/marketplace.json");
-const codex = readJson(".codex-plugin/plugin.json");
 const mcp = readJson(".mcp.json");
 
-if (claude && marketplace && codex) {
+if (claude && marketplace) {
   const versions = {
     ".claude-plugin/plugin.json version": claude.version,
-    ".codex-plugin/plugin.json version": codex.version,
     ".claude-plugin/marketplace.json metadata.version": marketplace.metadata?.version,
     ".claude-plugin/marketplace.json plugins[0].version": marketplace.plugins?.[0]?.version,
   };
@@ -83,25 +81,16 @@ if (claude && marketplace && codex) {
     }
   }
   if (new Set(Object.values(versions)).size !== 1) {
-    fail(".claude-plugin/marketplace.json", 0, `the four version fields disagree: ${JSON.stringify(versions)}`);
+    fail(".claude-plugin/marketplace.json", 0, `the three version fields disagree: ${JSON.stringify(versions)}`);
   }
   for (const [file, name] of [
     [".claude-plugin/plugin.json", claude.name],
-    [".codex-plugin/plugin.json", codex.name],
     [".claude-plugin/marketplace.json", marketplace.plugins?.[0]?.name],
   ]) {
     if (name !== PLUGIN_NAME) fail(file, 0, `plugin name is ${JSON.stringify(name)}, expected "${PLUGIN_NAME}"`);
   }
   if (marketplace.plugins?.[0]?.source !== "./") {
     fail(".claude-plugin/marketplace.json", 0, 'plugins[0].source must be "./" — the repo root is the plugin');
-  }
-  for (const key of ["skills", "mcpServers"]) {
-    if (codex[key] && !existsSync(join(ROOT, codex[key]))) {
-      fail(".codex-plugin/plugin.json", 0, `${key} points at ${codex[key]}, which does not exist`);
-    }
-  }
-  if (codex.interface?.logo && !existsSync(join(ROOT, codex.interface.logo))) {
-    fail(".codex-plugin/plugin.json", 0, `interface.logo points at ${codex.interface.logo}, which does not exist`);
   }
 }
 
@@ -193,7 +182,7 @@ for (const file of [...docFiles, ...projectDocs]) {
 
 // The repo is public and does not critique the dataset's quality (CLAUDE.md, Product constraints).
 const CRITIQUE = /duplicat|unreliab|coverage gap|coverage varies|stored without (?:its|their) bill|may be missing|missing roll call/gi;
-for (const file of [...docFiles, ...projectDocs, ".codex-plugin/plugin.json"]) {
+for (const file of [...docFiles, ...projectDocs]) {
   const text = read(file);
   for (const m of text.matchAll(CRITIQUE)) {
     fail(file, lineOf(text, m.index), `"${m[0]}" critiques the dataset's quality; describe what the tools return instead`);

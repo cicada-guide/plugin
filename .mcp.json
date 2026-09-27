@@ -2,7 +2,7 @@
   "mcpServers": {
     "guide-public": {
       "type": "http",
-      "url": "https://public.cicada.guide/mcp"
+      "url": "https://public.cicada.guide/mcp-anthropic"
     }
   }
 }

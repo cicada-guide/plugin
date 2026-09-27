@@ -1,10 +1,10 @@
 # cicada.guide
 
-Research U.S. state legislation in ChatGPT, Codex, or Claude: search bills, read bill text, look
+Research U.S. state legislation in Claude: search bills, read bill text, look
 up legislators, and trace roll-call and individual voting records.
 
 The plugin connects compatible AI hosts to the hosted cicada-guide MCP server at
-`https://public.cicada.guide/mcp`, which serves state legislative data — bills, documents,
+`https://public.cicada.guide/mcp-anthropic`, which serves state legislative data — bills, documents,
 legislators, sessions, roll calls, and ~5.6M individual vote records.
 
 ## Installation
@@ -214,7 +214,7 @@ Claude shows it in the conversation.
 
 ## Privacy
 
-Requests go to `https://public.cicada.guide/mcp`. The server records anonymous usage analytics per
+Requests go to `https://public.cicada.guide/mcp-anthropic`. The server records anonymous usage analytics per
 tool call: the tool name and the arguments passed to it (search terms, names, ids), duration,
 result count, the calling client's name and user agent, the `context` string the model supplies
 (including any `context_prefix` set in project settings), and the `llm_model` value — the calling
