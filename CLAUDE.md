@@ -27,8 +27,9 @@ change `scripts/check.mjs` in the same commit.
 
 `node scripts/check-live-tools.mjs` reconciles the tool documentation against the live
 `tools/list`: every live tool documented in the three tool lists, no documented tool the server
-lacks, and no example or parameter table passing a parameter the schema does not declare.
-`.github/workflows/live-tools.yml` runs it nightly and on demand, never on a pull request, so a
+lacks, no example or parameter table passing a parameter the schema does not declare, every
+documented card URI one a live tool links, and, on a live run, every card resource and the version
+before it still reading. `.github/workflows/live-tools.yml` runs it nightly and on demand, never on a pull request, so a
 server outage cannot block a merge. `--file tools-list.json` checks a saved response instead.
 
 Neither script can tell whether Claude follows the guidance. For that, load the checkout into a
