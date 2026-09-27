@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Reconciles the tool documentation against the live server's `tools/list` (CLAUDE.md: "Tool
-// documentation drifts silently"). Needs network access to the endpoint in `.mcp.json`.
+// documentation drifts silently"), and checks that every card resource, and the version before it,
+// still reads. Needs network access to the endpoint in `.mcp.json`.
 //
 //   node scripts/check-live-tools.mjs                     # fetch tools/list from the live endpoint
 //   node scripts/check-live-tools.mjs --file tools.json   # use a saved tools/list response instead
@@ -55,20 +56,29 @@ async function describe(response) {
   return `HTTP ${response.status}${headers.length ? ` (${headers.join("; ")})` : ""}${body ? ` — ${body}` : ""}`;
 }
 
+const headers = {
+  "User-Agent": "cicada-guide-plugin-live-tools (+https://github.com/cicada-guide/plugin)",
+  "Content-Type": "application/json",
+  Accept: "application/json, text/event-stream",
+  "MCP-Protocol-Version": PROTOCOL_VERSION,
+};
+const postTo = (endpoint, body, extra = {}) =>
+  fetch(endpoint, {
+    method: "POST",
+    headers: { ...headers, ...extra },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+
+// The server is stateless, so a resources/read needs no initialize first.
+async function readResource(endpoint, uri) {
+  const response = await postTo(endpoint, { jsonrpc: "2.0", id: 3, method: "resources/read", params: { uri } });
+  if (!response.ok) throw new Error(`resources/read returned ${await describe(response)}`);
+  return parseRpc(await response.text(), 3);
+}
+
 async function fetchTools(endpoint) {
-  const headers = {
-    "User-Agent": "cicada-guide-plugin-live-tools (+https://github.com/cicada-guide/plugin)",
-    "Content-Type": "application/json",
-    Accept: "application/json, text/event-stream",
-    "MCP-Protocol-Version": PROTOCOL_VERSION,
-  };
-  const post = (body, extra = {}) =>
-    fetch(endpoint, {
-      method: "POST",
-      headers: { ...headers, ...extra },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
+  const post = (body, extra = {}) => postTo(endpoint, body, extra);
 
   const init = await post({
     jsonrpc: "2.0", id: 1, method: "initialize",
@@ -180,6 +190,36 @@ for (const file of docFiles) {
       if (param && !params(tool).has(param[1])) fail(file, i + 1, `\`${tool}\` has no \`${param[1]}\` parameter on the live server`);
     }
   });
+}
+
+// 5. Every card URI the docs name is one a live tool links in `_meta.ui.resourceUri`.
+const cardUris = new Set([...tools.values()].map((t) => t._meta?.ui?.resourceUri).filter((u) => typeof u === "string"));
+for (const file of [...docFiles, ...walk("docs")]) {
+  const text = read(file);
+  for (const m of text.matchAll(/ui:\/\/cicada-guide\/[a-z0-9-]+\.html/g)) {
+    if (!cardUris.has(m[0])) fail(file, lineOf(text, m.index), `\`${m[0]}\` is not a card URI the live tools link`);
+  }
+}
+
+// 6. Live runs only: every card resource reads, and so does the version before it. A host that
+// fetched tools/list before a release still asks for the older URI, and a "not found" leaves the
+// card blank (cicada-guide/mcp#60).
+if (fileArg < 0) {
+  for (const uri of cardUris) {
+    const version = Number(uri.match(/-v(\d+)\.html$/)?.[1]);
+    const uris = version > 1 ? [uri, uri.replace(/-v\d+\.html$/, `-v${version - 1}.html`)] : [uri];
+    for (const u of uris) {
+      try {
+        const answer = await readResource(endpoint, u);
+        const html = answer.result?.contents?.[0]?.text;
+        if (answer.error || typeof html !== "string" || !/^<!doctype html>/i.test(html)) {
+          fail("(live server)", 0, `resources/read ${u} returned ${answer.error ? `error ${answer.error.code}: ${answer.error.message}` : "no card HTML"}`);
+        }
+      } catch (error) {
+        fail("(live server)", 0, `resources/read ${u} failed: ${error.message}`);
+      }
+    }
+  }
 }
 
 if (failures.length) {

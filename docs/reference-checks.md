@@ -301,6 +301,22 @@ even inside a code block, and any line not starting with `|` ends the table.
 - Message: ``<file>:<line>: `<tool>` has no `<param>` parameter on the live server``
 - Fix: remove the row, or rename it to the parameter the schema declares.
 
+**5. Documented card URIs are the live ones.** Files: as check 2, plus every `.md` under `docs/`.
+Each `ui://cicada-guide/<name>.html` must be the `_meta.ui.resourceUri` of a live tool.
+- Message: ``<file>:<line>: `<uri>` is not a card URI the live tools link``
+- Fix: update the URI to the one the server now links. A card's URI changes whenever its shell
+  does.
+
+**6. Every card resource reads, and so does the version before it.** Live runs only; skipped with
+`--file`. For each tool's `_meta.ui.resourceUri`, it posts `resources/read` for that URI and for the
+same name one version lower (`-v12` also checks `-v11`), and expects card HTML back. A host that
+fetched `tools/list` before a release still asks for the older URI, and a "not found" leaves the
+card blank, so the server keeps earlier versions answering with the current card.
+- Message: `(live server): resources/read <uri> returned error <code>: <message>`, or `returned
+  no card HTML`, or `failed: <reason>`
+- Fix: report it; the server is not this repo's code. An error on the older URI means the server
+  stopped answering earlier card versions.
+
 The wrapper-added `context` and `llm_model` appear in every live schema, so they pass checks 3 and
 4. What none of these checks see: a changed type, limit, default, or response shape, a tool present
 in a list but described wrongly, or prose that names a parameter outside a table or example.
