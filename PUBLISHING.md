@@ -65,7 +65,8 @@ claude --plugin-dir /path/to/plugin
 ```
 
 Then `/mcp` should list `guide-public` as connected, and `/help` should show
-`/cicada-guide:bill-research` and `/cicada-guide:voting-record`.
+`/cicada-guide:bill-research`, `/cicada-guide:voting-record`, and
+`/cicada-guide:contact-legislator`.
 
 End to end, the way a stranger gets it:
 

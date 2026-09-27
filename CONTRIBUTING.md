@@ -5,7 +5,10 @@ JSON, which a plugin loader reads at runtime. There is no build step, no depende
 application code. The MCP server behind it (`https://public.cicada.guide/mcp`) comes from a separate,
 private repository, so this repo cannot change what the tools return.
 
-For how the pieces fit together, read [docs/architecture.md](docs/architecture.md).
+For how the pieces fit together, read [docs/architecture.md](docs/architecture.md). To check your
+change, see [Verify a change](docs/howto-verify-a-change.md); to add a slash command or subagent,
+see [Add a command or agent](docs/howto-add-a-command-or-agent.md). Every check and its fix is in
+[docs/reference-checks.md](docs/reference-checks.md).
 
 ## Before you start
 

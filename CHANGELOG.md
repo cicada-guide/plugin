@@ -10,6 +10,14 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Added
+
+- A full documentation set under `docs/`, arranged as a tutorial, how-to guides, reference, and
+  explanation: getting started; researching a bill, checking a voting record, contacting a
+  legislator, comparing states, and configuring a project; verifying a change, adding a command or
+  agent, and updating the tool docs; references for the commands and agents, the cards, and the
+  checks; and explanations of the cards and the dataset rules. `docs/README.md` indexes them.
+
 ## [0.8.0] - 2026-09-27
 
 ### Added
