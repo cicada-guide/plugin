@@ -52,14 +52,16 @@ A card tool returns two things, and the host decides which one the model receive
   and session, title, status, the synopsis (cut at 300 characters), subjects, the newest
   document's link, the document count, and the `id`. For `show_official` it holds the seat line,
   the term when recorded, party, and one email, phone and website each.
-- **`structuredContent`.** The typed JSON the card renders from. For `show_official` it carries
-  every recorded contact option in `contact_options`, where the text has only one of each.
+- **`structuredContent`.** The typed JSON the card renders from. For `show_bill` it is the bill
+  row plus `_display`, which echoes the `headline` and `summary` passed. For `show_official` it
+  carries every recorded contact option in `contact_options`, where the text has only one of each.
 
 Neither carries what the card fetches for itself. The bill card calls `get_bill_dossier` and
 `get_rollcall_breakdown` for its sponsors and votes; the legislator record calls
 `get_person_votes` for its vote history. None of those results reach the model through the card.
-`show_person_record` returns the person and their seat, never their votes, and `show_bill` does
-not echo back the `headline` or `summary` it was given.
+`show_person_record` returns the person and their seat, never their votes. `show_bill`'s text
+fallback leaves out the `headline` and `summary` it was given; its `structuredContent` echoes them
+as `_display.aiHeadline` and `_display.aiSummary`, which are Claude's own words, not evidence.
 
 So every written claim comes from the data tools: `get_bill_dossier`, `get_rollcalls`,
 `get_rollcall_breakdown`, `get_person_votes`, and `get_latest_bill_document`. The card is the
