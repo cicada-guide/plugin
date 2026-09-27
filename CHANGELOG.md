@@ -10,6 +10,8 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-27
+
 ### Added
 
 - `show_official`, the server's new contact card for one legislator: office, state chamber and
@@ -191,7 +193,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/cicada-guide/plugin/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/cicada-guide/plugin/compare/v0.5.4...v0.6.0
 [0.5.4]: https://github.com/cicada-guide/plugin/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/cicada-guide/plugin/compare/v0.5.2...v0.5.3
