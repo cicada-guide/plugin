@@ -24,6 +24,11 @@ plugin's guidance, including updates made to match what the server returns.
 
 ### Changed
 
+- `scripts/check-live-tools.mjs` no longer requires an `mcp-session-id` from `initialize`, and sends
+  `DELETE` only when the server issued one. The hosted server is now stateless and issues none, so
+  the nightly `live-tools` run would otherwise fail on every run.
+- `PUBLISHING.md` and `CLAUDE.md`: fetching `tools/list` by hand is one POST, with no session
+  handshake.
 - `voting-record` argument hint is `<legislator name> [state] [bill] [session or date range]`.
   README and the `state-legislation` skill quote both commands' hints exactly.
 - Both slash commands ask which bill or legislator, and which state, when given no argument.

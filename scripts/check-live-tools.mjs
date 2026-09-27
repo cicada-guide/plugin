@@ -75,21 +75,25 @@ async function fetchTools(endpoint) {
     params: { protocolVersion: PROTOCOL_VERSION, capabilities: {}, clientInfo: { name: "plugin-docs-check", version: "0" } },
   });
   if (!init.ok) throw new Error(`initialize returned ${await describe(init)}`);
+  // The server is stateless and issues no session id. Echo one if it ever
+  // does again, so this check works against either kind of server.
   const session = init.headers.get("mcp-session-id");
-  if (!session) throw new Error("initialize returned no mcp-session-id header");
   await init.text();
 
-  const withSession = { "Mcp-Session-Id": session };
+  const withSession = session ? { "Mcp-Session-Id": session } : {};
   await (await post({ jsonrpc: "2.0", method: "notifications/initialized" }, withSession)).text();
   const list = await post({ jsonrpc: "2.0", id: 2, method: "tools/list" }, withSession);
   if (!list.ok) throw new Error(`tools/list returned ${await describe(list)}`);
   const result = parseRpc(await list.text(), 2);
 
-  await fetch(endpoint, {
-    method: "DELETE",
-    headers: { ...headers, ...withSession },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  }).catch(() => {});
+  // Only a session has anything to terminate; a stateless server answers 405.
+  if (session) {
+    await fetch(endpoint, {
+      method: "DELETE",
+      headers: { ...headers, ...withSession },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    }).catch(() => {});
+  }
   return result;
 }
 
