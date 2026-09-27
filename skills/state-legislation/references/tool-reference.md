@@ -1,11 +1,14 @@
 # cicada-guide tool reference
 
 Verified against the live endpoint's `tools/list`, MCP protocol revision `2025-06-18`, on
-2026-09-26. The endpoint is unversioned, so re-check this document against a live `tools/list` if
+2026-09-27. The endpoint is unversioned, so re-check this document against a live `tools/list` if
 tool behavior appears to disagree with it. Older behavioral observations below retain their dates.
 
 The tools below match the live `tools/list` as of that date. Check the live list before concluding
-an undocumented tool is unavailable.
+an undocumented tool is unavailable. On 2026-09-27 live calls also confirmed fitted list pages,
+`get_latest_bill_document`'s `text_offset` paging, `get_bill_dossier`'s markdown body,
+`Error: Offset past end.`, the `get_person_votes` cursor error, and scoped `search_bills` full-text
+search.
 
 Re-confirmed live on 2026-09-06 against Alabama, Georgia and Texas records: `list_states` returns 51
 divisions (50 states + DC, no territories); `search_people.ids` carries `minItems: 1, maxItems: 100`;
@@ -35,7 +38,7 @@ Every input schema is strict — an unknown parameter is rejected before the han
 | `llm_model` | string | — | Declared and required by every published schema. The exact model identifier of the calling model, or `"unknown"`. Added by the same wrapper as `context` — see below. |
 | `limit` | integer | `20` | 1-100. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, `get_rollcalls`, `get_votes`, and `get_person_votes`. |
 | `offset` | integer | `0` | 0-10000. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, and `get_rollcalls`. `get_votes` and `get_person_votes` page by `cursor`; `read_pdf_bytes` takes a byte `offset` of its own. |
-| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, and `get_rollcall_breakdown`. |
+| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `open_research_desk`, and `get_rollcall_breakdown`. |
 
 Every tool not listed in the `limit` and `offset` rows takes neither, `list_states` included.
 Verified 2026-09-24: `list_states` with `limit: 1` returns `Unrecognized key: "limit"`.
@@ -58,10 +61,21 @@ subsequent calls.
 Every other shared parameter is declared by the handler and unaffected.
 
 Every tool returns a `content` array of text blocks. List tools also return `structuredContent`
-holding the typed envelope. Text truncates at 25,000 characters with a pagination hint, in
-`response_format: "json"` as in markdown. The envelope's `next_offset` or `next_cursor` still points
-past the whole page, including items cut from the text, so following it after a truncated response
-skips them. Re-request the same `offset` or `cursor` with a smaller `limit` instead.
+holding the typed envelope.
+
+**List pages are fitted under 25,000 characters.** When a full page would render longer,
+`search_bills`, `search_people`, `get_documents`, `get_rollcalls`, `list_sessions`, `get_votes`, and
+`get_person_votes` return fewer items — the same ones in the text and in `items` — set `count` to
+that number and `has_more` to `true`, and derive `next_offset` or `next_cursor` from the last item
+returned. Following it resumes at the first item left out, so page as usual. Markdown adds a line
+such as
+`_Showing 12 of the requested 20 to stay under the 25,000-character limit; continue with offset=32._`
+A `count` below `limit` is not the end of the list; only `has_more` is.
+
+Any other text over 25,000 characters — one item longer than that, or a tool that returns no list —
+is cut there with a pagination hint appended, in `response_format: "json"` as in markdown. Only a
+response ending in that hint was cut. `get_latest_bill_document` pages its text separately, with
+`text_offset`.
 
 ### Errors arrive as results, in two shapes
 
@@ -91,12 +105,16 @@ is cheap — `list_states`, `list_sessions`, `get_documents`, `get_rollcalls`. I
 `search_bills`, `search_people`, `get_votes`, and `get_person_votes`. `get_latest_bill_document` is
 not a pagination envelope at all and reports `total_documents` instead.
 
-**Page only with `next_offset` while `has_more` is true; never compute an offset past it.**
-`get_rollcalls` at an offset past its last item returns `No roll calls at offset <n>; bill <id> has
-<total>.` An `offset` beyond the row count in a tool that reports `total` — `get_rollcalls`,
-`get_documents`, `list_sessions` — can instead fail with `Error: Database error.` and
-`isError: true`. Both mean the list ended, and neither is evidence about the bill. `search_bills`
-and `search_people` return an empty page at any offset.
+Markdown prints a progress line when more pages exist, e.g.
+`_Showing 21–40 (of 95). Use offset=40 for the next page._`, without "of N" on `search_bills` and
+`search_people`.
+
+**Page only with `next_offset` while `has_more` is true; never compute an offset past it.** An
+`offset` beyond the row count in `get_documents`, `list_sessions`, or `get_rollcalls` fails with
+`Error: Offset past end. The offset is past the end of the results — the list has ended. Page only
+while has_more is true.` and `isError: true`. `get_rollcalls` can instead return `No roll calls at
+offset <n>; bill <id> has <total>.` Both mean the list ended, and neither is evidence about the
+bill. `search_bills` and `search_people` return an empty page at any offset.
 
 ### The cursor envelope
 
@@ -104,7 +122,8 @@ and `search_people` return an empty page at any offset.
 { "count": 20, "has_more": true, "next_cursor": "b41e...", "items": [] }
 ```
 
-Used by `get_votes` and `get_person_votes`. `next_cursor` is `null` on the last page.
+Used by `get_votes` and `get_person_votes`. `next_cursor` is `null` on the last page. Pass it back
+exactly as given; never construct one.
 
 ---
 
@@ -145,19 +164,22 @@ session returns a message naming `list_sessions` instead of results; one matchin
 sessions asks for a `division_id` or a more specific name.
 
 **`query` runs two searches and ORs them.** Document text is searched with PostgreSQL `websearch`
-full-text search, capped at 200 document rows resolving to at most 50 distinct bills. Separately
-the string is split on whitespace; `or`, `and`, `not` and single characters are dropped, and up to
-8 remaining terms become `title ILIKE` / `synopsis ILIKE` clauses.
+full-text search, capped at 200 document rows resolving to at most 50 distinct bills. When
+`division_id`, `session_id`, or `session_name` is set, that search is scoped to the state or session
+before the cap, so the 200 rows come from inside it. Separately the string is split on whitespace;
+`or`, `and`, `not` and single characters are dropped, and up to 8 remaining terms become
+`title ILIKE` / `synopsis ILIKE` clauses.
 
 The ILIKE terms are ORed, so each extra word widens the title/synopsis matches rather than
 narrowing them: `"school choice"` matches every bill with "school" in its title or synopsis. Prefer
 one distinctive word.
 
-The full-text document rows are fetched across every state before any other filter applies, so
-`division_id`, `session_id`, and the rest narrow those 50 bills but never reach past them. These
-caps bound recall, not just cost: a broad `query` can miss matching bills beyond the 50-bill
-full-text ceiling, and a long one silently ignores terms past the eighth. Try another distinctive
-word or narrow with `subject` rather than lengthening the query string, and say which query ran.
+With no `division_id`, `session_id`, or `session_name`, the full-text rows are drawn from every
+state, so a nationwide search resolves at most 50 bills in all. `subject`, `status`, and
+`sponsor_id` apply after the cap and only narrow those bills. These caps bound recall, not just
+cost: a broad `query` can miss matching bills beyond the 50-bill full-text ceiling, and a long one
+silently ignores terms past the eighth. Scope by state and session, try another distinctive word,
+or narrow with `subject` rather than lengthening the query string, and say which query ran.
 
 **`status` matches any status containing the string.** `status: "Passed"` matches every status
 whose text contains "Passed", which can record one chamber's passage rather than enactment. Report
@@ -174,14 +196,26 @@ A missing id is not an error: returns the text `No bill found with id=<id>.` and
 
 ### `get_bill_dossier`
 
-`bill_id` (UUID, required), from `search_bills` or `get_bill`. Returns normalized bill, jurisdiction,
-session, sponsors, document metadata, the first page of roll calls, and partial-data warnings for a
-bill workspace. It omits full document text and source blobs. Use `get_latest_bill_document` for
-the text and `get_rollcalls` with the next offset when more roll calls are available.
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `bill_id` | UUID, required | From `search_bills` or `get_bill` |
+| `response_format` | `"markdown"` \| `"json"` | Default `"markdown"` |
+
+Returns normalized bill, jurisdiction, session, resolved sponsors, document metadata, the first page
+of roll calls, and partial-data warnings in one call — use it over `get_bill` when you also need
+sponsor names and floor votes. It omits full document text and source blobs. Use
+`get_latest_bill_document` for the text and `get_rollcalls` with the next offset when more roll
+calls are available.
+
+Markdown renders the same data as `structuredContent`: the bill number, title, state, session,
+status and date; any warnings; sponsors (name, party, id); documents (type, date, URL); and roll
+calls with their counts as yea, nay, absent, not voting, or `votes not recorded` when `counts` is
+`null`, ending with a pointer to `get_rollcalls` when more exist. `response_format: "json"` returns
+the object as text.
 
 ### `show_bill`
 
-`id` (UUID, required). Like the other workspace/display tools, it has no `response_format`.
+`id` (UUID, required). Like the other display tools, it has no `response_format`.
 
 Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
 via `ui://cicada-guide/bill-workspace-v7.html`. `content` still holds a markdown summary, so calling
@@ -193,13 +227,30 @@ back.
 
 ### `get_latest_bill_document`
 
-`bill_id` (UUID, required). Newest document by `date` then `created_at`, both descending, nulls
-last.
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `bill_id` | UUID, required | From `search_bills` or `get_bill` |
+| `text_offset` | integer 0-5000000, default `0` | Character offset into the text. Pass the previous `next_text_offset` |
+| `response_format` | `"markdown"` \| `"json"` | Default `"markdown"` |
+
+Newest document by `date` then `created_at`, both descending, nulls last.
 
 ```json
 { "bill_id": "...", "total_documents": 3, "text_source": "clean_text", "text": "AN ACT to ...",
-  "item": { "id": "...", "url": "...", "format": "PDF", "clean_text": "...", "raw_text": null } }
+  "text_offset": 0, "text_total_chars": 61234, "next_text_offset": 24410,
+  "item": { "id": "...", "url": "...", "format": "PDF", "type": "Bill Text", "date": "2025-02-11" } }
 ```
+
+**Long text comes in parts.** `text` holds the largest slice, from `text_offset`, that keeps the
+whole response under 25,000 characters. `text_total_chars` is the full length; `next_text_offset`
+is where the next part starts, or `null` once the text is complete. Until it is `null`, call again
+with the same `bill_id` and `text_offset` set to it, and read every part before describing the bill.
+Markdown prints the position before the text:
+`_Characters 0–24410 of 61234. Continue with text_offset=24410._`, and on the last part
+`This is the end of the text.` A text that fits in one response prints no position line, and its
+`next_text_offset` is `null`. A `text_offset` at or past the end returns no text and says
+`Omit text_offset to read from the start.` The text appears once, in `text`; `item` carries the
+document's metadata, not its stored text.
 
 `text_source` is `"clean_text"`, `"raw_text"`, `"document_url"`, or `null`. The tool tries stored
 `clean_text`, then `raw_text`, then fetches `item.url`. The network fallback aborts after 10
@@ -253,7 +304,10 @@ ask which one the user means.
 `max(limit, ids.length)`, so one call returns the whole batch instead of silently paginating. The
 envelope gains `unresolved_ids` listing ids that matched no row — present only when `ids` was
 supplied, so a caller never reports fewer legislators than it asked about. When every id misses,
-the tool returns explanatory text instead of an empty envelope.
+the tool returns explanatory text instead of an empty envelope. If a batch does not fit under
+25,000 characters, `has_more` is `true`: call again with the same `ids` and `offset` set to
+`next_offset` for the rest. The first response's `unresolved_ids` covers the whole batch; use it,
+and not any `unresolved_ids` on a later page of the same batch.
 
 ### `get_person`
 
@@ -315,7 +369,7 @@ One row per legislator per rollcall.
 | `cursor` | UUID | `next_cursor` from the previous response |
 
 **At least one of `rollcall_id`, `bill_id`, `people_id` is required.** Omitting all three returns
-`Error: Provide at least one of rollcall_id, bill_id, or people_id to filter the ~4.8M vote records.`
+`Error: Provide at least one of rollcall_id, bill_id, or people_id to filter the ~5.6M vote records.`
 This is enforced by the handler at runtime, not by the schema — so it arrives as a normal tool
 result containing error text, not a protocol validation rejection.
 
@@ -349,9 +403,9 @@ member-by-member breakdown as unavailable. Never present it as nobody having vot
 - The `counts` keys are upper-case here and lower-case in `get_rollcalls`.
 - The member list is capped at 500 rows. `partial: true` means the cap was reached; `by_party`
   then covers only the rows returned, so say so.
-- A roll call with no individual vote rows returns zero `counts` and empty `members`, and the text
-  reads `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No individual votes are recorded for
-  this roll call.` That is not a 0-0 vote: report the counts as not recorded.
+- A roll call with no individual vote rows returns zero `counts` and empty `members` and
+  `by_party`, and the text reads `<label>: no individual votes recorded (not a 0-0 vote).` Report
+  the counts as not recorded, never as a 0-0 vote.
 
 ### `get_person_votes`
 
@@ -365,9 +419,9 @@ already joined.
 | `session_id` | UUID | Excludes votes whose roll call has no bill |
 | `start_date` | `YYYY-MM-DD` | Inclusive lower bound |
 | `end_date` | `YYYY-MM-DD` | Inclusive upper bound |
-| `latest` | boolean, default `false` | Return only the single most recent matching vote, no cursor |
+| `latest` | boolean, default `false` | Return one vote from the newest rollcall date, no cursor. Ignores `cursor` |
 | `limit` | integer 1-100 | |
-| `cursor` | string, max 512 | Opaque `next_cursor` from the previous response |
+| `cursor` | string, max 512 | Opaque `next_cursor` from the previous response, passed back exactly |
 
 The envelope adds `retrieved_at`, `source_freshness`, `ordering`, and `active_filters` to `count`,
 `has_more`, `next_cursor`, and `items`. Each item is nested (verified 2026-09-24):
@@ -393,6 +447,10 @@ The envelope adds `retrieved_at`, `source_freshness`, `ordering`, and `active_fi
   among votes cast on the latest date. For a "most recent vote" question, fetch a page and keep
   paging with `cursor` while `has_more` is true and the page's last item still carries the newest
   `rollcall.date`; report every vote on that date unless a description establishes their order.
+
+**A cursor it cannot place is an error, not an empty page.** It returns `Error: cursor is not a
+next_cursor from get_person_votes. Omit cursor to restart from the newest vote.` Omit `cursor` to
+start over from the newest vote; never build one.
 
 Prefer this over `get_votes` with `people_id` — it needs no follow-up enrichment.
 

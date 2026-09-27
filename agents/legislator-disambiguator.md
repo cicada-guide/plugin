@@ -86,10 +86,11 @@ never copy file contents into a tool argument.
 - Failed calls come back as results in two shapes, never exceptions: a text block beginning with
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. Retry once, then
   report the candidate as unverified instead of dropping them.
-- Text output truncates at 25,000 characters, in `response_format: "json"` as in markdown. A
-  response ending mid-sentence is not the end of the record, but its `next_offset` or `next_cursor`
-  points past the items cut from the text — following it skips them. Re-request the same `offset`
-  or `cursor` with a smaller `limit`.
+- List pages are fitted under 25,000 characters in either `response_format`: a page can hold
+  fewer items than `limit`, with `has_more` true and, in markdown, a line beginning `_Showing N of
+  the requested M`. Follow `next_offset` or `next_cursor` while `has_more` is true; it resumes at
+  the first item left out. Other text truncates at 25,000 characters with a pagination hint
+  appended; only a response ending in that hint was cut, so say what it lacks.
 - Same-name rows are different people: matching name, party, and state fits two legislators in
   different chambers or years. Never collapse candidates. When constraints cannot separate them,
   return AMBIGUOUS with each row's party, state, and vote date range, and ask which one the request

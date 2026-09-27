@@ -51,9 +51,11 @@ with `Rate limit exceeded. Retry in 60 seconds.` and the response carries `Retry
 
 ## An answer looks cut off
 
-Tool output truncates at 25,000 characters, with a pagination hint appended. A truncated response
-is not the complete answer. Ask Claude to page through the rest, or narrow the request (one
-session, one chamber, a date range).
+List results come in pages fitted under 25,000 characters, so a page can hold fewer items than
+asked for; Claude pages on from where it stopped. Long bill text comes in parts the same way. Other
+tool output truncates at 25,000 characters, with a pagination hint appended, and a truncated
+response is not the complete answer. Ask Claude to page through the rest, or narrow the request
+(one session, one chamber, a date range).
 
 ## Tool errors
 

@@ -33,10 +33,22 @@ plugin's guidance, including updates made to match what the server returns.
   README and the `state-legislation` skill quote both commands' hints exactly.
 - Both slash commands ask which bill or legislator, and which state, when given no argument.
 - `search_bills` guidance: each `query` word is matched separately and ORed, so one distinctive
-  word beats a phrase; the document full-text cap applies before `division_id` and other filters;
-  `status` is a partial match on recorded status text and is not proof of enactment.
-- After a truncated response, re-request the same `offset` or `cursor` with a smaller `limit`:
-  `next_offset` and `next_cursor` point past the items cut from the text. Example limits lowered.
+  word beats a phrase; `status` is a partial match on recorded status text and is not proof of
+  enactment.
+- Updated to match the server: `search_bills` scopes its document full-text search by `division_id`,
+  `session_id`, or `session_name` before the 50-bill cap, so the cap no longer reads as applying
+  across every state before those filters. A search with none of them is still capped at 50 bills
+  nationwide.
+- Updated to match the server: list tools fit each page under 25,000 characters, returning fewer
+  items than `limit` with `has_more` true and continuing from the last item returned. Guidance now
+  says to follow `next_offset` or `next_cursor`, that a `count` below `limit` is not the end of the
+  list, and that only a response ending in a truncation hint was cut. Example limits lowered.
+- Updated to match the server: `get_latest_bill_document` takes `text_offset` and returns
+  `text_total_chars` and `next_text_offset`. Long bill text is read in parts until
+  `next_text_offset` is `null`, instead of reporting what was cut.
+- Updated to match the server: `get_bill_dossier` takes `response_format` and renders a markdown
+  body. It is dropped from the lists of tools without the parameter in README, the project-settings
+  reference, and the settings template.
 - On a rate-limit error, Claude tells the user and resumes after a minute.
 - Answers keep UUIDs out unless asked, and say "did not vote" for `NV`.
 - The settings template leaves `default_session` commented out, so a copied file pins no session.
@@ -46,10 +58,17 @@ plugin's guidance, including updates made to match what the server returns.
 
 - `read_pdf_bytes` is no longer suggested for reading bill text; it returns PDF bytes. Older
   versions are cited by their `get_documents` URL.
-- Offset-past-end guidance quotes the messages the tools return now.
+- Offset-past-end guidance quotes the messages the tools return now: `Error: Offset past end.` from
+  `get_documents`, `list_sessions`, and `get_rollcalls`, replacing `Error: Database error.`
+- A `get_person_votes` cursor the tool cannot place is described as the error it now returns,
+  `Error: cursor is not a next_cursor from get_person_votes. Omit cursor to restart from the newest
+  vote.`, rather than an empty page.
+- The `get_votes` no-filter error is quoted with `~5.6M vote records`, as the server now words it,
+  and README gives the same figure.
 - `get_person_votes` is listed among the tools without `total`.
 - `get_rollcall_breakdown` output for a roll call with no vote rows is reported as not recorded,
-  not as a 0-0 vote.
+  not as a 0-0 vote, and quoted as the server now words it:
+  `no individual votes recorded (not a 0-0 vote).`
 - Tool reference: `show_bill` and `open_research_desk` declare `llm_model` as well as `context`;
   `get_rollcalls` points to `get_rollcall_breakdown`; `search_people` `party` matching is stated
   exactly.

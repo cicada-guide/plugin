@@ -45,12 +45,13 @@ the conversation that asked for it. You absorb that traffic and return one conso
    at 200 document rows resolving to at most 50 distinct bills, ORed with an ILIKE search that keeps
    only the first 8 terms after dropping `or`, `and`, `not`, and single characters. Each ILIKE term
    is a separate title/synopsis substring ORed with the others, so every extra word widens the
-   results. The full-text rows are fetched across every state before `division_id` or any other
-   filter applies: a per-state search narrows those 50 bills but never reaches past them. Prefer
-   one distinctive word per search, and run a second word as a separate search rather than
-   lengthening the query. Use `subject` (exact match) to narrow. `status` is a partial match on the
-   recorded status text — `"Passed"` can match one chamber's passage — so report each bill's status
-   as recorded and never treat the filter as proof of enactment.
+   results. `division_id`, `session_id`, and `session_name` scope the full-text rows before the
+   cap, so each per-state search draws its own 50 bills; one search with none of them is capped at
+   50 bills nationwide, which is why the sweep runs per jurisdiction. Prefer one distinctive word
+   per search, and run a second word as a separate search rather than lengthening the query. Use
+   `subject` (exact match) to narrow. `status` is a partial match on the recorded status text —
+   `"Passed"` can match one chamber's passage — so report each bill's status as recorded and never
+   treat the filter as proof of enactment.
 4. **Sweep.** One `search_bills` per jurisdiction, `limit: 25`. Page with `offset` / `next_offset`
    while `has_more` is true and the extra pages still matter.
 5. **Verify every hit.** Read `bill`, `title`, and `synopsis`. `query` matches document text, so
@@ -58,7 +59,8 @@ the conversation that asked for it. You absorb that traffic and return one conso
 6. **Deepen selectively.** For the one to three bills that most decide the answer, call
    `get_latest_bill_document` and read `text`. When `text_source` is `null` there is no stored text
    and the fetch failed — report that and cite `item.url` rather than treating an empty string as
-   the bill's contents.
+   the bill's contents. Long text comes in parts: until `next_text_offset` is `null`, call again
+   with `text_offset` set to it, or say which part you read.
 7. **Add vote outcomes only when asked.** `get_rollcalls` with `bill_id` for floor votes. Their
    `counts` are recorded tallies, not a pass/fail result. Report each roll call's own `counts`;
    never add counts across roll calls.
@@ -68,8 +70,8 @@ the conversation that asked for it. You absorb that traffic and return one conso
    - For individual positions, `get_rollcall_breakdown` with `rollcall_id`. One call returns
      `by_party` and `members` with each legislator's name, party, and vote.
    - `null` counts mean no individual votes were recorded, not a 0-0 vote. A breakdown with empty
-     `members` reads `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No individual votes are
-     recorded for this roll call.` — the same case. Report the counts as not recorded.
+     `members` reads `no individual votes recorded (not a 0-0 vote).` — the same case. Report the
+     counts as not recorded.
 
 Supply the `context` string on every call: 15-25 words, third person, describing why the
 call is being made. Never put credentials, personal data, or first-person phrasing in it. Also
@@ -94,10 +96,11 @@ never copy file contents into a tool argument.
   `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
 - `search_bills` returns no `total`. Report counts as "at least N", or paginate to exhaustion and
   say that you did.
-- Text output truncates at 25,000 characters, in `response_format: "json"` as in markdown. A
-  response ending mid-sentence is not the end of the record, but its `next_offset` or `next_cursor`
-  points past the items cut from the text — following it skips them. Re-request the same `offset`
-  or `cursor` with a smaller `limit`.
+- List pages are fitted under 25,000 characters in either `response_format`: a page can hold
+  fewer items than `limit`, with `has_more` true and, in markdown, a line beginning `_Showing N of
+  the requested M`. Follow `next_offset` or `next_cursor` while `has_more` is true; it resumes at
+  the first item left out. Other text truncates at 25,000 characters with a pagination hint
+  appended; only a response ending in that hint was cut, so list it under Coverage and caveats.
 - Never assert a state has no legislation on a topic from one narrow query. Say which query ran.
 - Report zero-result jurisdictions as rows, not omissions. A silent gap reads as a finding.
 - Failed calls come back as results in two shapes, never exceptions: a text block beginning with
