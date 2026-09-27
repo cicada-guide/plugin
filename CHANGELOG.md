@@ -46,6 +46,8 @@ plugin's guidance, including updates made to match what the server returns.
 - Updated to match the server: `get_latest_bill_document` takes `text_offset` and returns
   `text_total_chars` and `next_text_offset`. Long bill text is read in parts until
   `next_text_offset` is `null`, instead of reporting what was cut.
+- Updated to match the server: the `read_pdf_bytes` refusal table lists the two URL checks it was
+  missing, a URL carrying a username or password and a URL that names a port.
 - Updated to match the server: `get_bill_dossier` takes `response_format` and renders a markdown
   body. It is dropped from the lists of tools without the parameter in README, the project-settings
   reference, and the settings template.
