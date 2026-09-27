@@ -108,8 +108,8 @@ short text update naming what they are viewing; it carries names, not ids.
 
 **Subagents name a card instead of calling it.** A subagent's output goes to the conversation that
 dispatched it, not to the user, so a card it opened would render nowhere. Each agent ends its report
-with the card that fits, such as `show_bill {id}` with a `summary`, and the main conversation calls
-it. `legislator-disambiguator` calls `show_official` only to read a candidate's recorded seat.
+with the card that fits, such as `show_bill {id, summary}`, and the main conversation calls it.
+`legislator-disambiguator` calls `show_official` only to read a candidate's recorded seat.
 
 A legislator's chamber and district come only from `show_official` and `show_person_record`, which
 return the recorded seat. `search_people` and `get_person` return a name and party only.

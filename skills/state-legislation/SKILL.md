@@ -95,7 +95,7 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Goal | Tool |
 | --- | --- |
 | Find bills by number, topic, subject, status, sponsor | `search_bills` |
-| Explore a topic or browse bills (its results card pages itself and opens bills in place) | `search_bills` |
+| Explore a topic or browse bills (its results card pages itself; a tapped result asks you to show it) | `search_bills` |
 | Read one bill's full record | `get_bill` |
 | One bill with sponsor names, documents, and floor votes in one call | `get_bill_dossier` |
 | Show or pull up a bill, with your plain-language summary | `show_bill` with `summary` |
@@ -152,24 +152,27 @@ screen, so write what it does not show: the answer to the question, context, and
 may lack card rendering, so the written answer must stand on its own, from the data tools.
 
 **`search_bills` renders a results card on every call** in card hosts. It shows the results and
-"Show more", and tapping a result opens that bill in place. Summarize what matched rather than
-tabulating every row.
+"Show more"; tapping a result posts a request to show that bill (below). Summarize what matched
+rather than tabulating every row.
 
-**Write `show_bill`'s `summary` for a voter.** It is optional, 1–1500 characters, plain prose; the
-card renders it as text, so markdown does not render. Say what the bill does, who it affects, and
-where it stands as recorded. Base it on `get_latest_bill_document` text or the synopsis, and omit it
-rather than guess. Never infer passage or an outcome. The card labels it as written by the AI
-assistant.
+**Always pass `show_bill` a `summary`, written for a voter.** It is required, 1–1500 characters,
+plain prose; a call without it fails with `-32602`. The card renders it as text, so markdown does
+not render. Read the bill first, then write it: say what the bill does, who it affects, and where
+it stands as recorded. Base it on `get_latest_bill_document` text or the synopsis. When neither
+text nor synopsis is on record, say so in the summary rather than guess. Never infer passage or an
+outcome. The card labels it as written by the AI assistant.
 
-**Answer a "Summarize with AI" turn, then re-show the card.** The bill card's button posts a user
-turn: `Summarize HB 314 (bill id <uuid>) in plain language for a voter: what it does, who it
-affects, and where it stands. Then show it again with show_bill, passing your summary as summary.`
-Read the text with `get_latest_bill_document` (or the synopsis), answer in chat, then call
-`show_bill` `{ id, summary }` with that id.
+**Answer a "Show HB 314 … with show_bill" turn by reading the bill, then showing it.** Tapping a
+bill in the `search_bills` results card, a vote in the `show_person_record` card, or a sponsored
+bill's "Show in the conversation" button posts a user turn: `Show HB 314 (bill id <uuid>) with
+show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a
+plain-language summary for a voter as summary: what it does, who it affects, and where it stands.`
+Read the text with `get_latest_bill_document` (or the synopsis), then call `show_bill`
+`{ id, summary }` with that id. A short chat answer alongside is optional.
 
-**Card selections arrive as model-context updates,** in text such as `User is viewing HB 314.
-Selected floor vote: <description>, <date>.`, `User is reading <document> of HB 314.`, or `User is
-viewing <name>'s votes, filtered to Yea.` They carry names and numbers, never ids: map them to ids
+**Card selections arrive as model-context updates,** in text such as `User is viewing HB 314
+votes. Selected floor vote: <description>, <date>.`, `User is reading <document> of HB 314.`, or
+`User is viewing <name>'s votes, filtered to Yea.` They carry names and numbers, never ids: map them to ids
 from earlier results. Answer "which vote am I looking at" from the update, without a tool call. For
 that vote's details, call `get_rollcalls` for the bill, match the description and date, then call
 `get_rollcall_breakdown` with that roll call's id.

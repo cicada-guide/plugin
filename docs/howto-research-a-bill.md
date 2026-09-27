@@ -42,8 +42,9 @@ pick one to brief unasked. `search_bills` returns no total, so a count is report
 when more pages remain.
 
 In a host that renders MCP Apps, every search also puts a results card on screen, with "Show more"
-paging; tapping a result opens that bill in place. Claude then names the few bills that fit and
-why, rather than restating every row.
+paging. Tapping a result asks Claude to show that bill (see
+[Use the bill card](#use-the-bill-card)). Claude then names the few bills that fit and why, rather
+than restating every row.
 
 ### How topic search behaves
 
@@ -147,14 +148,16 @@ To look at one legislator's votes on the bill instead, see
 ## Use the bill card
 
 After the written answer, Claude calls `show_bill` for the bill without being asked. In a host that
-renders MCP Apps, the card shows:
+renders MCP Apps, the card shows the bill number and headline, with a toggle to the official title,
+and the status, above four tabs:
 
-- the bill number and headline, with a toggle to the official title, and the status;
-- a summary box holding Claude's plain-language summary, labeled "Summary · your AI assistant",
-  with a note that the official text is the record;
-- a floor-vote timeline with party splits;
-- a "Read bill" document viewer;
-- "Explore bill", which opens a workspace with Overview, Sponsors, Documents, and Votes tabs.
+- **Overview:** the path to becoming law, the recorded status, and a summary box holding Claude's
+  plain-language summary, labeled "Summary · your AI assistant", with a note that the AI wrote it
+  and can miss details;
+- **Sponsors:** the bill's sponsors;
+- **Documents:** each version with a "Read" button that opens a viewer, or the document's link with
+  a "Copy link" button where the host blocks the preview;
+- **Votes:** the floor votes with party splits, and who voted how.
 
 Hosts that cannot render cards get a short text version of the bill instead. The written answer is
 built from the data tools either way, so it is complete without the card. In a card host, Claude
@@ -163,13 +166,14 @@ bill does, context, and caveats.
 
 **The assistant summary.** Claude writes it for a voter: plain prose of up to 1,500 characters
 saying what the bill does, who it affects, and where it stands as recorded. It is drawn from the
-text or synopsis Claude read, never infers passage, and is left off entirely when Claude read
-neither.
+text or synopsis Claude read, and never infers passage. Every bill card carries one: when neither
+text nor synopsis is on record, the summary says so.
 
-**"Summarize with AI".** When the card has no summary, it offers a "Summarize with AI" button.
-Pressing it posts a request into the conversation. Claude reads the bill text (or the synopsis),
-answers in chat with a plain-language summary, and then shows the card again with that summary in
-place.
+**Tapping a bill in another card.** Tapping a bill in the search results card, a vote in a
+legislator record, or a sponsored bill's "Show in the conversation" button posts a request into the
+conversation: `Show HB 314 (bill id <uuid>) with show_bill. …`. Claude reads the bill text (or the
+synopsis), then shows the bill card with its plain-language summary, sometimes with a short answer
+in chat.
 
 **Selecting on the card.** When you select a floor vote or open a document, the card tells Claude
 what you are looking at. You can then ask "which vote am I looking at?" or "break this vote down by

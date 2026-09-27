@@ -43,7 +43,8 @@ summary" below:
 ```
 
 In a host that renders cards, every `search_bills` call also shows a results card with "Show more";
-tapping a result opens that bill in place. Summarize what matched and why, rather than tabulating
+tapping a result posts a request to show that bill (see "Show-bill request from a card" below).
+Summarize what matched and why, rather than tabulating
 every row the card already lists, and still name the bills your answer rests on.
 
 `query` searches title and synopsis *and* the full text of attached documents, then ORs the two
@@ -204,10 +205,11 @@ ask.
 { "tool": "show_bill", "arguments": { "id": "<bill uuid>", "summary": "<plain prose, at most 1500 characters>" } }
 ```
 
-Write `summary` for a voter, in 1–1500 characters of plain prose: what the bill does, who it
-affects, and where it stands as recorded. The card renders it as text, so markdown does not render.
-Base it on the document text or the synopsis; when neither says enough, omit `summary` rather than
-guess. Never infer passage or an outcome. The card labels it as written by the AI assistant.
+Always pass `summary`: a call without it fails with `-32602`. Write it for a voter, in 1–1500
+characters of plain prose: what the bill does, who it affects, and where it stands as recorded. The
+card renders it as text, so markdown does not render. Base it on the document text or the synopsis;
+when neither text nor synopsis is on record, say so in the summary rather than guess. Never infer
+passage or an outcome. The card labels it as written by the AI assistant.
 
 Depending on the host, `show_bill` hands you either its text fallback or its `structuredContent`.
 Neither carries the floor votes or sponsors the card fetches for itself, so take those claims from
@@ -215,30 +217,31 @@ Neither carries the floor votes or sponsors the card fetches for itself, so take
 card's rows; write the answer, context, and caveats so the reply still stands on its own where no
 card renders. `show_bill` takes no `response_format`.
 
-## Summarize with AI request
+## Show-bill request from a card
 
-The bill card's "Summarize with AI" button posts a user turn such as:
+Tapping a bill in the `search_bills` results card, a vote in the `show_person_record` card, or a
+sponsored bill's "Show in the conversation" button posts a user turn such as:
 
 ```text
-Summarize HB 314 (bill id <uuid>) in plain language for a voter: what it does, who it affects, and where it stands. Then show it again with show_bill, passing your summary as summary.
+Show HB 314 (bill id <uuid>) with show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a plain-language summary for a voter as summary: what it does, who it affects, and where it stands.
 ```
 
 ```jsonc
 // 1. read every part of the text; use the synopsis when text_source is null
 { "tool": "get_latest_bill_document", "arguments": { "bill_id": "<bill uuid from the turn>" } }
 
-// 2. after answering in chat, re-show the card with the same summary
+// 2. show the card with your summary
 { "tool": "show_bill", "arguments": { "id": "<bill uuid from the turn>", "summary": "<your summary>" } }
 ```
 
-Answer in chat first, following the `summary` rules above, then call `show_bill`. A summary written
-from part of a long text says which characters it rests on.
+Write the summary under the rules above, then call `show_bill`; a short chat answer alongside is
+optional. A summary written from part of a long text says which characters it rests on.
 
 ## React to what the user selected on a card
 
 Selecting a vote, filter, or document on a card sends a model-context update, such as:
 
-- `User is viewing HB 314. Selected floor vote: <description>, <date>.`
+- `User is viewing HB 314 votes. Selected floor vote: <description>, <date>.`
 - `User is reading <document> of HB 314.`
 - `User is viewing <name>'s votes, filtered to Yea.`
 
@@ -328,7 +331,7 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | A sitting legislator appears to have no votes | The chosen row may be a different legislator with the same name | Surface other rows with the same name as candidates and ask |
 | Right bill number, wrong bill | The same number exists in another session or state | Scope by `division_id` and `session_id` (or `session_name`); read each result's session |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Use `get_rollcall_breakdown`, whose `members` carry names and party |
-| `summary` rejected by `show_bill` | Empty, or longer than 1500 characters | Shorten it to plain prose under 1500 characters, or omit it |
+| `summary` rejected by `show_bill` | Missing, empty, or longer than 1500 characters | Always pass it, as plain prose under 1500 characters; when no text or synopsis is on record, say so in it |
 | Asked for a legislator's chamber or district | `search_people` and `get_person` return neither | Use the `show_official` seat line; when it has none, say they are not recorded |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` / `get_person_votes` have no `total` | Report "at least N", or paginate to exhaustion |
 | A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills — nationwide unless scoped by `division_id` or a session — and uses 8 terms, silently | Try one distinctive word, scope by `division_id` and `session_id` / `session_name`; do not report absence from one query |

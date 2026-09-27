@@ -79,8 +79,8 @@ regulations, and non-U.S. legislatures.
 3. **Strict schemas**, the `context` and `llm_model` strings, and loading deferred tools.
 4. **Tool selection.** A goal-to-tool table covering every tool, plus how UUIDs flow between them.
 5. **Cards.** End with the fitting card without asking; the card returns less than it shows; don't
-   re-list the card; how to write `show_bill`'s `summary`; the "Summarize with AI" turn; how to
-   read model-context updates; no `response_format` on the display tools. See
+   re-list the card; how to write `show_bill`'s required `summary`; the show-bill turn a tapped
+   bill posts; how to read model-context updates; no `response_format` on the display tools. See
    [Cards reference](reference-cards.md).
 6. **Rules that prevent the common failures.** The full set of dataset rules — see the
    [table below](#dataset-rules-by-entry-point).
@@ -141,13 +141,14 @@ to what answers the request, because the card lists them. It closes with what th
 establish and the date of the latest status. For a topic, it lists one line per matching bill,
 the query that ran, "at least N" when `has_more` is true, and an offer to brief one.
 
-**Card.** `show_bill` `{ id, summary }`. The summary is plain prose of 1-1,500 characters for a
-voter, drawn from the text or synopsis the brief read, and omitted when neither was read. A topic
-list skips the card until the user picks a bill.
+**Card.** `show_bill` `{ id, summary }`, with `summary` always passed. The summary is plain prose
+of 1-1,500 characters for a voter, drawn from the text or synopsis the brief read; when neither is
+on record, it says so. A topic list skips the card until the user picks a bill.
 
-**Card requests.** It handles the bill card's "Summarize with AI" turn without a full brief — read
-the text, answer in chat, re-show the card with the summary — and answers "which vote am I looking
-at" from a model-context update without a tool call.
+**Card requests.** It handles the `Show HB 314 (bill id <uuid>) with show_bill. …` turn a tapped
+bill posts without a full brief — read the text or synopsis, then call `show_bill` with the
+summary — and answers "which vote am I looking at" from a model-context update without a tool
+call.
 
 **Notable rules.** A synopsis or headline is not statutory language. An enrolled document is not
 proof of signature. No passage claim from `yea > nay`. `read_pdf_bytes` is not a way to read a
@@ -190,7 +191,8 @@ chosen roll call. Path C lists each of the legislator's votes on the bill in dat
 answer states the window covered and the filters applied.
 
 **Card.** `show_person_record` for Path A, called before the votes are read. `show_bill` for Paths
-B and C, with a `summary` only when the bill's text or synopsis was read.
+B and C, always with a `summary` written from the bill's text or synopsis. A vote or sponsored bill
+tapped in the record posts a show-bill turn, handled the same way.
 
 **Notable rules.** Same-name rows are different people, and picking one silently is the worst
 failure the skill can produce. `ABSENT` and `NV` are not positions and are counted separately. A
@@ -283,9 +285,9 @@ the intermediate calls don't fill the conversation. Not for a topic sweep across
    roll call `id`.
 6. **Gaps** — unavailable text, unresolved ids, truncated pages, errored calls. An empty section
    means it checked.
-7. **Card to show** — `show_bill {id: <bill uuid>}` plus a `summary` the caller can pass: plain
-   prose of at most 1,500 characters, no markdown, for a voter, or `summary: none` when neither
-   text nor synopsis was read.
+7. **Card to show** — `show_bill {id: <bill uuid>, summary: <text>}`, with a `summary` the caller
+   must pass: plain prose of at most 1,500 characters, no markdown, for a voter. When neither text
+   nor synopsis is on record, the summary says so.
 
 **Edge cases.** Several plausible bills returns `AMBIGUOUS` with the candidates and stops. Nothing
 matching lists the searches that ran. A bill with no documents or no roll calls is reported as
