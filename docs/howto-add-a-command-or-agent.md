@@ -250,8 +250,8 @@ CARD TO SHOW: show_official {id: <person uuid>} for who they are or how to reach
   show_person_record {id: <person uuid>} for their votes
 ```
 
-`bill-brief-researcher` ends with `show_bill {id}` and a `summary` the caller can pass;
-`multi-state-bill-scanner` lists `show_bill {id}` for notable bills. The one exception is reading
+`bill-brief-researcher` ends with `show_bill {id}` and a `summary` the caller can pass. The one
+exception is reading
 data a card tool returns: `legislator-disambiguator` calls `show_official` to read a candidate's
 recorded seat, and says so.
 

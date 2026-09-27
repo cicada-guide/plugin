@@ -324,10 +324,9 @@ ask for it next time:
 - `/cicada-guide:contact-legislator <name> [state]` — who a legislator is, their seat, and the
   contact details on record, ending with their `show_official` card.
 
-Three subagents handle work whose intermediate tool traffic would bury the conversation:
-`bill-brief-researcher`, `legislator-disambiguator`, and `multi-state-bill-scanner`. Dispatch
-`multi-state-bill-scanner` for any sweep across several jurisdictions; a single state is a direct
-call sequence.
+Two subagents handle work whose intermediate tool traffic would bury the conversation:
+`bill-brief-researcher` and `legislator-disambiguator`. A question across several states is a
+direct call sequence: one `search_bills` call per state, each scoped with its `division_id`.
 
 ## Answering well
 

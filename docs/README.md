@@ -20,7 +20,6 @@ Using the plugin:
   bill, or one roll call broken down by party.
 - [Contact a legislator](howto-contact-a-legislator.md): the contact card and what to do when
   details are not on record.
-- [Compare states](howto-compare-states.md): sweep several legislatures for bills on one topic.
 - [Configure a project](howto-configure-a-project.md): set defaults in
   `.claude/cicada-guide.local.md`.
 
