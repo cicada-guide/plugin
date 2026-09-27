@@ -42,19 +42,26 @@ Ask in plain language:
 - "How did Alabama Representative Rex Reynolds vote most recently?"
 - "How did Alabama Representative Rex Reynolds vote on HB 591 in the 2026 Regular Session?"
 - "Show me how the chamber split on that roll call"
+- "How do I contact Alabama Representative Rex Reynolds?"
 - "Which states are in the data?"
 
 Name the state, and the session or year when you know it: the same bill number recurs across
 states and sessions.
 
-Two packaged skills drive longer workflows:
+Three packaged skills drive longer workflows:
 
 | Command | Purpose |
 | --- | --- |
 | `/cicada-guide:bill-research <bill number or topic> [state] [year]` | Sourced brief on one bill: status, sponsors, text, roll calls, votes. A topic lists matching bills first |
 | `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]` | One legislator's voting history or vote on one bill, or a party breakdown of one roll call |
+| `/cicada-guide:contact-legislator <name> [state]` | One legislator's recorded seat and contact details, on a contact card |
 
-With no argument, either command asks which bill or legislator you mean, and in which state.
+With no argument, each command asks which bill or legislator you mean, and in which state.
+
+**Cards.** In hosts that render MCP Apps, answers end with the fitting card without being asked: a
+bill card after bill research, a legislator record after a voting-record question, and a contact
+card after a contact question. `search_bills` shows its results as a card too. Hosts that cannot
+render cards get a shorter text version instead, so the written answer is complete on its own.
 
 ## Scope
 
@@ -69,6 +76,8 @@ ordinances, and no ballot measures. `list_states` reports which jurisdictions ar
 
 **Legislators are looked up by name.** No tool maps an address or district to a legislator, so
 "my senator" or "my representative" gets a question back: give the legislator's name and state.
+A legislator's chamber and district are stated only when their contact card or legislator record
+returns a seat; otherwise the answer says they are not recorded.
 
 Everything is read-only. The tools retrieve legislative records and cannot send messages, contact
 officials, file documents, or change anything.
@@ -126,7 +135,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `default_division` | Jurisdiction assumed when a question names no state |
 | `default_session` | Session assumed within that jurisdiction. Left commented out in the template, so copying it as-is pins no session |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
-| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `show_official`, `open_research_desk`, or `get_rollcall_breakdown`, which lack the parameter |
+| `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `show_official`, or `get_rollcall_breakdown`, which lack the parameter |
 
 Every key is optional, and so is the file — without it the plugin behaves exactly as before.
 Text below the frontmatter is standing project context, folded into scoping decisions.
@@ -151,24 +160,23 @@ change when you make one.
 
 | Tool | Purpose |
 | --- | --- |
-| `search_bills` | Search bills by number, topic, subject, status, sponsor, session, or state |
+| `search_bills` | Search bills by number, topic, subject, status, sponsor, session, or state. Hosts that support MCP Apps also show the results as a card |
 | `get_bill` | Full record for one bill |
 | `get_bill_dossier` | Bill workspace data: resolved sponsors, documents, and initial roll calls |
-| `show_bill` | Render a bill as an interactive card |
+| `show_bill` | Show a bill as a card with floor votes, sponsors, documents, and an optional assistant summary |
 | `get_latest_bill_document` | Newest attached document, with its text |
 | `get_documents` | All documents attached to a bill |
 | `read_pdf_bytes` | Stream a large legislative PDF in chunks |
 | `search_people` | Find legislators by name or party, or batch-resolve up to 100 ids |
 | `get_person` | Name, party, and contact details for one legislator |
-| `show_person_record` | Display a resolved legislator and recorded votes |
-| `show_official` | Display a resolved legislator's office, district, term, and recorded contact details as a card |
+| `show_person_record` | Show a legislator's record: seat, voting history with session, vote, and subject filters, and sponsored bills |
+| `show_official` | Show a legislator's contact card: photo, seat, contact options, district map, and a tally of recent recorded votes |
 | `get_rollcalls` | Floor-vote summaries for a bill |
 | `get_rollcall_breakdown` | One roll call's counts, per-party tally, and every member's name, party, and vote |
 | `get_votes` | Individual positions on a roll call |
 | `get_person_votes` | One legislator's voting history, with bill context joined |
 | `list_states` | Available jurisdictions |
 | `list_sessions` | Legislative sessions within a jurisdiction |
-| `open_research_desk` | Interactive exploration of bills, legislators, and votes |
 
 Full parameter reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md).
 
@@ -182,6 +190,8 @@ Full parameter reference: [`skills/state-legislation/references/tool-reference.m
   Claude reach for it when a request calls for a full brief.
 - **`voting-record`** — the `/cicada-guide:voting-record` workflow. Invoke it by name, or let
   Claude reach for it when a request calls for a voting record.
+- **`contact-legislator`** — the `/cicada-guide:contact-legislator` workflow. Invoke it by name, or
+  let Claude reach for it when a request asks how to reach a legislator.
 
 ## Agents
 
@@ -193,14 +203,17 @@ report rather than its call-by-call traffic.
   side-by-side comparison. For cross-state questions only; a single bill or single state is a direct
   call sequence.
 - **`legislator-disambiguator`** — resolves an ambiguous legislator name to one person id, probing
-  each candidate's vote history for the state they serve. The data carries no chamber or district,
-  so it confirms state only and flags any chamber or district in the request as unverified. Returns
-  `RESOLVED`, `AMBIGUOUS`, or `NOT FOUND` and never guesses, because attributing a vote to the wrong
-  person is this dataset's worst failure.
+  each candidate's vote history for the state they serve and reading their recorded seat. It checks
+  a chamber or district in the request against that seat, and flags it as unverified when no seat
+  is recorded. Returns `RESOLVED`, `AMBIGUOUS`, or `NOT FOUND` and never guesses, because
+  attributing a vote to the wrong person is this dataset's worst failure.
 - **`bill-brief-researcher`** — assembles a full sourced brief on one bill: record, text, sponsors,
   roll calls, and the vote breakdown. Same ground as `/cicada-guide:bill-research`, run
   autonomously; it returns candidates instead of picking when the bill is ambiguous, since it cannot
   ask mid-run.
+
+A subagent's output is not shown as a card, so each one names the card that fits its result, and
+Claude shows it in the conversation.
 
 ## Privacy
 

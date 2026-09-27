@@ -29,11 +29,11 @@ Every key is optional. A missing key means no default, not a fallback to some ot
 
 ## `response_format` must not reach the tools without it
 
-As of 2026-09-27, `show_bill`, `show_person_record`, `show_official`, `open_research_desk`, and
-`get_rollcall_breakdown` have no `response_format` parameter, and every schema is strict. Passing a
-pinned `response_format` to any of them returns `MCP error -32602: Input validation error:` rather
-than being ignored. When a pinned `response_format` is in effect, omit it from those tools and pass
-it to everything else as normal.
+As of 2026-09-27, `show_bill`, `show_person_record`, `show_official`, and `get_rollcall_breakdown`
+have no `response_format` parameter, and every schema is strict. Passing a pinned `response_format`
+to any of them returns `MCP error -32602: Input validation error:` rather than being ignored. When a
+pinned `response_format` is in effect, omit it from those tools and pass it to everything else as
+normal.
 
 Treat the list as a floor rather than a fixed set: every display tool added so far has omitted the
 parameter, so check a new tool's schema in `tool-reference.md` before assuming it accepts one.

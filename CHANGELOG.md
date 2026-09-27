@@ -10,6 +10,41 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Added
+
+- `/cicada-guide:contact-legislator <name> [state]`: resolves one legislator by name with
+  `search_people`, shows their `show_official` contact card, and reports only the seat and contact
+  details it returned. It asks for a name rather than looking up a district from an address.
+- Card-first workflows. Bill research ends with `show_bill` and an assistant-written `summary` on
+  the card, a voting-record answer with `show_person_record`, and a contact question with
+  `show_official`, without asking first. The written answer covers what the card does not show and
+  still stands on its own in hosts that cannot render cards.
+- Guidance for the bill card's "Summarize with AI" request (answer in chat, then show the bill again
+  with the summary) and for the cards' model-context updates, which name what the user is viewing
+  and are mapped back to ids from earlier results.
+- Votes by subject: `get_person_votes` in `json` carries `bill.subjects`, which the voting-record
+  workflow filters on. The tool takes no subject parameter.
+- Subagents end their report with the card that fits their result for the main conversation to
+  show, since a subagent's output is not rendered as a card.
+
+### Changed
+
+- A legislator's chamber and district are stated when `show_official` or `show_person_record`
+  returns a seat, and reported as not recorded otherwise. They are never inferred from
+  `search_people` or `get_person`. This replaces the rule that no tool returns them.
+  `legislator-disambiguator` reads each candidate's seat and checks a requested chamber or district
+  against it.
+- Updated to match the server: `show_bill` takes an optional `summary` (plain prose, up to 1,500
+  characters) and shows floor votes, sponsors, and documents; `show_official` shows the photo,
+  seat, contact options, district map, and a tally of recent recorded votes; `show_person_record`
+  shows the voting history with session, vote, and subject filters, and sponsored bills.
+  `search_bills` shows its results as a card in hosts that support MCP Apps.
+
+### Removed
+
+- `open_research_desk`, which the server no longer serves, from README, the skills, the tool
+  reference, and the project-settings template.
+
 ## [0.7.0] - 2026-09-27
 
 ### Added

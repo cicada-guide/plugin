@@ -36,7 +36,14 @@ before the first call; never guess its parameters.
 jurisdiction filter.** `get_person` adds nothing on this front. A common surname matches legislators
 nationwide, and neither result can separate them. To narrow: call `get_person_votes` on each
 candidate and check whether `bill.division_id` on the returned items is the jurisdiction the request
-implies (resolve it with `list_states`). No tool returns chamber or district — do not state either.
+implies (resolve it with `list_states`). Do not call a `show_*` tool on each candidate to tell them
+apart; every call puts a card on screen.
+
+State a chamber or district only as `show_official` or `show_person_record` returns it: the seat
+line in the text (title · state chamber · District N), or `office.chamber` and `office.district`
+in `structuredContent`, depending on the host. When the seat line reads `Office and district: not
+recorded.` or `office` is `null`, they are not recorded. Never infer them from `search_people`,
+`get_person`, or the bills a legislator voted on.
 
 A `default_division` in `.claude/cicada-guide.local.md` is the jurisdiction to test candidates
 against when the request names none — see **Project settings** in
@@ -50,7 +57,15 @@ and the date range of their recorded votes, and ask which one the user means.
 Never pick one candidate silently — attributing a vote to the wrong person is the worst failure this
 skill can produce.
 
-### 2. Pull the record
+### 2. Show the record
+
+Once one person is identified, call `show_person_record` with their `id`, without asking. In a host
+that renders cards it shows their seat, contact options, recorded votes with session, vote, and
+subject filters, and the bills they sponsored. What reaches you is identity and seat only (as text
+or as `structuredContent`, depending on the host) — never the votes. Read the votes with
+`get_person_votes` below for the written report, so it stands on its own in a host with no cards.
+
+### 3. Pull the record
 
 Use `get_person_votes`, not `get_votes`. Each item nests `vote.category`, `rollcall` (date,
 description, and `outcome` — the roll call's recorded tallies, not pass/fail), and `bill` (number,
@@ -64,6 +79,10 @@ calls attached to no bill; report those by description and date. Resolve `sessio
 - A session → `session_id` from `list_sessions`.
 - A period → `start_date` and `end_date` as `YYYY-MM-DD`.
 - Only one side → `category` of `YEA`, `NAY`, `ABSENT`, or `NV`.
+- A subject ("how did she vote on education bills") → `response_format: "json"` and filter on
+  `items[].bill.subjects`; the markdown text does not carry subjects, and there is no subject
+  parameter. Page through the whole window before counting, match the user's topic against the
+  subject values, and say which subject values you matched and the window covered.
 
 Page with `cursor`. There is no `offset`. Pass each `next_cursor` back exactly as given: a cursor
 the tool cannot place fails with `Error: cursor is not a next_cursor from get_person_votes. Omit
@@ -77,15 +96,29 @@ above; UUID order is not chronology. If dates tie and no description establishes
 the tied records rather than claiming one occurred last. Call it the latest recorded vote in the
 available data, and state any session, date, or category filter that limits that claim.
 
-Call `get_person` only when the request also asks for contact details; it returns no biography,
-role, or jurisdiction.
+When the request also asks for contact details, call `show_official` with the `id` and report only
+what it returned — every value in `contact_options` when that came back, otherwise the email,
+phone, and website lines. Contact details are absent for most officials: say none are on record
+rather than guess, and do not search the web for them unless the user asks. `/contact-legislator`
+covers this on its own.
 
-### 3. Report
+### 4. Report
 
-Lead with the identification — full name, party, jurisdiction — so the reader can confirm it is
-the right person. Then the votes in reverse chronological order: date, bill number, bill title,
-the legislator's category, and the roll-call tallies. Say the measure passed or failed only when
-the roll-call description or bill status says so — the tools return no pass/fail field.
+Lead with the identification — full name, party, jurisdiction, and the seat as
+`show_person_record` returned it — so the reader can confirm it is the right person. Then the votes
+in reverse chronological order: date, bill number, bill title, the legislator's category, and the
+roll-call tallies. Say the measure passed or failed only when the roll-call description or bill
+status says so — the tools return no pass/fail field.
+
+In a host that renders cards, the record already lists the votes and their filters. Do not re-list
+every vote card: report the votes that answer the question, then the context and caveats the card
+does not show — the window covered, the filters applied, and what the record cannot establish.
+The record's tallies label what they cover; never use them to grade or rank.
+
+The card sends context updates such as "User is viewing <name>'s votes, filtered to Yea." They
+carry names, never ids: map the name to the `id` already resolved. Answer what the user is looking
+at from the update without a tool call; for details, call `get_person_votes` with the matching
+`category` or other filter.
 
 For a pattern question ("does she usually vote with her party"), state the sample size and the
 window covered before drawing any characterization, and keep it descriptive. `ABSENT` and `NV` are
@@ -107,6 +140,10 @@ session.
    `party`, and `category`). Keys are upper-case. `party: null` means no party is recorded.
 4. When `partial` is `true`, the 500-row cap was reached and `by_party` covers only the rows
    returned; say so.
+5. Report the breakdown, then call `show_bill` with the bill's `id`, without asking (a `summary`
+   follows the Path C rules). The card shows every floor vote with its party split; in a host that
+   renders cards, write the answer about the chosen roll call and leave the other floor votes to
+   the card.
 
 A roll call with `counts: null` has no recorded member votes. Say the member-by-member breakdown
 is unavailable in this dataset. Do not present it as nobody having voted. `get_rollcall_breakdown`
@@ -132,6 +169,11 @@ Report each roll call's own `counts`; never add counts across roll calls.
 5. Report each vote in date order: date, roll-call description, the legislator's category, and that
    roll call's own `counts`. When `get_votes` returns no rows, say the data holds no recorded vote
    by that legislator on that bill — not that they abstained.
+6. Call `show_bill` with the bill's `id`, without asking. A `summary` is optional: when you read
+   the bill's text or synopsis, pass a plain-prose summary for a voter (1-1,500 characters, no
+   markdown) of what it does, who it affects, and where it stands as recorded. Never infer passage;
+   omit `summary` rather than guess. The card shows the floor votes with party splits: do not
+   re-list them in chat.
 
 ## Paging and limits
 
@@ -151,6 +193,9 @@ seconds.` Tell the user the rate limit was hit and that you will resume after a 
 minute before the next call rather than retrying straight away.
 
 ## Constraints
+
+- `show_bill`, `show_person_record`, and `show_official` take no `response_format`, and neither does
+  `get_rollcall_breakdown`; passing one fails with -32602.
 
 - Failed calls come back as results, never exceptions, in two shapes: a text block beginning with
   `Error:`, or `MCP error -32602: Input validation error:` naming a bad key. The second means the

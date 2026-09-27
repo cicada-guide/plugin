@@ -54,7 +54,10 @@ the year (partial match, so regular and special sessions both match) narrows wit
 each candidate's session before reporting.
 
 A topic argument usually returns several bills. Answer with the topic list below and offer a brief
-on one; do not pick one to brief unasked.
+on one; do not pick one to brief unasked. In a host that renders cards, every `search_bills` call
+also puts a results card on screen, with "Show more" paging, and tapping a result opens that bill
+in place. The card carries the full list, so pick out the bills that fit the request rather than
+tabulating every row.
 
 Stop and ask when a bill-number search returns several plausible bills and nothing in the request
 distinguishes them. List the candidates with number, title, session, and status rather than
@@ -69,7 +72,16 @@ bill.
 
 ## 2. Gather
 
-Call in this order, skipping what the request does not need:
+The `show_bill` card at the end fetches its own floor votes, sponsors, and documents, but none of
+that reaches you: depending on the host you receive either its text fallback or its
+`structuredContent`, and neither carries the floor votes or sponsors. Gather every claim in the
+brief from the data tools below, so the brief stands on its own in a host with no cards.
+
+`get_bill_dossier` with `bill_id` returns the record, resolved sponsors (name and party),
+document metadata, and the first page of floor votes in one call. Use it in place of steps 1-2 and
+the first `get_rollcalls` page when that is enough; it omits full document text.
+
+Otherwise call in this order, skipping what the request does not need:
 
 1. `get_bill` — full record: status, dates, subjects, sponsors, session.
 2. `search_people` with `ids` set to the `sponsors` array, in batches of at most 100 — the cap is
@@ -119,9 +131,17 @@ Structure:
   votes.
 - **Sources** — document URLs from `get_documents` or `get_latest_bill_document`.
 
+In a host that renders cards, the `show_bill` card lists the floor votes with party splits, the
+sponsors, and the documents. Do not re-list them in chat: keep **Sponsors**, **Legislative
+history**, and **Sources** to what answers the request (the lead sponsors, the roll calls that
+matter, the version the brief read), and put the words into what the card does not show — what the
+bill does, context, and caveats.
+
 For a topic, answer with a list instead of a brief:
 
-- One line per bill: number, title, session, and status as recorded, newest first.
+- One line per bill that fits the request: number, title, session, and status as recorded, newest
+  first. With a results card on screen, name the relevant few and say why each fits, rather than
+  restating every row.
 - The query that ran, and "at least N" when `has_more` is true — `search_bills` returns no `total`.
 - An offer to brief any one of them.
 
@@ -129,8 +149,39 @@ Close with what the brief could not establish — text that was unavailable or r
 unresolved ids, or pages not fetched — and the date of the latest status. State these plainly
 rather than implying the brief is exhaustive.
 
-Offer `show_bill` at the end when the host renders cards and the user may want to look at the bill
-directly.
+## 4. Show the bill
+
+After writing the brief, call `show_bill` with the bill's `id` and a `summary`, without asking.
+Hosts without card support get the bill as text, so the call is always safe. Write the `summary`
+for a voter:
+
+- Plain prose, 1-1,500 characters. It is rendered as text, so markdown does not render.
+- What the bill does, who it affects, and where it stands as recorded — drawn from the brief and
+  from the bill text or synopsis it read.
+- Never infer passage or outcome; give the status as recorded. Leave out anything the brief could
+  not establish rather than guess, and omit `summary` entirely when neither text nor synopsis was
+  read.
+
+The card labels the summary as written by the AI assistant. For a topic list, skip this step until
+the user picks a bill.
+
+### Card requests
+
+The card's "Summarize with AI" button posts a user turn like `Summarize HB 314 (bill id <uuid>) in
+plain language for a voter: what it does, who it affects, and where it stands. Then show it again
+with show_bill, passing your summary as summary.` Handle it without a full brief:
+
+1. Read the text with `get_latest_bill_document` (every part), or the synopsis when no text is
+   available.
+2. Answer in chat with the plain-language summary.
+3. Call `show_bill` with that `id` and the same text as `summary`, under the rules above.
+
+The card also sends context updates such as "User is viewing HB 314. Selected floor vote:
+<description>, <date>." or "User is reading <document> of HB 314." They carry names and numbers,
+never ids: map them to ids from earlier results. Answer "which vote am I looking at" from the
+update without a tool call. For the details of a selected vote, find it with `get_rollcalls`
+(match the description and date), then call `get_rollcall_breakdown` with that item's `id` as
+`rollcall_id`.
 
 ## Constraints
 
@@ -152,6 +203,8 @@ directly.
 - An `offset` past the end of `get_documents` or `get_rollcalls` returns `Error: Offset past end.`
   or `No roll calls at offset <n>; bill <id> has <total>.` The list ended; it says nothing about the
   bill.
+- `show_bill` takes no `response_format`; passing one fails with -32602. Neither does
+  `get_rollcall_breakdown`.
 - Keep UUIDs out of the brief unless the user asks for them. Say "did not vote" for an `NV`
   category.
 - Do not characterize the bill's politics or predict its passage. Report status and votes.

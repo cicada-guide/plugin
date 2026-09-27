@@ -120,6 +120,9 @@ Return a single report:
 4. **Coverage and caveats** — jurisdictions absent from the dataset, searches that hit `has_more`
    and were not exhausted, query terms dropped past the eighth, documents whose `text_source` was
    `null`, and any jurisdiction whose search errored.
+5. **Cards to show** (optional) — `show_bill {id}` for each notable bill the caller may want on
+   screen. Never call `show_bill` yourself: a subagent's card renders nowhere, so the caller shows
+   it.
 
 Every claim about a bill's contents cites the bill number and id. Never present a synopsis as the
 bill's operative text without saying so.
