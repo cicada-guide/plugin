@@ -146,12 +146,19 @@ Return one brief:
    split by party, plus any notable crossings, and name the roll call `id`.
 6. **Gaps** — unavailable text, unresolved person ids, truncated pages, errored calls. An empty gaps
    section must mean you checked, not that you skipped it.
-7. **Card to show** — `show_bill {id: <bill uuid>, summary: <text>}`, with a `summary` the caller
-   must pass with it, since `show_bill` fails with -32602 without one: plain prose of at most
-   1,500 characters, no markdown (the card renders it as text), written for a voter — what the bill
-   does, who it affects, and where it stands as recorded. Draw it from the document text you read
-   or the synopsis, and never infer passage or outcome. When neither text nor synopsis is on
-   record, say so in the summary rather than guess. The card labels the summary as written by the AI
+7. **Card to show** — `show_bill {id: <bill uuid>, headline: <text>, summary: <text>}`, with a
+   `headline` and a `summary` the caller must pass with it, since `show_bill` fails with -32602
+   without either. Write both for a voter, in plain text with no markdown (the card renders them as
+   text), from the document text you read or the synopsis, and never infer or claim passage or
+   outcome in either:
+   - `headline`: at most 120 characters saying what the bill does, e.g. "Bans buying soda and
+     candy with SNAP benefits", with no trailing period needed. The card's title plate shows it
+     first, with a tap to the official title.
+   - `summary`: prose of at most 1,500 characters — what the bill does, who it affects, and where
+     it stands as recorded.
+
+   When neither text nor synopsis is on record, say so in the summary rather than guess, and write
+   the headline from the official title alone. The card labels the summary as written by the AI
    assistant, and it already shows the floor votes, sponsors, and documents, so the summary does
    not repeat them.
 

@@ -44,7 +44,13 @@ plugin's guidance, including updates made to match what the server returns.
 - `search_bills`' `bill` matches the number exactly, ignoring case, spaces and dots, and needs the
   chamber prefix: a number alone ("314") returns no bills. Matches the server's fix for bill-number
   lookups that timed out.
-- Card resource URIs: `bill-results-v10`, `bill-workspace-v10`, `legislator-record-v11`, and
+- Updated to match the server: `show_bill` takes a required `headline`, 1-120 characters, next to
+  `summary`, and a call without it fails with `-32602`. It is a short plain-language line for a
+  voter, written from the bill's text or synopsis, that never claims passage. The bill card's title
+  plate shows it first, and tapping the plate toggles to the official title and back. Every skill,
+  agent, workflow, and example passes both, and the show-bill request a tapped bill posts now asks
+  for a headline as well as a summary.
+- Card resource URIs: `bill-results-v11`, `bill-workspace-v11`, `legislator-record-v12`, and
   `official-card-v4`.
 
 ### Removed

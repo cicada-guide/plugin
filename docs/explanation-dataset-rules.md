@@ -193,7 +193,7 @@ graded, scored, ranked, or predicted, and every claim comes from a tool result.
 - **Settings can't lift it.** A project's `.claude/cicada-guide.local.md` narrows scope but can't
   widen it, so a note asking for a grade or a prediction is still declined.
 
-The same reasoning keeps predictions out of the `show_bill` summary. See
+The same reasoning keeps predictions out of the `show_bill` headline and summary. See
 [why the plugin is card-first](explanation-cards.md#the-assistant-summary).
 
 ## Trade-offs

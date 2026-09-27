@@ -32,8 +32,8 @@ Once one bill is settled, answer the question, then end with its card, as in "Sh
 summary" below:
 
 ```jsonc
-// 4. end with the card, carrying your plain-language summary
-{ "tool": "show_bill", "arguments": { "id": "<bill uuid>", "summary": "<plain prose, at most 1500 characters>" } }
+// 4. end with the card, carrying your plain-language headline and summary
+{ "tool": "show_bill", "arguments": { "id": "<bill uuid>", "headline": "<plain text, at most 120 characters>", "summary": "<plain prose, at most 1500 characters>" } }
 ```
 
 ## Research a topic
@@ -201,15 +201,22 @@ ask.
 // 2. read what it says; fall back to the synopsis when text_source is null
 { "tool": "get_latest_bill_document", "arguments": { "bill_id": "<bill uuid>" } }
 
-// 3. show the card with your summary
-{ "tool": "show_bill", "arguments": { "id": "<bill uuid>", "summary": "<plain prose, at most 1500 characters>" } }
+// 3. show the card with your headline and summary
+{ "tool": "show_bill", "arguments": { "id": "<bill uuid>", "headline": "<plain text, at most 120 characters>", "summary": "<plain prose, at most 1500 characters>" } }
 ```
 
-Always pass `summary`: a call without it fails with `-32602`. Write it for a voter, in 1–1500
-characters of plain prose: what the bill does, who it affects, and where it stands as recorded. The
-card renders it as text, so markdown does not render. Base it on the document text or the synopsis;
-when neither text nor synopsis is on record, say so in the summary rather than guess. Never infer
-passage or an outcome. The card labels it as written by the AI assistant.
+Always pass both `headline` and `summary`: a call without either fails with `-32602`. Write both
+for a voter, from the document text or the synopsis:
+
+- `headline`: 1–120 characters of plain text saying what the bill does, e.g. "Bans buying soda and
+  candy with SNAP benefits". No markdown, no trailing period needed. The card's title plate shows
+  it first; tapping the plate toggles to the official title and back.
+- `summary`: 1–1500 characters of plain prose: what the bill does, who it affects, and where it
+  stands as recorded. The card labels it as written by the AI assistant.
+
+The card renders both as text, so markdown does not render. When neither text nor synopsis is on
+record, say so in the summary rather than guess, and write the headline from the official title
+alone. Never infer or claim passage or an outcome in either.
 
 Depending on the host, `show_bill` hands you either its text fallback or its `structuredContent`.
 Neither carries the floor votes or sponsors the card fetches for itself, so take those claims from
@@ -223,19 +230,19 @@ Tapping a bill in the `search_bills` results card, a vote in the `show_person_re
 sponsored bill's "Show in the conversation" button posts a user turn such as:
 
 ```text
-Show HB 314 (bill id <uuid>) with show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a plain-language summary for a voter as summary: what it does, who it affects, and where it stands.
+Show HB 314 (bill id <uuid>) with show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a short plain-language headline as headline and a plain-language summary for a voter as summary: what it does, who it affects, and where it stands.
 ```
 
 ```jsonc
 // 1. read every part of the text; use the synopsis when text_source is null
 { "tool": "get_latest_bill_document", "arguments": { "bill_id": "<bill uuid from the turn>" } }
 
-// 2. show the card with your summary
-{ "tool": "show_bill", "arguments": { "id": "<bill uuid from the turn>", "summary": "<your summary>" } }
+// 2. show the card with your headline and summary
+{ "tool": "show_bill", "arguments": { "id": "<bill uuid from the turn>", "headline": "<your headline>", "summary": "<your summary>" } }
 ```
 
-Write the summary under the rules above, then call `show_bill`; a short chat answer alongside is
-optional. A summary written from part of a long text says which characters it rests on.
+Write the headline and summary under the rules above, then call `show_bill`; a short chat answer
+alongside is optional. A summary written from part of a long text says which characters it rests on.
 
 ## React to what the user selected on a card
 
@@ -331,7 +338,7 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | A sitting legislator appears to have no votes | The chosen row may be a different legislator with the same name | Surface other rows with the same name as candidates and ask |
 | Right bill number, wrong bill | The same number exists in another session or state | Scope by `division_id` and `session_id` (or `session_name`); read each result's session |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Use `get_rollcall_breakdown`, whose `members` carry names and party |
-| `summary` rejected by `show_bill` | Missing, empty, or longer than 1500 characters | Always pass it, as plain prose under 1500 characters; when no text or synopsis is on record, say so in it |
+| `headline` or `summary` rejected by `show_bill` | Missing, empty, or too long: over 120 characters for `headline`, 1500 for `summary` | Always pass both, as plain text: a headline of at most 120 characters and a summary under 1500; when no text or synopsis is on record, say so in the summary |
 | Asked for a legislator's chamber or district | `search_people` and `get_person` return neither | Use the `show_official` seat line; when it has none, say they are not recorded |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` / `get_person_votes` have no `total` | Report "at least N", or paginate to exhaustion |
 | A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills — nationwide unless scoped by `division_id` or a session — and uses 8 terms, silently | Try one distinctive word, scope by `division_id` and `session_id` / `session_name`; do not report absence from one query |

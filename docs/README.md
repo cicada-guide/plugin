@@ -15,7 +15,7 @@ Claude session. Pick the section that matches what you are doing.
 Using the plugin:
 
 - [Research a bill](howto-research-a-bill.md): find a bill by number or topic, get a sourced
-  brief, and show the bill card with a plain-language summary.
+  brief, and show the bill card with a plain-language headline and summary.
 - [Check a voting record](howto-check-a-voting-record.md): a legislator's history, a vote on one
   bill, or one roll call broken down by party.
 - [Contact a legislator](howto-contact-a-legislator.md): the contact card and what to do when
