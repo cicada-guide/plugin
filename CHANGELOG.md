@@ -10,6 +10,8 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-27
+
 ### Added
 
 - `voting-record` Path C and a matching workflow for one legislator's vote on one bill:
@@ -183,7 +185,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/cicada-guide/plugin/compare/v0.5.4...v0.6.0
 [0.5.4]: https://github.com/cicada-guide/plugin/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/cicada-guide/plugin/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/cicada-guide/plugin/compare/v0.5.1...v0.5.2
