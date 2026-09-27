@@ -272,16 +272,17 @@ the object as text.
 
 Like the other display tools, it has no `response_format`.
 
-Renders a bill card via `ui://cicada-guide/bill-workspace-v11.html` in hosts that support MCP Apps.
+Renders a bill card via `ui://cicada-guide/bill-workspace-v12.html` in hosts that support MCP Apps.
 The card shows the state and session, the status, the bill number, and a title plate that shows your
 `headline` first; tapping the plate toggles to the official title and back. Then come four tabs.
 Overview holds the path to becoming law (Introduced, Engrossed, Enrolled, Enacted), the recorded
 status, and your summary; Sponsors lists the sponsors; Documents lists each version with a Read
 button that opens a viewer; Votes holds the floor votes with party splits and who voted how. The
 card calls `get_bill_dossier` and `get_rollcall_breakdown` itself for the sponsors, documents, and
-votes. The viewer embeds a Google Docs preview only when the host allows `docs.google.com`; when the
-host blocks the preview or refuses "Open full screen", the card shows the document URL as a link
-with a "Copy link" button.
+votes. The viewer draws a PDF's pages inside the card, fetching its bytes with `read_pdf_bytes`
+itself, and shows the latest non-PDF version as text. A document it can't show, or a refused "Open
+full screen", gets the document URL as a link with a "Copy link" button. None of what the viewer
+fetches reaches you: read a bill's text with `get_latest_bill_document`.
 
 **The result carries none of that.** The text fallback holds the bill number, state and session,
 title, status, type, date, synopsis (cut at 300 characters), subjects, the newest document's link,
@@ -418,11 +419,12 @@ Use it when the user wants to know who someone is or how to reach them. For how 
 `get_person_votes` or `show_person_record`.
 
 In a host that supports MCP Apps it renders a contact card via
-`ui://cicada-guide/official-card-v4.html`: the photo, the seat line, party, contact menus holding
+`ui://cicada-guide/official-card-v5.html`: the photo, the seat line, party, contact menus holding
 every entry in `contact_options`, a district map when `office.outline` exists, the tally of the
 last recorded votes, and recent votes. The card asks the host for geolocation; when the viewer
-turns location on, the map places them and reads "You're in this district · 5.7 mi from its edge"
-or "You're 5.7 mi outside this district", with a dashed line to the nearest edge. The location
+turns location on, the map places them and, below the map, reads "You're in this district." or
+"You're not in this district." until dismissed; outside, a dashed line runs to the nearest edge. The
+card and its recent-votes and map panels sit side by side at one width. The location
 stays in the card and never reaches the server or you. The card does not show the term or other
 seats held; the text and `structuredContent` do. The tally covers only the votes it names; never
 use it to grade or rank.
@@ -644,7 +646,8 @@ Items carry `id`, `name`, `geoidfq`. Use a returned `id` as `division_id`.
 
 ### `read_pdf_bytes`
 
-Streams a PDF in base64 chunks using HTTP Range requests. It returns file bytes, not readable text:
+Streams a PDF in base64 chunks using HTTP Range requests; a source that ignores Range is read from
+the start instead, for files up to 20 MB. It returns file bytes, not readable text:
 read a bill's text with `get_latest_bill_document`, and give the user an older version's `url` from
 `get_documents` rather than reading its bytes.
 
@@ -668,7 +671,7 @@ document past 1.5 MB. Accumulate: chunk 3 of the 2.4 MB example above starts at 
 Markdown output deliberately omits the base64 payload and prints only chunk metadata. Read
 `structuredContent.bytes`, or pass `response_format: "json"`.
 
-The tool refuses to fetch in six cases, each returning explanatory text:
+The tool refuses in these cases, each returning explanatory text:
 
 | Condition | Message |
 | --- | --- |
@@ -676,7 +679,8 @@ The tool refuses to fetch in six cases, each returning explanatory text:
 | URL carries a username or password | `Unable to read PDF: URLs with credentials are not supported.` |
 | URL names a port | `Unable to read PDF: Only the default https port is supported.` |
 | Host not on the allowlist | `Unable to read PDF: This host is not on the allowed list of known legislative document sources.` |
-| Status is not `206` | `PDF source does not support byte-range requests (expected HTTP 206).` |
+| Status is neither `206` nor `200` | `Failed to fetch PDF bytes (status <status>).` |
+| A `200` (Range ignored) for a file over 20 MB | `This PDF is too large to read from a source without byte-range support (over 20 MB).` |
 | `Content-Type` is not `application/pdf` | `Response content-type is not a PDF (application/pdf).` |
 
 Fetches run with `redirect: "manual"`, so redirects are rejected rather than followed.
