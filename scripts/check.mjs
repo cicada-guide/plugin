@@ -200,6 +200,16 @@ for (const file of [...docFiles, ...projectDocs, ".codex-plugin/plugin.json"]) {
   }
 }
 
+// show_official and show_person_record return a seat's chamber and district; the old claim that
+// no tool does would stop Claude from reporting them.
+const NO_SEAT = /no tool returns[^.]{0,40}\b(?:chamber|district)/gi;
+for (const file of docFiles) {
+  const text = read(file).replace(/\s+/g, " ");
+  for (const m of text.matchAll(NO_SEAT)) {
+    fail(file, 0, `"${m[0]}": show_official and show_person_record return chamber and district`);
+  }
+}
+
 // ── Dataset rules restated in every entry point ──────────────────────────────────────────────────
 
 // Every stated number must match the server's value, wherever it appears.

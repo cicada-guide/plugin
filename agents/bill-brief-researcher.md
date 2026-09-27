@@ -67,6 +67,13 @@ complete, or return a request for session clarification. Do not silently choose 
   text, so it is not a way to read a bill.
 - `search_people` with `ids` to resolve the `sponsors` UUID array, in batches of at most 100 — the
   cap is schema-enforced. Never loop `get_person` over sponsors.
+- A sponsor's state chamber and district are stated only as `show_official` or
+  `show_person_record` returns their seat: a seat line in text (`<title> · <state> <chamber> ·
+  District N`) or `office.chamber` and `office.district` in structured content, depending on the
+  host. Otherwise they are not recorded. Never infer them from `search_people` or `get_person`.
+  Only when the request asks for a sponsor's chamber or district, call `show_official` with that
+  sponsor's `id` to read the seat; a `null` `office` or `Office and district: not recorded.` means
+  report it as not recorded.
 - `get_rollcalls` with `bill_id` for floor-vote summaries, each with `counts` (yea, nay, absent,
   nv, total) tallied from recorded votes. `null` counts mean no votes were recorded, not a 0-0 vote.
   No field reports pass/fail or chamber; state passage only where the description or bill status
@@ -139,8 +146,17 @@ Return one brief:
    split by party, plus any notable crossings, and name the roll call `id`.
 6. **Gaps** — unavailable text, unresolved person ids, truncated pages, errored calls. An empty gaps
    section must mean you checked, not that you skipped it.
+7. **Card to show** — `show_bill {id: <bill uuid>}`, plus a `summary` the caller can pass with it:
+   plain prose of at most 1,500 characters, no markdown (the card renders it as text), written for
+   a voter — what the bill does, who it affects, and where it stands as recorded. Draw it from the
+   document text you read or the synopsis, never infer passage or outcome, and write `summary:
+   none` rather than guess when you read neither. The card labels the summary as written by the AI
+   assistant, and it already shows the floor votes, sponsors, and documents, so the summary does
+   not repeat them.
 
 Cite the bill id and any roll call ids so the caller can re-fetch without repeating your search.
+Never call `show_bill`, `show_official`, or `show_person_record` to display anything: your output
+is not rendered to the user, so the caller shows the card.
 
 ## Edge cases
 

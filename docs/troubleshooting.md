@@ -28,9 +28,10 @@ a mistake; the server accepts anonymous callers.
 
 ## Slash commands are missing
 
-`/help` should list `/cicada-guide:bill-research` and `/cicada-guide:voting-record`. If they're
-missing, the plugin isn't enabled in this session: see step 2 above. The always-on skill has no
-command; it loads by itself when you ask about state legislation.
+`/help` should list `/cicada-guide:bill-research`, `/cicada-guide:voting-record`, and
+`/cicada-guide:contact-legislator`. If they're missing, the plugin isn't enabled in this session:
+see step 2 above. The always-on skill has no command; it loads by itself when you ask about state
+legislation.
 
 ## A call fails with "has not been loaded yet"
 
@@ -71,9 +72,10 @@ An empty result is not an error. It means nothing matched; try a broader search.
 ## The answer names the wrong legislator
 
 Legislators with the same name are different people. Name the state, the party, or a session
-or bill the person voted on, and Claude can tell them apart. The records confirm a legislator's
-state, not their chamber or district, so a chamber or district you give is reported as unverified.
-When the records can't settle it, the plugin lists the candidates rather than guessing.
+or bill the person voted on, and Claude can tell them apart. A chamber or district you give is
+checked against the seat the legislator's contact card returns; when no seat is recorded, it is
+reported as unverified. When the records can't settle it, the plugin lists the candidates rather
+than guessing.
 
 No tool maps an address or district to a legislator. Asking about "my senator" or "my
 representative" without a name gets a question back: give the legislator's name and state.

@@ -12,15 +12,20 @@ search.
 
 Re-confirmed live on 2026-09-06 against Alabama, Georgia and Texas records: `list_states` returns 51
 divisions (50 states + DC, no territories); `search_people.ids` carries `minItems: 1, maxItems: 100`;
-`show_bill` declares `id` plus the wrapper's `context` and `llm_model`, with no `response_format`;
 `get_votes` has `cursor` and no `offset`, and its cursor is a UUID while `get_person_votes` takes a
 512-character string.
 
 **Source `legiscan` objects are no longer returned.** Re-checked with live calls on 2026-09-24:
 `get_bill`, `get_person`, `get_documents`, and `get_rollcalls` carry no `legiscan` field. Roll-call
 tallies now arrive as a top-level `counts` object computed from recorded individual votes. No tool
-returns a legislator's chamber, district, or role, or an external source id for a person or roll
-call. Do not ask for `legiscan` fields or build logic on them.
+returns a legislator's role, or an external source id for a person or roll call. Do not ask for
+`legiscan` fields or build logic on them.
+
+**Chamber and district come only from `show_official` and `show_person_record`.** State them only
+as one of those returns them: the seat line in the text, or `office.chamber` and `office.district`
+in `structuredContent`. When `office` is `null`, or the seat line is absent or reads
+`Office and district: not recorded.`, they are not recorded. Never infer them from `search_people`,
+`get_person`, a bill's `division_id`, or a roll-call description.
 
 Served over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
 never modify it. Every invocation emits an analytics event, which is why the descriptors carry
@@ -38,7 +43,7 @@ Every input schema is strict — an unknown parameter is rejected before the han
 | `llm_model` | string | — | Declared and required by every published schema. The exact model identifier of the calling model, or `"unknown"`. Added by the same wrapper as `context` — see below. |
 | `limit` | integer | `20` | 1-100. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, `get_rollcalls`, `get_votes`, and `get_person_votes`. |
 | `offset` | integer | `0` | 0-10000. Only on `search_bills`, `search_people`, `list_sessions`, `get_documents`, and `get_rollcalls`. `get_votes` and `get_person_votes` page by `cursor`; `read_pdf_bytes` takes a byte `offset` of its own. |
-| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `show_official`, `open_research_desk`, and `get_rollcall_breakdown`. |
+| `response_format` | `"markdown"` \| `"json"` | `"markdown"` | Absent on `show_bill`, `show_person_record`, `show_official`, and `get_rollcall_breakdown`. Passing it to one of them fails with `-32602`. |
 
 Every tool not listed in the `limit` and `offset` rows takes neither, `list_states` included.
 Verified 2026-09-24: `list_states` with `limit: 1` returns `Unrecognized key: "limit"`.
@@ -127,6 +132,43 @@ exactly as given; never construct one.
 
 ---
 
+## Cards
+
+`search_bills`, `show_bill`, `show_person_record`, and `show_official` carry an MCP Apps resource.
+In a host that renders it, the call also puts an interactive card on screen; any other host gets
+only the result. The cards fetch their own data over the bridge, so the card shows more than the
+model receives.
+
+**What reaches you is thinner than the card.** Depending on the host, you receive either the text
+fallback or `structuredContent`. Neither includes what the card fetches for itself — floor votes,
+sponsors, vote history. Get those from the data tools (`get_bill_dossier`, `get_rollcalls`,
+`get_rollcall_breakdown`, `get_person_votes`, `get_latest_bill_document`), and base every written
+claim on them.
+
+**Don't re-list the card.** In a host that renders cards, its rows, tallies, and contact buttons
+are already on screen. Write what the card does not show: the answer to the question, context, and
+caveats. The host may not render cards at all, so the written answer must still stand on its own.
+
+**A subagent's call renders nowhere.** A subagent returns the id and names the card that fits;
+the main conversation calls it.
+
+### Model-context updates
+
+When the user selects something on a card, the host passes you a short text update, such as:
+
+- `User is viewing HB 314. Selected floor vote: <description>, <date>.`
+- `User is reading <document> of HB 314.`
+- `User is viewing <name>'s votes, filtered to Yea.`
+- `User is viewing the voting record of <name>.`
+- `User is viewing the contact card for <name>.`
+
+They carry names and numbers, never ids. Map them to ids from earlier results in the conversation.
+Answer "which vote am I looking at" from the update, without a tool call. For that vote's details,
+find the roll call with `get_rollcalls` on the bill (match the description and date), then pass its
+`id` to `get_rollcall_breakdown`.
+
+---
+
 ## Bills
 
 ### `search_bills`
@@ -185,6 +227,12 @@ or narrow with `subject` rather than lengthening the query string, and say which
 whose text contains "Passed", which can record one chamber's passage rather than enactment. Report
 each bill's `status` as recorded, and never treat a `status` filter as proof a bill became law.
 
+**Every call also renders a results card** in a host that supports MCP Apps, via
+`ui://cicada-guide/bill-results-v9.html`. It lists the results with a "Show more" button that pages
+with the same arguments, and tapping a result opens that bill's card in place. You still receive
+the full list as text or JSON, so read results from it as usual. Where the card renders, summarize
+the results rather than tabulating every row it already shows.
+
 ### `get_bill`
 
 `id` (UUID, required). `structuredContent` is the full row — adding `created_at`, `modified_on`,
@@ -215,15 +263,45 @@ the object as text.
 
 ### `show_bill`
 
-`id` (UUID, required). Like the other display tools, it has no `response_format`.
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `id` | UUID, required | From `search_bills` or `get_bill` |
+| `summary` | string, 1-1500 characters, optional | Your plain-language summary for a voter, shown on the card. Trimmed; an empty one is rejected |
 
-Renders an interactive card that expands to a fullscreen workspace in hosts supporting MCP Apps,
-via `ui://cicada-guide/bill-workspace-v7.html`. `content` still holds a markdown summary, so calling
-it in a host without card support is always safe. `structuredContent` adds `_display.divisionName`
-and `_display.sessionName`.
+Like the other display tools, it has no `response_format`.
+
+Renders a bill card via `ui://cicada-guide/bill-workspace-v9.html` in hosts that support MCP Apps.
+The card shows the bill number, the headline with a toggle to the official title, the status, a
+summary box, a floor-vote timeline with party splits, and a "Read bill" document viewer. "Explore
+bill" opens a workspace with Overview, Sponsors, Documents, and Votes tabs. The card calls
+`get_bill_dossier` and `get_rollcall_breakdown` itself for the sponsors and votes.
+
+**The result carries none of that.** The text fallback holds the bill number, state and session,
+title, status, type, date, synopsis (cut at 300 characters), subjects, the newest document's link,
+the document count, and the `id` — no votes, no sponsors, and no echo of your `summary`.
+`structuredContent` is the bill row plus `_display.divisionName`, `_display.sessionName`, and
+`_display.aiSummary` when a `summary` was passed. A missing id returns
+`No bill found with id=<id>.` Read votes and sponsors from `get_bill_dossier`, `get_rollcalls`, and
+`get_rollcall_breakdown`, and the text from `get_latest_bill_document`.
 
 Use `show_bill` when the user wants to look at a bill; `get_bill` when they want its contents read
 back.
+
+**Write `summary` for a voter, or omit it.**
+
+- Say what the bill does, who it affects, and where it stands as recorded.
+- Base it on `get_latest_bill_document` text or the synopsis. When you have read neither, omit it
+  rather than guess.
+- Never infer passage or an outcome; state the recorded `status`.
+- Plain prose only. The card renders it as text, so markdown does not render.
+- The card labels it "Summary · your AI assistant", with a note that it was written by the AI in
+  this chat and the official text is the record.
+
+**"Summarize with AI".** Without a `summary`, the card offers a button that posts a user turn:
+`Summarize HB 314 (bill id <uuid>) in plain language for a voter: what it does, who it affects, and
+where it stands. Then show it again with show_bill, passing your summary as summary.` Handle it in
+order: read the text with `get_latest_bill_document` (or the synopsis), answer in chat, then call
+`show_bill` with the same `id` and your `summary`.
 
 ### `get_latest_bill_document`
 
@@ -281,10 +359,12 @@ Ordered by `last_name`. Returns `id`, `full_name`, `first_name`, `middle_name`, 
 
 **There is no jurisdiction, chamber, or district field, and no `division_id` filter.** A search for
 a common surname matches legislators nationwide and the result cannot separate them, and
-`get_person` no longer helps: it returns no role, chamber, district, or jurisdiction either. The
-one jurisdiction signal left is vote history. Call `get_person_votes` on each candidate and read
-`bill.division_id` (and `bill.session_id`) off the returned items; resolve the division with
-`list_states`. Chamber and district cannot be confirmed from any tool, so do not claim them.
+`get_person` does not help: it returns no role, chamber, district, or jurisdiction either. For
+jurisdiction, call `get_person_votes` on each candidate and read `bill.division_id` (and
+`bill.session_id`) off the returned items; resolve the division with `list_states`. Chamber and
+district come only from `show_official` or `show_person_record` on a candidate's `id`, as their
+seat line or `office` returns them; when `office` is `null` they are not recorded. Never infer
+them from these results.
 
 **100 is a hard cap, and chambers are bigger than that.** Verified 2026-09-05: an ordinary
 Alabama House roll call returned **103** distinct legislators, and passing all 103 to `ids` in one
@@ -314,20 +394,23 @@ and not any `unresolved_ids` on a later page of the same batch.
 `id` (UUID, required). Returns `id`, `created_at`, the name fields, `party`, and `contact_details`
 (may be `null`) — nothing about jurisdiction, chamber, district, or role, and no `legiscan` object. A
 missing id returns `No person found with id=<id>.` Prefer `search_people` with `ids` for more than
-one person. Call it only when contact details are wanted; it adds nothing to disambiguation.
-
-### `show_person_record`
-
-`id` (UUID, required), from `search_people` after resolving identity. Opens an interactive
-legislator record with enriched voting history. Hosts without MCP Apps support receive the resolved
-person as text. It has no `response_format`.
+one person. It adds nothing to disambiguation, and for contact details `show_official` is the better
+call: it returns every recorded option, sorted and checked.
 
 ### `show_official`
 
-`id` (UUID, required), from `search_people` after resolving identity. Opens a contact card for one
-elected official: office title, state chamber and district, party, term, and Email, Website, and
-Call buttons for whichever contact details are recorded. Hosts without MCP Apps support receive the
-same facts as text:
+`id` (UUID, required), from `search_people` after resolving identity. It has no `response_format`.
+Use it when the user wants to know who someone is or how to reach them. For how they voted, use
+`get_person_votes` or `show_person_record`.
+
+In a host that supports MCP Apps it renders a contact card via
+`ui://cicada-guide/official-card-v3.html`: the photo, the seat line, party, contact menus holding
+every entry in `contact_options`, a district map when `office.outline` exists, the tally of the
+last recorded votes, and recent votes. The card does not show the term or other seats held; the
+text and `structuredContent` do. The tally covers only the votes it names; never use it to grade or
+rank.
+
+The text fallback:
 
 ```text
 ## Rex Reynolds
@@ -335,16 +418,45 @@ State Representative · AL House · District 21
 **Term**: 2022-11-08 to 2026-11-03 (2022 General Election)
 **Party**: R
 No email, website or phone number is on record.
+**ID**: <id>
 ```
 
-The term line appears only when dates are recorded, and `Office and district: not recorded.`
-replaces the office line when the person has no recorded seat. A person with more than one seat gets
-the current one, with the others under `**Also held**:`. `structuredContent` carries `person`,
-`office` (`title`, `chamber`, `state`, `district`, `division_name`, `term_start`, `term_end`,
-`election_name`, `election_date`, `current`), `other_offices`, and `contact` (`email`, `phone`,
-`website`, each `null` when none is recorded). Report only the contact details it returns; never
-supply one from elsewhere. It has no `response_format`. For how the person voted, use
-`get_person_votes` or `show_person_record`.
+- **The seat line** is title · state chamber · `District N`, each part only when recorded. With no
+  recorded seat, `Office and district: not recorded.` replaces it.
+- The term line appears only when term dates are recorded.
+- Contact lines are one `**Email**:`, `**Phone**:`, and `**Website**:` each, whichever are
+  recorded, or `No email, website or phone number is on record.` when none is.
+- A person with more than one seat gets the current one, with the others under `**Also held**:`.
+
+`structuredContent` carries:
+
+- `person` — the name fields, `party`, `contact_details`, and `photo_url`: a
+  `https://public.cicada.guide/photos/<id>` proxy URL, or `null` when no photo is recorded.
+- `office` — the current seat, or `null` when none is recorded: `title`, `chamber`, `state`,
+  `district`, `division_id`, `division_name`, `term_start`, `term_end`, `election_name`,
+  `election_date`, `current`, and `outline`, the district as GeoJSON or `null`.
+- `other_offices` — earlier or concurrent seats, in the same shape without an outline.
+- `contact` — the first `email`, `phone`, and `website`, each `null` when none is recorded.
+- `contact_options` — every recorded entry as arrays: `emails`, `phones`, `websites` (official
+  `.gov` and `.us` pages first), and `addresses`.
+
+Contact details are absent for most officials. Report only the ones it returns, say "not on record"
+for the rest, and never supply one from elsewhere.
+
+### `show_person_record`
+
+`id` (UUID, required), from `search_people` after resolving identity. It has no `response_format`.
+
+In a host that supports MCP Apps it renders a legislator record via
+`ui://cicada-guide/legislator-record-v10.html`: the seat and contact options, the vote history
+with session, vote, and subject filters, and the bills they sponsored. The card loads the votes
+through `get_person_votes` itself.
+
+The text carries identity and seat only: the name, the seat line when a seat is recorded, party,
+nickname, and `id`. It holds no votes, so call `get_person_votes` to read or summarize them.
+`structuredContent` has the same `person`, `office`, `other_offices`, `contact`, and
+`contact_options` as `show_official`. When the seat lookup fails, `office` is `null` and the record
+still loads, so a `null` `office` here means the seat is not on record in this response.
 
 ---
 
@@ -456,16 +568,20 @@ The envelope adds `retrieved_at`, `source_freshness`, `ordering`, and `active_fi
   "rollcall": { "id": "...", "date": "2025-09-03", "description": "Read 3rd time",
                 "outcome": { "yea": 17, "nay": 8, "absent": 4, "nv": 1 } },
   "bill": { "id": "...", "bill": "HB7", "title": "...", "status": "Engrossed",
-            "session_id": "...", "division_id": "...", "source_url": null, "type": "Bill" } }
+            "session_id": "...", "division_id": "...", "source_url": null, "type": "Bill",
+            "subjects": ["Education"] } }
 ```
 
+- **`bill.subjects` is in JSON only.** It is a string array, `[]` when none is recorded, and it
+  appears in `structuredContent` and `response_format: "json"` but not in the markdown text. Pass
+  `response_format: "json"` to group or filter a legislator's votes by subject.
 - **`rollcall.outcome` is the roll call's recorded tallies, not a pass/fail result.** It is `null`
   when the roll call has no recorded individual votes. There is no chamber and no passed field.
 - **`bill` is `null` when the vote is attached to no bill**, such as a procedural motion. Report
   those by roll-call description and date; do not attach a bill to them.
 - **`bill` carries ids, not names.** Resolve `division_id` through `list_states` and `session_id`
   through `list_sessions` when the answer needs the state or session name. `bill.division_id` is
-  also the only jurisdiction evidence any tool returns for a legislator.
+  jurisdiction evidence for the legislator, not their chamber or district.
 - **Same-day order is not chronology.** `ordering` is `rollcall.date DESC`, `rollcall.id DESC`,
   `vote.id DESC` — within one date, rows sort by UUID. `latest: true` therefore picks arbitrarily
   among votes cast on the latest date. For a "most recent vote" question, fetch a page and keep
@@ -544,14 +660,3 @@ The tool refuses to fetch in six cases, each returning explanatory text:
 
 Fetches run with `redirect: "manual"`, so redirects are rejected rather than followed.
 
----
-
-## Exploration
-
-### `open_research_desk`
-
-Takes only the wrapper's `context` and `llm_model`. Opens an interactive research desk with state
-and session filters, bill search, legislator search, and links to bill and voting-record
-workspaces. Use it when the user
-wants to explore rather than retrieve a known record. Hosts without MCP Apps support receive a
-short text fallback. It has no `response_format`.

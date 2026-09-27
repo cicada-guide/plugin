@@ -1,6 +1,6 @@
 ---
 name: state-legislation
-description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find state representative Jane Smith", "what party is she"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only.
+description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find state representative Jane Smith", "what party is she", "how do I contact Senator X"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only.
 ---
 
 # Researching U.S. state legislation with cicada-guide
@@ -95,38 +95,94 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | Goal | Tool |
 | --- | --- |
 | Find bills by number, topic, subject, status, sponsor | `search_bills` |
+| Explore a topic or browse bills (its results card pages itself and opens bills in place) | `search_bills` |
 | Read one bill's full record | `get_bill` |
 | One bill with sponsor names, documents, and floor votes in one call | `get_bill_dossier` |
-| Display a bill visually ("show me", "pull it up") | `show_bill` |
+| Show or pull up a bill, with your plain-language summary | `show_bill` with `summary` |
 | Read the newest attached document's text | `get_latest_bill_document` |
 | List every document on a bill | `get_documents` |
 | Stream a PDF's raw bytes in base64 chunks (not text) | `read_pdf_bytes` |
 | Find legislators by name or party | `search_people` |
-| Read one legislator's contact details (no jurisdiction or role) | `get_person` |
-| Display a resolved legislator's voting record | `show_person_record` |
-| Display a resolved legislator's office, district, and how to reach them | `show_official` |
+| Read one legislator's stored record by id (no state, chamber, district, or role) | `get_person` |
+| Who a resolved legislator is, their seat, and how to reach or contact them | `show_official` |
+| Show a resolved legislator's record: votes, filters, sponsored bills | `show_person_record` |
 | Resolve many person UUIDs to names at once | `search_people` with `ids` |
 | Summarize floor votes on a bill | `get_rollcalls` |
 | Page through individual vote rows for a roll call, bill, or legislator | `get_votes` |
 | Who voted which way on one roll call, and the split by party | `get_rollcall_breakdown` |
 | One legislator's voting history over time | `get_person_votes` |
+| One legislator's votes on bills of one subject (read `items[].bill.subjects`) | `get_person_votes` with `response_format: "json"` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
-| Open an exploratory research workspace | `open_research_desk` |
 
 `get_bill_dossier` omits full document text and includes only the first 100 roll calls; read its
 `warnings` before trusting a `null` section. Its markdown lists the sponsors, documents, and roll
 calls with their counts; pass `response_format: "json"` for the same data as JSON.
 `get_rollcall_breakdown` returns one roll call's whole breakdown in one call: `counts`, `by_party`,
-and every member's name, party, and vote in `members`. Resolve identity before
-`show_person_record` or `show_official`, and use `open_research_desk` for an exploration request rather than a known
-bill or person.
+and every member's name, party, and vote in `members`. Resolve identity with `search_people`
+before `show_person_record` or `show_official`, and pass only an id it returned.
 `read_pdf_bytes` returns base64 PDF bytes, not readable text. For a bill's text use
 `get_latest_bill_document`; for an older version, report its document URL from `get_documents`.
 
 UUIDs flow between tools. `list_states` yields `division_id`; `list_sessions` yields `session_id`;
 `search_bills` yields bill `id`; `search_people` yields person `id`; `get_rollcalls` and `get_votes`
 yield `rollcall_id`. Do not invent a UUID — obtain it from the tool that produces it.
+
+## Cards
+
+`show_bill`, `show_official`, and `show_person_record` put a card on screen in hosts that render
+MCP Apps; other hosts show only what the call returns. `search_bills` also renders a results card.
+
+**End with the fitting card, without asking.** End a bill answer with `show_bill` `{ id, summary }`,
+a "who is this" or contact answer with `show_official`, and an answer about a resolved legislator's
+record with `show_person_record`. Call the card after the written answer is ready.
+
+**A card tool returns less than its card shows.** Depending on the host, you receive either the
+text fallback or the `structuredContent`; neither carries what the card fetches for itself — floor
+votes, sponsors, vote history. `show_bill` gives the number, state and session, title, status,
+synopsis, newest document, and id. `show_person_record` gives the person and seat, never their
+votes. `show_official` gives the seat, term, party, and the contact details on record: one email,
+phone, and website in text, or every option in `contact_options` in `structuredContent`. Its text
+reads `No email, website or phone number is on record.` when there are none. Take every written
+claim from the data tools: `get_bill_dossier`, `get_rollcalls`, `get_rollcall_breakdown`,
+`get_person_votes`, `get_latest_bill_document`.
+
+**Don't re-list the card; still answer in full.** Its rows, tallies, and contact buttons are on
+screen, so write what it does not show: the answer to the question, context, and caveats. Any host
+may lack card rendering, so the written answer must stand on its own, from the data tools.
+
+**`search_bills` renders a results card on every call** in card hosts. It shows the results and
+"Show more", and tapping a result opens that bill in place. Summarize what matched rather than
+tabulating every row.
+
+**Write `show_bill`'s `summary` for a voter.** It is optional, 1–1500 characters, plain prose; the
+card renders it as text, so markdown does not render. Say what the bill does, who it affects, and
+where it stands as recorded. Base it on `get_latest_bill_document` text or the synopsis, and omit it
+rather than guess. Never infer passage or an outcome. The card labels it as written by the AI
+assistant.
+
+**Answer a "Summarize with AI" turn, then re-show the card.** The bill card's button posts a user
+turn: `Summarize HB 314 (bill id <uuid>) in plain language for a voter: what it does, who it
+affects, and where it stands. Then show it again with show_bill, passing your summary as summary.`
+Read the text with `get_latest_bill_document` (or the synopsis), answer in chat, then call
+`show_bill` `{ id, summary }` with that id.
+
+**Card selections arrive as model-context updates,** in text such as `User is viewing HB 314.
+Selected floor vote: <description>, <date>.`, `User is reading <document> of HB 314.`, or `User is
+viewing <name>'s votes, filtered to Yea.` They carry names and numbers, never ids: map them to ids
+from earlier results. Answer "which vote am I looking at" from the update, without a tool call. For
+that vote's details, call `get_rollcalls` for the bill, match the description and date, then call
+`get_rollcall_breakdown` with that roll call's id.
+
+**What the legislator cards show.** `show_official` shows the photo, a contact menu for every
+contact option on record, a district map when an outline exists, and the last recorded-vote tally.
+`show_person_record` shows their recorded votes with session, vote, and subject filters, and the
+bills they sponsored. Card tallies label what they cover; never use them to grade or rank a
+legislator. Most officials have no contact details on record: say so, and never guess an email,
+phone, or address.
+
+**`show_bill`, `show_official`, and `show_person_record` take no `response_format`.** Passing it
+returns `MCP error -32602`; omit it even when a project default pins one.
 
 ## Rules that prevent the common failures
 
@@ -172,12 +228,16 @@ report every vote on it.
 return name and party only — no state, chamber, district, or role. A common surname will match
 legislators across many states. The only jurisdiction evidence is vote history: call
 `get_person_votes` on each candidate and read `bill.division_id`, resolved through `list_states`.
-Never state a legislator's chamber or district — no tool returns either. When two candidates remain
-plausible, list them and ask rather than picking one.
+When two candidates remain plausible, list them and ask rather than picking one.
+
+**State chamber and district only as `show_official` or `show_person_record` returns them** — the
+seat line in text, or `office.chamber` and `office.district` in `structuredContent`. When the seat
+line has none, or `office` is `null`, say they are not recorded. Never infer them from
+`search_people` or `get_person`.
 
 **"My senator" needs a name.** When the user asks about "my senator" or "my representative"
 without naming them, ask for the legislator's name and state before calling anything. No tool maps
-an address or district to a legislator.
+an address or district to a legislator, so no tool can find one from where the user lives.
 
 **Same-name rows are different people.** Matching name, party, and state fits two legislators in
 different chambers or years. Never combine their records. List the candidates with party, state,
@@ -253,14 +313,16 @@ which characters the answer rests on.
 
 ## Longer workflows have dedicated entry points
 
-Two slash commands cover multi-step research. Either can be invoked by name or reached for on your
-own when a request matches one. Name the command either way — a user who does not know it exists
-cannot ask for it next time:
+Slash commands cover multi-step research. Each can be invoked by name or reached for on your own
+when a request matches one. Name the command either way — a user who does not know it exists cannot
+ask for it next time:
 
 - `/cicada-guide:bill-research <bill number or topic> [state] [year]` — a full sourced brief on
   one bill, or a list of matching bills for a topic.
 - `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]` — a
   legislator's history or vote on one bill, or one roll call broken down by party.
+- `/cicada-guide:contact-legislator <name> [state]` — who a legislator is, their seat, and the
+  contact details on record, ending with their `show_official` card.
 
 Three subagents handle work whose intermediate tool traffic would bury the conversation:
 `bill-brief-researcher`, `legislator-disambiguator`, and `multi-state-bill-scanner`. Dispatch

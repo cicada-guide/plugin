@@ -28,11 +28,23 @@ partial match, so it can return regular and special sessions together.
 Omit `session_id` only when the session has not been resolved. In that case, the first exact-number
 match is not enough: finish paging for other sessions or ask which session the user intends.
 
+Once one bill is settled, answer the question, then end with its card, as in "Show a bill with a
+summary" below:
+
+```jsonc
+// 4. end with the card, carrying your plain-language summary
+{ "tool": "show_bill", "arguments": { "id": "<bill uuid>", "summary": "<plain prose, at most 1500 characters>" } }
+```
+
 ## Research a topic
 
 ```jsonc
 { "tool": "search_bills", "arguments": { "query": "voucher", "division_id": "<uuid>", "limit": 25 } }
 ```
+
+In a host that renders cards, every `search_bills` call also shows a results card with "Show more";
+tapping a result opens that bill in place. Summarize what matched and why, rather than tabulating
+every row the card already lists, and still name the bills your answer rests on.
 
 `query` searches title and synopsis *and* the full text of attached documents, then ORs the two
 result sets. Skip `division_id` for a nationwide sweep. There is no `total` on this envelope — use
@@ -136,8 +148,21 @@ Each `get_person_votes` item nests `vote` (category), `rollcall` (date, descript
 
 `search_people` and `get_person` return name and party only — no state, chamber, or district — so
 several matches for a common surname cannot be separated from those results. Check which candidate
-has votes whose `bill.division_id` is the expected jurisdiction. Chamber and district cannot be
-confirmed from any tool. Ask rather than guessing when two remain equally plausible.
+has votes whose `bill.division_id` is the expected jurisdiction. Ask rather than guessing when two
+remain equally plausible.
+
+State chamber and district only as `show_official` or `show_person_record` returns them: the seat
+line in text, or `office.chamber` and `office.district` in `structuredContent`. When the seat line
+has none, or `office` is `null`, say they are not recorded. Never infer them from `search_people` or
+`get_person`.
+
+Write the answer from `get_person_votes`, then end with the legislator's record card. It returns
+identity and seat only, so it does not replace the votes you read:
+
+```jsonc
+// 5. end with the record card for the resolved legislator
+{ "tool": "show_person_record", "arguments": { "id": "<person uuid>" } }
+```
 
 When the user says "my senator" or "my representative" without a name, ask for the legislator's
 name and state. No tool maps an address or district to a legislator.
@@ -166,23 +191,124 @@ rows, the data holds no recorded vote by that legislator on that bill — say so
 abstained. When several bills or legislators remain plausible after steps 1 and 2, list them and
 ask.
 
-## Show a bill visually
+## Show a bill with a summary
 
 ```jsonc
+// 1. resolve the bill, scoped as in "Find a bill by number in a named state"
 { "tool": "search_bills", "arguments": { "bill": "HB 314", "division_id": "<uuid>" } }
-{ "tool": "show_bill", "arguments": { "id": "<bill uuid>" } }
+
+// 2. read what it says; fall back to the synopsis when text_source is null
+{ "tool": "get_latest_bill_document", "arguments": { "bill_id": "<bill uuid>" } }
+
+// 3. show the card with your summary
+{ "tool": "show_bill", "arguments": { "id": "<bill uuid>", "summary": "<plain prose, at most 1500 characters>" } }
 ```
 
-`show_bill` returns a card plus a text summary. Hosts without MCP Apps support display the text,
-so the call is always safe. Use it for "show me" / "pull it up"; use `get_bill` when the user wants
-the contents read back.
+Write `summary` for a voter, in 1–1500 characters of plain prose: what the bill does, who it
+affects, and where it stands as recorded. The card renders it as text, so markdown does not render.
+Base it on the document text or the synopsis; when neither says enough, omit `summary` rather than
+guess. Never infer passage or an outcome. The card labels it as written by the AI assistant.
+
+Depending on the host, `show_bill` hands you either its text fallback or its `structuredContent`.
+Neither carries the floor votes or sponsors the card fetches for itself, so take those claims from
+`get_bill_dossier`, `get_rollcalls`, or `get_rollcall_breakdown`. In a card host, don't re-list the
+card's rows; write the answer, context, and caveats so the reply still stands on its own where no
+card renders. `show_bill` takes no `response_format`.
+
+## Summarize with AI request
+
+The bill card's "Summarize with AI" button posts a user turn such as:
+
+```text
+Summarize HB 314 (bill id <uuid>) in plain language for a voter: what it does, who it affects, and where it stands. Then show it again with show_bill, passing your summary as summary.
+```
+
+```jsonc
+// 1. read every part of the text; use the synopsis when text_source is null
+{ "tool": "get_latest_bill_document", "arguments": { "bill_id": "<bill uuid from the turn>" } }
+
+// 2. after answering in chat, re-show the card with the same summary
+{ "tool": "show_bill", "arguments": { "id": "<bill uuid from the turn>", "summary": "<your summary>" } }
+```
+
+Answer in chat first, following the `summary` rules above, then call `show_bill`. A summary written
+from part of a long text says which characters it rests on.
+
+## React to what the user selected on a card
+
+Selecting a vote, filter, or document on a card sends a model-context update, such as:
+
+- `User is viewing HB 314. Selected floor vote: <description>, <date>.`
+- `User is reading <document> of HB 314.`
+- `User is viewing <name>'s votes, filtered to Yea.`
+
+Updates carry names and numbers, never ids. Map them to ids from earlier results in the
+conversation. Answer "which vote am I looking at" from the latest update, without a tool call. For
+the selected vote's details:
+
+```jsonc
+// 1. find the roll call: match the update's description and date against the items
+{ "tool": "get_rollcalls", "arguments": { "bill_id": "<bill uuid from earlier results>" } }
+
+// 2. who voted which way, and the split by party
+{ "tool": "get_rollcall_breakdown", "arguments": { "rollcall_id": "<matched rollcall uuid>" } }
+```
+
+When no item matches the description and date, page with `next_offset` while `has_more` is true;
+when still none matches, say so and ask which vote the user means. Report that roll call's own
+`counts`; never add counts across roll calls.
+
+## Contact a legislator
+
+```jsonc
+// 1. find them; disambiguate as in "How did one legislator vote"
+{ "tool": "search_people", "arguments": { "name": "Rex Reynolds" } }
+
+// 2. the contact card for the one resolved id
+{ "tool": "show_official", "arguments": { "id": "<person uuid>" } }
+```
+
+Report only what `show_official` returned: the seat (title, state and chamber, district when
+recorded), term, party, and the contact details on record. Depending on the host, that is the text
+fallback, with one email, phone, and website each, or the `structuredContent`, whose
+`contact_options` lists every email, phone, website, and address. When the text reads `No email,
+website or phone number is on record.`, or every `contact_options` list is empty, say the contact
+details are not on record and never guess one. When the seat line has no chamber or district, or
+`office` is `null`, say they are not recorded. In a card host the contact buttons are on screen: don't re-list them. For how the
+legislator voted, point to `show_person_record` and read votes through `get_person_votes`.
+
+No tool maps an address or district to a legislator. For "who is my representative", ask for the
+legislator's name and state rather than searching by address.
+
+## Votes by subject
+
+Bill subjects reach you only in `get_person_votes` JSON, at `items[].bill.subjects`; the markdown
+text does not list them.
+
+```jsonc
+{ "tool": "get_person_votes", "arguments": { "people_id": "<person uuid>", "session_id": "<session uuid>", "response_format": "json", "limit": 100 } }
+// → keep items whose bill.subjects contains the subject; bill is null for procedural roll calls
+// → pass next_cursor back as cursor while has_more is true, filtering each page
+```
+
+The filter runs on each page you read, not on the server, so page through the session or date range
+before reporting a count, or say "at least N" and which range was read. Copy the subject spelling
+from a returned `subjects` array. Report each vote with its bill, roll-call date, and description;
+never grade the legislator or characterize the record from the subset.
 
 ## Who sponsored this bill
 
-`search_bills` and `get_bill` return a `sponsors` array of person UUIDs. Resolve them in one call:
+`search_bills` and `get_bill` return a `sponsors` array of person UUIDs. Resolve them in one call,
+in batches of up to 100, and check `unresolved_ids`:
 
 ```jsonc
 { "tool": "search_people", "arguments": { "ids": ["<sponsor uuid>", "..."] } }
+```
+
+When the answer settles on one sponsor, end with their contact card:
+
+```jsonc
+{ "tool": "show_official", "arguments": { "id": "<sponsor uuid>" } }
 ```
 
 The reverse direction — every bill a legislator sponsored — goes through `search_bills`:
@@ -196,12 +322,14 @@ The reverse direction — every bill a legislator sponsored — goes through `se
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `Error: Provide at least one of rollcall_id, bill_id, or people_id...` | `get_votes` with no entity filter, or `category` alone | Add `rollcall_id`, `bill_id`, or `people_id` |
-| `MCP error -32602: Input validation error:` naming a key | An invented or misremembered parameter, e.g. `offset` passed to `get_votes` / `get_person_votes`, or `response_format` passed to `show_bill`, `get_rollcall_breakdown`, or another tool without it | Schemas are strict; drop or correct the named key — see the two error shapes in `tool-reference.md` |
+| `MCP error -32602: Input validation error:` naming a key | An invented or misremembered parameter, e.g. `offset` passed to `get_votes` / `get_person_votes`, or `response_format` passed to `show_bill`, `show_official`, `show_person_record`, `get_rollcall_breakdown`, or another tool without it | Schemas are strict; drop or correct the named key — see the two error shapes in `tool-reference.md` |
 | Wrong legislator | `search_people` and `get_person` return no state or chamber, so a common surname is ambiguous | Confirm jurisdiction from `bill.division_id` in `get_person_votes`; ask when still tied |
 | Two identical-looking candidates | Two legislators with the same name | List both with party, state, and vote dates, and ask; never combine their records |
 | A sitting legislator appears to have no votes | The chosen row may be a different legislator with the same name | Surface other rows with the same name as candidates and ask |
 | Right bill number, wrong bill | The same number exists in another session or state | Scope by `division_id` and `session_id` (or `session_name`); read each result's session |
 | Names missing from a vote breakdown | `get_votes` returns UUIDs only | Use `get_rollcall_breakdown`, whose `members` carry names and party |
+| `summary` rejected by `show_bill` | Empty, or longer than 1500 characters | Shorten it to plain prose under 1500 characters, or omit it |
+| Asked for a legislator's chamber or district | `search_people` and `get_person` return neither | Use the `show_official` seat line; when it has none, say they are not recorded |
 | A count looks wrong | `search_bills` / `search_people` / `get_votes` / `get_person_votes` have no `total` | Report "at least N", or paginate to exhaustion |
 | A topic search finds nothing, or suspiciously little | `search_bills` full-text caps at 50 bills — nationwide unless scoped by `division_id` or a session — and uses 8 terms, silently | Try one distinctive word, scope by `division_id` and `session_id` / `session_name`; do not report absence from one query |
 | A topic search returns many off-topic bills | Each `query` word is matched separately and ORed | Use one distinctive word rather than a phrase |

@@ -56,7 +56,7 @@ There are three kinds of entry point, and each reaches the model differently:
 | Kind | Where | How it loads |
 | --- | --- | --- |
 | Always-on skill | `skills/state-legislation/` | Loads automatically on any state-legislation question. Its `references/` hold the tool reference, workflows and project-settings contract |
-| Slash-command skills | `skills/bill-research/`, `skills/voting-record/` | Run as `/cicada-guide:<name>`, or when Claude judges a request needs the full workflow |
+| Slash-command skills | `skills/bill-research/`, `skills/voting-record/`, `skills/contact-legislator/` | Run as `/cicada-guide:<name>`, or when Claude judges a request needs the full workflow |
 | Subagents | `agents/*.md` | Dispatched by Claude for long, autonomous jobs; each returns one consolidated report |
 
 Two design rules follow from how they load.
