@@ -136,12 +136,14 @@ headline on the card's title plate is Claude's too; tap the plate to see the off
 vote tallies on the legislator cards cover only the votes they name; the plugin never uses them to
 grade or rank a legislator.
 
-## A bill document shows as a link instead of a preview
+## A bill document shows as a link instead of its pages
 
-The document viewer in the bill card's Documents tab embeds a Google Docs preview only when the
-host allows `docs.google.com` inside the card. When the host blocks the preview, or refuses "Open
-full screen", the card shows the document's URL as a link with a **Copy link** button instead. That is expected
-in hosts that restrict framed content. Open the link, or copy it into a browser. Claude can also
+The document viewer in the bill card's Documents tab draws a PDF's pages inside the card, and shows
+the latest version of a non-PDF document as text. It shows the document's URL as a link with a
+**Copy link** button instead when it can't: an older non-PDF version, a PDF the server can't fetch
+from the legislature's site (over 20 MB, or from a site outside its list of known sources), or a
+host that blocks the viewer's script from `public.cicada.guide`. Open the link, or copy it into a
+browser. Claude can also
 read the text with `get_latest_bill_document`.
 
 ## Contact details, chamber, or district are "not on record"

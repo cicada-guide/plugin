@@ -20,8 +20,10 @@ plugin's guidance, including updates made to match what the server returns.
 - The contact card's district map note, when the viewer turns location on: "You're in this
   district · 5.7 mi from its edge" or "You're 5.7 mi outside this district", with a dashed line to
   the nearest edge. The location stays in the card.
-- The bill card's document viewer fallback: where the host blocks the Google Docs preview or
-  refuses "Open full screen", the card shows the document link with a "Copy link" button.
+- The bill card's document viewer draws a PDF's pages inside the card, from bytes it fetches with
+  `read_pdf_bytes`, and shows the latest non-PDF version as text. A document it can't show, or a
+  refused "Open full screen", gets the document link with a "Copy link" button. It no longer
+  embeds a Google Docs preview, which hosts such as Claude block.
 
 ### Changed
 
@@ -50,7 +52,9 @@ plugin's guidance, including updates made to match what the server returns.
   plate shows it first, and tapping the plate toggles to the official title and back. Every skill,
   agent, workflow, and example passes both, and the show-bill request a tapped bill posts now asks
   for a headline as well as a summary.
-- Card resource URIs: `bill-results-v11`, `bill-workspace-v11`, `legislator-record-v12`, and
+- Updated to match the server: `read_pdf_bytes` reads a source that ignores Range from the start,
+  for files up to 20 MB, instead of refusing it.
+- Card resource URIs: `bill-results-v11`, `bill-workspace-v12`, `legislator-record-v12`, and
   `official-card-v4`.
 
 ### Removed
