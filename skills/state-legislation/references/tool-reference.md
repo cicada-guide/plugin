@@ -156,7 +156,7 @@ the main conversation calls it.
 
 When the user selects something on a card, the host passes you a short text update, such as:
 
-- `User is viewing HB 314. Selected floor vote: <description>, <date>.`
+- `User is viewing HB 314 votes. Selected floor vote: <description>, <date>.`
 - `User is reading <document> of HB 314.`
 - `User is viewing <name>'s votes, filtered to Yea.`
 - `User is viewing the voting record of <name>.`
@@ -272,12 +272,14 @@ the object as text.
 Like the other display tools, it has no `response_format`.
 
 Renders a bill card via `ui://cicada-guide/bill-workspace-v10.html` in hosts that support MCP
-Apps. The card shows the bill number, the headline with a toggle to the official title, the status,
-your summary, a floor-vote timeline with party splits, and a "Read bill" document viewer. "Explore
-bill" opens a workspace with Overview, Sponsors, Documents, and Votes tabs. The card calls
-`get_bill_dossier` and `get_rollcall_breakdown` itself for the sponsors and votes. The viewer embeds
-a Google Docs preview only when the host allows `docs.google.com`; when the host blocks the preview
-or refuses "Open full screen", the card shows the document URL as a link with a "Copy link" button.
+Apps. The card shows the state and session, the status, the bill number, and the headline with a
+toggle to the official title, then four tabs. Overview holds the path to becoming law (Introduced,
+Engrossed, Enrolled, Enacted), the recorded status, and your summary; Sponsors lists the sponsors;
+Documents lists each version with a Read button that opens a viewer; Votes holds the floor votes
+with party splits and who voted how. The card calls `get_bill_dossier` and
+`get_rollcall_breakdown` itself for the sponsors, documents, and votes. The viewer embeds a Google
+Docs preview only when the host allows `docs.google.com`; when the host blocks the preview or
+refuses "Open full screen", the card shows the document URL as a link with a "Copy link" button.
 
 **The result carries none of that.** The text fallback holds the bill number, state and session,
 title, status, type, date, synopsis (cut at 300 characters), subjects, the newest document's link,
@@ -297,8 +299,8 @@ back.
   record, say so in the summary rather than guess.
 - Never infer passage or an outcome; state the recorded `status`.
 - Plain prose only. The card renders it as text, so markdown does not render.
-- The card labels it "Summary · your AI assistant", with a note that it was written by the AI in
-  this chat and the official text is the record.
+- The card labels it "Summary · your AI assistant", with the note "Written by the AI in this chat.
+  It can miss details."
 
 **"Show HB 314 … with show_bill" requests.** Tapping a bill in the `search_bills` results card, a
 vote in the `show_person_record` card, or a sponsored bill's "Show in the conversation" button

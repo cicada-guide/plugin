@@ -241,7 +241,7 @@ optional. A summary written from part of a long text says which characters it re
 
 Selecting a vote, filter, or document on a card sends a model-context update, such as:
 
-- `User is viewing HB 314. Selected floor vote: <description>, <date>.`
+- `User is viewing HB 314 votes. Selected floor vote: <description>, <date>.`
 - `User is reading <document> of HB 314.`
 - `User is viewing <name>'s votes, filtered to Yea.`
 

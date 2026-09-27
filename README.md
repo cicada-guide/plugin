@@ -162,7 +162,7 @@ change when you make one.
 | --- | --- |
 | `search_bills` | Search bills by number, topic, subject, status, sponsor, session, or state. Hosts that support MCP Apps also show the results as a card |
 | `get_bill` | Full record for one bill |
-| `get_bill_dossier` | Bill workspace data: resolved sponsors, documents, and initial roll calls |
+| `get_bill_dossier` | Bill card data: resolved sponsors, documents, and initial roll calls |
 | `show_bill` | Show a bill as a card with floor votes, sponsors, documents, and a required assistant-written summary |
 | `get_latest_bill_document` | Newest attached document, with its text |
 | `get_documents` | All documents attached to a bill |

@@ -178,7 +178,7 @@ without a full brief:
 2. Call `show_bill` with that `id` and a `summary`, under the rules above. A short chat answer
    alongside is optional.
 
-The card also sends context updates such as "User is viewing HB 314. Selected floor vote:
+The card also sends context updates such as "User is viewing HB 314 votes. Selected floor vote:
 <description>, <date>." or "User is reading <document> of HB 314." They carry names and numbers,
 never ids: map them to ids from earlier results. Answer "which vote am I looking at" from the
 update without a tool call. For the details of a selected vote, find it with `get_rollcalls`

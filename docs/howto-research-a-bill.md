@@ -148,15 +148,16 @@ To look at one legislator's votes on the bill instead, see
 ## Use the bill card
 
 After the written answer, Claude calls `show_bill` for the bill without being asked. In a host that
-renders MCP Apps, the card shows:
+renders MCP Apps, the card shows the bill number and headline, with a toggle to the official title,
+and the status, above four tabs:
 
-- the bill number and headline, with a toggle to the official title, and the status;
-- a summary box holding Claude's plain-language summary, labeled "Summary · your AI assistant",
-  with a note that the official text is the record;
-- a floor-vote timeline with party splits;
-- a "Read bill" document viewer, or the document's link with a "Copy link" button where the host
-  blocks the preview;
-- "Explore bill", which opens a workspace with Overview, Sponsors, Documents, and Votes tabs.
+- **Overview:** the path to becoming law, the recorded status, and a summary box holding Claude's
+  plain-language summary, labeled "Summary · your AI assistant", with a note that the AI wrote it
+  and can miss details;
+- **Sponsors:** the bill's sponsors;
+- **Documents:** each version with a "Read" button that opens a viewer, or the document's link with
+  a "Copy link" button where the host blocks the preview;
+- **Votes:** the floor votes with party splits, and who voted how.
 
 Hosts that cannot render cards get a short text version of the bill instead. The written answer is
 built from the data tools either way, so it is complete without the card. In a card host, Claude

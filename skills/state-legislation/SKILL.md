@@ -170,9 +170,9 @@ plain-language summary for a voter as summary: what it does, who it affects, and
 Read the text with `get_latest_bill_document` (or the synopsis), then call `show_bill`
 `{ id, summary }` with that id. A short chat answer alongside is optional.
 
-**Card selections arrive as model-context updates,** in text such as `User is viewing HB 314.
-Selected floor vote: <description>, <date>.`, `User is reading <document> of HB 314.`, or `User is
-viewing <name>'s votes, filtered to Yea.` They carry names and numbers, never ids: map them to ids
+**Card selections arrive as model-context updates,** in text such as `User is viewing HB 314
+votes. Selected floor vote: <description>, <date>.`, `User is reading <document> of HB 314.`, or
+`User is viewing <name>'s votes, filtered to Yea.` They carry names and numbers, never ids: map them to ids
 from earlier results. Answer "which vote am I looking at" from the update, without a tool call. For
 that vote's details, call `get_rollcalls` for the bill, match the description and date, then call
 `get_rollcall_breakdown` with that roll call's id.

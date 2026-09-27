@@ -15,7 +15,7 @@ there rather than repeating them. Why the plugin ends answers with a card is in
 | Tool | Card | Resource URI | The card fetches | The model receives |
 | --- | --- | --- | --- | --- |
 | `search_bills` | Bill results | `ui://cicada-guide/bill-results-v10.html` | More pages of the same search | The full result list, as text or JSON, as usual |
-| `show_bill` | Bill card and workspace | `ui://cicada-guide/bill-workspace-v10.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors, no echo of the `summary` |
+| `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v10.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors, no echo of the `summary` |
 | `show_official` | Contact card | `ui://cicada-guide/official-card-v4.html` | Recent votes and their tally (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
 | `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v11.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
 
@@ -75,22 +75,21 @@ year.`
 rather than tabulating every row the card shows. `bill-research` answers a topic with a list and
 an offer to brief one, and shows no bill card until the user picks one.
 
-## `show_bill`: bill card and workspace
+## `show_bill`: bill card
 
 Parameters: `id` and `summary`, both required —
 [tool reference](../skills/state-legislation/references/tool-reference.md#show_bill).
 
-**The card shows:**
+**The card shows** a header, then four tabs. It always opens on this layout, inline.
 
-- the bill number, state, and session;
-- the headline, with a toggle to the official title;
-- the status;
-- the summary box (see [below](#the-summary-box));
-- a floor-vote timeline with each roll call's party split, and who voted how, filterable by party;
-- **Read bill**, a viewer for the newest document with a readable link, or that link with **Copy
-  link** where the host blocks the preview;
-- **Explore bill**, a workspace with **Overview**, **Sponsors**, **Documents**, and **Votes** tabs,
-  shown full screen where the host allows it.
+- **Header:** the state and session, the status, the bill number, and the headline, with a toggle
+  to the official title.
+- **Overview:** the path to becoming law (Introduced, Engrossed, Enrolled, Enacted), the recorded
+  status, and the summary box (see [below](#the-summary-box)).
+- **Sponsors:** the bill's sponsors.
+- **Documents:** each version, with a **Read** button that opens a viewer, or the document's link
+  with **Copy link** where the host blocks the preview.
+- **Votes:** the floor votes, each roll call's party split, and who voted how, filterable by party.
 
 **The card fetches** `get_bill_dossier` for sponsors, documents, and floor votes, and
 `get_rollcall_breakdown` for a selected vote's party split and members.
@@ -122,8 +121,8 @@ the main conversation to pass.
 ### The summary box
 
 The box is labeled "Summary · your AI assistant" and shows the `summary`, with the note "Written by
-the AI in this chat. It can miss details; the official text is the record." The box has no button;
-the bill card posts no user turn.
+the AI in this chat. It can miss details." Without a `summary`, it shows the bill's synopsis and no
+note. The box has no button; the bill card posts no user turn.
 
 ### The show-bill request
 
@@ -223,16 +222,14 @@ numbers, never ids.
 | Update | Sent when | Card |
 | --- | --- | --- |
 | `User is viewing HB 314.` | The bill card loads | Bill card |
-| `User is viewing HB 314. Selected floor vote: <description>, <date>.` | A floor vote is selected on the card | Bill card |
-| `User is viewing HB 314 votes. Selected floor vote: <description>, <date>.` | A floor vote is selected in the workspace **Votes** tab | Bill workspace |
-| `User opened the HB 314 workspace.` | **Explore bill** is opened | Bill workspace |
-| `User is reading <document> of HB 314.` | A document is opened in the workspace | Bill workspace |
+| `User is viewing HB 314 votes. Selected floor vote: <description>, <date>.` | A floor vote is selected in the **Votes** tab | Bill card |
+| `User is reading <document> of HB 314.` | A document is opened in the **Documents** tab | Bill card |
 | `User is viewing the contact card for <name>.` | The contact card loads | Contact card |
 | `User is viewing the voting record of <name>.` | The record loads | Legislator record |
 | `User is viewing <name>'s votes, filtered to Yea.` | A vote-category filter is set; without the suffix when cleared | Legislator record |
 | `User is viewing <name>'s record for <session>.` | A session is picked; without `for <session>` for all sessions | Legislator record |
 
-The skill guidance quotes the first two bill updates, the document update, the Yea filter, the
+The skill guidance quotes the vote-selection update, the document update, the Yea filter, the
 voting-record update, and the contact-card update; the others were read from the server's card
 source on 2026-09-27 and follow the same pattern.
 

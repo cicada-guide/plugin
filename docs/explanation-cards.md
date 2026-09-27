@@ -10,8 +10,8 @@ returns, see the [cards reference](reference-cards.md) and the
 
 The server renders four tools as MCP Apps cards: `search_bills` (a results list), `show_bill`,
 `show_official`, and `show_person_record`. In a host that supports MCP Apps, a card is the best
-view of the data it covers. A bill card has a floor-vote timeline with party splits, a document
-viewer, and tabs for sponsors and votes. A legislator's contact card has a photo, a menu for every
+view of the data it covers. A bill card has tabs for an overview, sponsors, documents with a
+viewer, and floor votes with party splits. A legislator's contact card has a photo, a menu for every
 recorded contact option and a district map. A written answer can't match that, and trying to
 re-create it in prose buries the reader in rows they can already see.
 
@@ -96,7 +96,7 @@ a bill card never appears without one.
 Three rules shape it, each for a reason:
 
 - **It is labelled as AI-written.** The card shows it under "Summary · your AI assistant", with a
-  note that the AI wrote it in this chat and the official text is the record. A reader can't tell
+  note that the AI wrote it in this chat and can miss details. A reader can't tell
   a summary's source from its position on a card, so the label keeps the assistant's words
   separate from the legislature's.
 - **It never infers passage or an outcome.** Passage thresholds vary by chamber and question, and
@@ -120,8 +120,8 @@ summary, with a short chat answer optional.
 
 When the user selects something on a card, such as a floor vote, a document, or a vote filter,
 the card tells the host, and the host passes the model a short text update such as
-`User is viewing HB 314. Selected floor vote: <description>, <date>.` It is context, not a new
-turn.
+`User is viewing HB 314 votes. Selected floor vote: <description>, <date>.` It is context, not a
+new turn.
 
 These updates carry the names and numbers the user sees, never ids. The guidance therefore maps
 them back to ids from earlier results in the conversation. A question such as "which vote am I

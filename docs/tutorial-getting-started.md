@@ -109,9 +109,10 @@ enactment.
 Once the written answer is ready, Claude calls `show_bill` for that bill without being asked.
 
 - **In a host that renders MCP Apps**, this puts a bill card on screen: the bill number and
-  headline, the status, a summary box with Claude's plain-language summary (labeled as written by
-  your AI assistant), a floor-vote timeline with party splits, and a "Read bill" document viewer.
-  "Explore bill" opens a workspace with Overview, Sponsors, Documents, and Votes tabs.
+  headline, the status, and tabs for Overview, Sponsors, Documents, and Votes. Overview holds a
+  summary box with Claude's plain-language summary (labeled as written by your AI assistant), the
+  Votes tab shows the floor votes with party splits, and the Documents tab opens each version in a
+  viewer.
 - **In a host that shows only text**, you get the written answer and a short text version of the
   bill instead. Nothing is lost: the written answer is built from the data tools so it stands on
   its own.

@@ -25,6 +25,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ### Changed
 
+- The bill card always opens on its tabbed layout: a header, then Overview (the path to becoming
+  law, the recorded status, and the summary), Sponsors, Documents, and Votes. The front view with
+  its floor-vote timeline, "Read bill", and "Explore bill" is gone. The summary note now reads
+  "Written by the AI in this chat. It can miss details." and no longer says the official text is
+  the record. Selecting a floor vote sends `User is viewing HB 314 votes. Selected floor vote: …`,
+  and `User opened the HB 314 workspace.` is no longer sent.
 - Updated to match the server: `show_bill`'s `summary` is now required, and a call without it
   fails with `-32602`. Every skill, agent, workflow, and example always passes one, written after
   reading the bill's text or synopsis; when neither is on record, the summary says so. It never

@@ -136,9 +136,9 @@ grade or rank a legislator.
 
 ## A bill document shows as a link instead of a preview
 
-The bill card's "Read bill" viewer embeds a Google Docs preview only when the host allows
-`docs.google.com` inside the card. When the host blocks the preview, or refuses "Open full screen",
-the card shows the document's URL as a link with a **Copy link** button instead. That is expected
+The document viewer in the bill card's Documents tab embeds a Google Docs preview only when the
+host allows `docs.google.com` inside the card. When the host blocks the preview, or refuses "Open
+full screen", the card shows the document's URL as a link with a **Copy link** button instead. That is expected
 in hosts that restrict framed content. Open the link, or copy it into a browser. Claude can also
 read the text with `get_latest_bill_document`.
 
