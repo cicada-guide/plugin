@@ -10,6 +10,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Added
+
+- `show_official`, the server's new contact card for one legislator: office, state chamber and
+  district, party, term, and recorded contact details. Listed in README, the `state-legislation`
+  skill, the tool reference, and the tools that take no `response_format`.
+
 ## [0.6.0] - 2026-09-27
 
 ### Added
