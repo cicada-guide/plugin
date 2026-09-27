@@ -89,8 +89,8 @@ version bump and a transition period where the old hostname still resolves.
 **Tool documentation drifts silently.** The endpoint is unversioned, so nothing signals when the
 live server gains, renames, or drops a tool. Tool lists are duplicated in `README.md`,
 `skills/state-legislation/SKILL.md`, and `references/tool-reference.md`. Before editing any of
-them, run `tools/list` against the live endpoint (a bare POST returns 400; the session handshake
-script is in PUBLISHING.md) and reconcile all three against the server — not against each other.
+them, run `tools/list` against the live endpoint (the server is stateless, so it is one POST; the
+command is in PUBLISHING.md) and reconcile all three against the server — not against each other.
 Avoid writing a tool *count* into prose; it is the first thing to go stale.
 
 **Never document a tool or parameter that you have not seen the server return.** Input schemas

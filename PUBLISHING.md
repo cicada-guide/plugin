@@ -23,24 +23,20 @@ every release.
 - **Reconcile the tool reference against the live server.** Run `tools/list` against
   `https://public.cicada.guide/mcp` and diff it against
   `skills/state-legislation/references/tool-reference.md`, which records the server version it was
-  verified against. The endpoint is unversioned, so nothing else signals drift. A bare `tools/list`
-  POST returns 400 — the transport requires a session, so `initialize` first, echo the
-  `mcp-session-id` response header on the next call, and send `notifications/initialized` between
-  the two. Reconcile against the server, never against the other copies: the tool names are
-  repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three agreeing
-  with each other is exactly the state drift leaves behind. `node scripts/check-live-tools.mjs`
-  does the handshake and the reconciliation in one step, and the `live-tools` workflow runs it
-  nightly. To inspect the raw list by hand, this writes it to `tools-list.json` (bash):
+  verified against. The endpoint is unversioned, so nothing else signals drift. The server is
+  stateless: it issues no `mcp-session-id`, and a bare `tools/list` POST is answered directly, with
+  no `initialize` first. Reconcile against the server, never against the other copies: the tool
+  names are repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three
+  agreeing with each other is exactly the state drift leaves behind.
+  `node scripts/check-live-tools.mjs` does the fetch and the reconciliation in one step, and the
+  `live-tools` workflow runs it nightly. To inspect the raw list by hand, this writes it to
+  `tools-list.json` (bash):
 
   ```bash
   E=https://public.cicada.guide/mcp
   H=(-H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream'
      -H 'MCP-Protocol-Version: 2025-06-18')
-  SID=$(curl -s -D - -o /dev/null "${H[@]}" "$E" -d '{"jsonrpc":"2.0","id":1,"method":"initialize",
-    "params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"docs","version":"0"}}}' |
-    tr -d '\r' | awk -F': ' 'tolower($1)=="mcp-session-id"{print $2}')
-  curl -s "${H[@]}" -H "Mcp-Session-Id: $SID" "$E" -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
-  curl -s "${H[@]}" -H "Mcp-Session-Id: $SID" "$E" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |
+  curl -s "${H[@]}" "$E" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |
     sed -n 's/^data: //p' > tools-list.json
   ```
 
