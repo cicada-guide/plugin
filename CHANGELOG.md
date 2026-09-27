@@ -56,7 +56,7 @@ plugin's guidance, including updates made to match what the server returns.
 - Updated to match the server: `read_pdf_bytes` reads a source that ignores Range from the start,
   for files up to 20 MB, instead of refusing it.
 - Card resource URIs: `bill-results-v11`, `bill-workspace-v12`, `legislator-record-v12`, and
-  `official-card-v5`.
+  `official-card-v6`.
 
 ### Removed
 
