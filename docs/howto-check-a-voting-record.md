@@ -127,8 +127,9 @@ In a card-rendering host you can also filter by subject on the legislator record
 ## The legislator record card
 
 Once one person is identified, Claude calls `show_person_record` without being asked. In a host
-that renders MCP Apps, the card shows the legislator's seat and contact options, their recorded
-votes with session, vote, and subject filters, and the bills they sponsored.
+that renders MCP Apps, the card shows the legislator's seat, their recorded votes with session,
+vote, and subject filters, and the bills they sponsored. Contact buttons are on the contact card,
+not here.
 
 The card loads the votes itself, and none of them reach Claude through the card. The written answer
 comes from the votes Claude read directly, so it stands on its own in a host that cannot render

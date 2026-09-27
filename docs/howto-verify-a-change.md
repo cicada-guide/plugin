@@ -31,7 +31,7 @@ It needs no network and finishes in well under a second. On success it prints
 `N check(s) failed:`, then one line per failure in the form `file:line: message`, and exits 1. The
 line number is omitted when a failure belongs to the whole file.
 
-It covers the four version fields, manifest names and `source`, the pinned endpoint and server key,
+It covers the three version fields, manifest names and `source`, the pinned endpoint and server key,
 skill and agent frontmatter, `${CLAUDE_PLUGIN_ROOT}` paths and Markdown links, tool counts in
 prose, the numbers in each restated dataset rule, the rules each entry point must carry, and
 phrases that critique the dataset. Every check, its message, and its fix are in the
@@ -60,7 +60,7 @@ what the server returned, save one with the command from [PUBLISHING.md](../PUBL
 (bash). The server is stateless, so this is one POST with no `initialize` first:
 
 ```bash
-E=https://public.cicada.guide/mcp
+E=https://public.cicada.guide/mcp-anthropic
 H=(-H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream'
    -H 'MCP-Protocol-Version: 2025-06-18')
 curl -s "${H[@]}" "$E" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |

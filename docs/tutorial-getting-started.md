@@ -6,7 +6,7 @@ how cards appear, and run one of its slash commands. It takes about ten minutes 
 account, API key, or sign-in.
 
 The plugin connects your AI host to the hosted cicada-guide server at
-`https://public.cicada.guide/mcp`, which serves U.S. state legislative data: bills, bill text,
+`https://public.cicada.guide/mcp-anthropic`, which serves U.S. state legislative data: bills, bill text,
 legislators, sessions, roll calls, and individual votes. It covers state legislatures only, and it
 is read-only: it looks things up and never contacts anyone or changes anything.
 
@@ -16,11 +16,6 @@ is read-only: it looks things up and never contacts anyone or changes anything.
 - Network access to `https://public.cicada.guide` over HTTPS.
 - Nothing else. The server accepts anonymous callers, so there is no key to paste and no OAuth
   flow to complete.
-
-**Using Codex?** The same repository is also a Codex plugin: `.codex-plugin/plugin.json` points
-Codex at the same skills and the same server. Install it through Codex's own plugin flow; the
-`/plugin`, `/mcp`, and `/help` commands in this tutorial are Claude Code's. The questions in steps
-3 to 6 work the same way once the tools are available.
 
 ## Step 1: Install the plugin
 
@@ -133,8 +128,8 @@ How do I contact Alabama Representative Rex Reynolds?
 
 Claude finds the legislator by name, confirms which person you mean, and ends with their contact
 card from `show_official`. In a card-rendering host that card shows the photo, the seat, every
-contact option on record as buttons and menus, a district map when an outline exists, and a tally
-of recent recorded votes.
+contact option on record as buttons and menus, a district map when an outline exists, and a Recent
+votes panel.
 
 **Done looks like:** an answer that states the seat (office, state, chamber, district) as recorded,
 names which contact details are on record and which are not, and ends with the contact card or

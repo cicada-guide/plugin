@@ -25,7 +25,7 @@ The server is stateless, so this is one POST with no `initialize` (bash; the sam
 PUBLISHING.md):
 
 ```bash
-E=https://public.cicada.guide/mcp
+E=https://public.cicada.guide/mcp-anthropic
 H=(-H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream'
    -H 'MCP-Protocol-Version: 2025-06-18')
 curl -s "${H[@]}" "$E" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' |

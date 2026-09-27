@@ -193,7 +193,7 @@ connected rather than answering from general knowledge. See
 
 ## Using a host other than Claude Code
 
-The endpoint `https://public.cicada.guide/mcp` is a standard Streamable HTTP MCP server. Any host
+The endpoint `https://public.cicada.guide/mcp-anthropic` is a standard Streamable HTTP MCP server. Any host
 that supports remote MCP servers can connect to it directly, with no credentials. Without the
 plugin, though, the host doesn't get the skills and agents, only the raw tools.
 

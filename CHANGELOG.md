@@ -10,6 +10,8 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-27
+
 ### Added
 
 - A full documentation set under `docs/`, arranged as a tutorial, how-to guides, reference, and
@@ -55,11 +57,19 @@ plugin's guidance, including updates made to match what the server returns.
   for a headline as well as a summary.
 - Updated to match the server: `read_pdf_bytes` reads a source that ignores Range from the start,
   for files up to 20 MB, instead of refusing it.
-- Card resource URIs: `bill-results-v11`, `bill-workspace-v12`, `legislator-record-v12`, and
-  `official-card-v6`.
+- The contact card (`show_official`) shows no vote tally; its Recent votes panel and district map
+  stay. The legislator record (`show_person_record`) shows no contact buttons; its tally stays as
+  the vote filter. Each card does one job.
+- The plugin's MCP endpoint is `https://public.cicada.guide/mcp-anthropic`. The server still
+  answers the old `https://public.cicada.guide/mcp`, so copies installed before this release keep
+  working until they update.
+- Card resource URIs: `bill-results-v12`, `bill-workspace-v13`, `legislator-record-v13`, and
+  `official-card-v7`. The bill cards no longer carry ChatGPT compatibility paths.
 
 ### Removed
 
+- ChatGPT, Codex and OpenAI support. `.codex-plugin/plugin.json`, the Codex manifest, is gone, so
+  the version is three fields in two files, and the docs describe Claude only.
 - The `multi-state-bill-scanner` subagent and the "Compare states" how-to. A question across
   several states is now answered directly, with one `search_bills` call per state.
 - Handling for the bill card's "Summarize with AI" request, which the card no longer offers.
@@ -286,7 +296,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/cicada-guide/plugin/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/cicada-guide/plugin/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/cicada-guide/plugin/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/cicada-guide/plugin/compare/v0.5.4...v0.6.0

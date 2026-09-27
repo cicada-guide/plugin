@@ -14,10 +14,10 @@ there rather than repeating them. Why the plugin ends answers with a card is in
 
 | Tool | Card | Resource URI | The card fetches | The model receives |
 | --- | --- | --- | --- | --- |
-| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v11.html` | More pages of the same search | The full result list, as text or JSON, as usual |
-| `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v12.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors. The text fallback omits the `headline` and `summary`; `structuredContent` echoes them in `_display` |
-| `show_official` | Contact card | `ui://cicada-guide/official-card-v6.html` | Recent votes and their tally (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
-| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v12.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
+| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v12.html` | More pages of the same search | The full result list, as text or JSON, as usual |
+| `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v13.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors. The text fallback omits the `headline` and `summary`; `structuredContent` echoes them in `_display` |
+| `show_official` | Contact card | `ui://cicada-guide/official-card-v7.html` | Recent votes (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
+| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v13.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
 
 The URIs are the ones the live `tools/list` advertises in each tool's `_meta.ui.resourceUri`. The
 `-vN` suffix changes when the server changes a card's HTML shell, so a host that caches by URI
@@ -174,7 +174,8 @@ Parameter: `id` (required), from `search_people` after identity is resolved —
   viewer turns location on, the map places them and, below the map, reads "You're in this
   district." or "You're not in this district." until dismissed; from outside, a dashed line runs to
   the nearest edge. The location stays in the card: it never reaches the server or the model;
-- the tally of the last recorded votes, and those recent votes.
+- a Recent votes panel listing the last recorded votes. The card shows no vote tally; how a
+  legislator voted is the record's job.
 
 It does not show the term or other seats held; the text and `structuredContent` do.
 
@@ -193,8 +194,8 @@ It does not show the term or other seats held; the text and `structuredContent` 
 
 **How the skills react.** `contact-legislator` reports the seat exactly as returned and every
 contact option on record, names what is not on record, and never guesses an address or number. In
-a card host it does not re-list the contact buttons. The card's tally labels what it covers, and
-no skill uses it to grade, score, or rank a legislator. `legislator-disambiguator` calls
+a card host it does not re-list the contact buttons. No skill uses the recent votes to grade,
+score, or rank a legislator. `legislator-disambiguator` calls
 `show_official` only to read a candidate's seat, never to display it.
 
 ## `show_person_record`: legislator record
@@ -202,7 +203,8 @@ no skill uses it to grade, score, or rank a legislator. `legislator-disambiguato
 Parameter: `id` (required), from `search_people` after identity is resolved —
 [tool reference](../skills/state-legislation/references/tool-reference.md#show_person_record).
 
-**The card shows** the seat and contact options, then two views:
+**The card shows** the seat, with no contact buttons (those are on the contact card), then two
+views:
 
 - **Voting history**, newest first, filterable by session, by how they voted (Yea, Nay, No vote,
   Absent), and by subject, with older votes loaded on request. The session picker lists only

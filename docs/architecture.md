@@ -8,15 +8,15 @@ server also renders interactive cards; the guidance decides when to show one and
 beside it.
 
 ```text
- host (Claude Code, Codex)
+ host (Claude Code)
    │  reads the manifest
    ▼
- .claude-plugin/plugin.json ─┐          .codex-plugin/plugin.json
- .claude-plugin/marketplace.json        (own interface block, same version)
+ .claude-plugin/plugin.json ─┐
+ .claude-plugin/marketplace.json
    │                          │
    │ skills/  agents/         │ .mcp.json  ──  "guide-public"
    ▼                          ▼
- guidance loaded into    Streamable HTTP ──► https://public.cicada.guide/mcp
+ guidance loaded into    Streamable HTTP ──► https://public.cicada.guide/mcp-anthropic
  the model's context                          (Cloudflare Worker, private repo
                                                cicada-guide/mcp, read-only data)
 ```
@@ -27,17 +27,13 @@ beside it.
 - **`.claude-plugin/marketplace.json`** lets `/plugin marketplace add cicada-guide/plugin` work.
   Its single entry has `"source": "./"`: the repo root *is* the plugin, so there is no
   sub-directory to package.
-- **`.codex-plugin/plugin.json`** is the Codex manifest. It has its own `interface` block
-  (display name, prompts, logo) and its own description text, and it points at the same `skills/`
-  and `.mcp.json`.
-
-The three files carry four independent `version` fields. They must match, or hosts see different
+The two files carry three independent `version` fields. They must match, or hosts see different
 releases. `scripts/check.mjs` fails until they agree.
 
 ## The MCP server
 
 `.mcp.json` declares exactly one server, keyed `guide-public`, at
-`https://public.cicada.guide/mcp`. Two consequences follow:
+`https://public.cicada.guide/mcp-anthropic`. Two consequences follow:
 
 - **Tool names include the server key.** A host exposes each tool to the model as
   `mcp__plugin_cicada-guide_guide-public__<tool>`. Agent allowlists and any prose that names a

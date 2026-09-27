@@ -1,6 +1,6 @@
 # cicada-guide plugin documentation
 
-The plugin connects Claude Code and Codex to U.S. state legislative data — bills, legislators,
+The plugin connects Claude Code to U.S. state legislative data — bills, legislators,
 roll calls, and sessions — through the hosted cicada-guide MCP server, and ships the skills and
 agents that tell Claude how to use it. These pages are for people: nothing here is loaded into a
 Claude session. Pick the section that matches what you are doing.

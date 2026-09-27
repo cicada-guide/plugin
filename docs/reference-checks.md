@@ -41,40 +41,33 @@ Offline, no dependencies, Node 22. Run it from anywhere: it resolves paths from 
 
 ### Manifests
 
-The manifest checks run only when `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
-and `.codex-plugin/plugin.json` all parse. Fix a parse failure first; the rest follow on the next
+The manifest checks run only when `.claude-plugin/plugin.json` and
+`.claude-plugin/marketplace.json` both parse. Fix a parse failure first; the rest follow on the next
 run.
 
-**JSON parses.** Each of the three manifests and `.mcp.json`.
+**JSON parses.** Each of the two manifests and `.mcp.json`.
 - Message: `<file>: does not parse as JSON: <parser error>`
 - Fix: correct the JSON syntax at the position the parser names.
 
-**Each version field is a version.** The four fields: `version` in `.claude-plugin/plugin.json`,
-`version` in `.codex-plugin/plugin.json`, and `metadata.version` and `plugins[0].version` in
-`.claude-plugin/marketplace.json`. Each must be a string starting `<major>.<minor>.<patch>`.
+**Each version field is a version.** The three fields: `version` in `.claude-plugin/plugin.json`,
+and `metadata.version` and `plugins[0].version` in `.claude-plugin/marketplace.json`. Each must be a string starting `<major>.<minor>.<patch>`.
 - Message: `<file>: <file> <field> is missing or not a version: <value as JSON>`, for example
-  `.codex-plugin/plugin.json: .codex-plugin/plugin.json version is missing or not a version: "0.8"`
+  `.claude-plugin/plugin.json: .claude-plugin/plugin.json version is missing or not a version: "0.8"`
 - Fix: set the field to the release version.
 
-**The four version fields agree.** All four must be the identical string.
-- Message: `.claude-plugin/marketplace.json: the four version fields disagree: <JSON of all four>`
-- Fix: bump the ones that lag. `grep -rn '"version"' .claude-plugin .codex-plugin` shows all four.
+**The three version fields agree.** All three must be the identical string.
+- Message: `.claude-plugin/marketplace.json: the three version fields disagree: <JSON of all three>`
+- Fix: bump the ones that lag. `grep -rn '"version"' .claude-plugin` shows all three.
   Release bumps are in [PUBLISHING.md](../PUBLISHING.md#before-each-release).
 
-**The plugin name is `cicada-guide`.** In `.claude-plugin/plugin.json` `name`,
-`.codex-plugin/plugin.json` `name`, and `.claude-plugin/marketplace.json` `plugins[0].name`.
+**The plugin name is `cicada-guide`.** In `.claude-plugin/plugin.json` `name` and
+`.claude-plugin/marketplace.json` `plugins[0].name`.
 - Message: `<file>: plugin name is "<name>", expected "cicada-guide"`
 - Fix: restore the name. It is part of every tool's qualified name, so renaming it breaks users.
 
 **The marketplace entry points at the repo root.**
 - Message: `.claude-plugin/marketplace.json: plugins[0].source must be "./" — the repo root is the plugin`
 - Fix: set `plugins[0].source` to `"./"`.
-
-**Codex paths exist.** `skills`, `mcpServers`, and `interface.logo` in `.codex-plugin/plugin.json`,
-when set, must name a file or directory that exists.
-- Message: `.codex-plugin/plugin.json: <skills or mcpServers> points at <path>, which does not exist`,
-  or `.codex-plugin/plugin.json: interface.logo points at <path>, which does not exist`
-- Fix: correct the path, relative to the repo root.
 
 **One server, keyed `guide-public`.** `.mcp.json` `mcpServers` must hold exactly one key,
 `guide-public`.
@@ -83,8 +76,8 @@ when set, must name a file or directory that exists.
   name, so changing it makes every documented tool name unreachable.
 
 **The endpoint is pinned.** `mcpServers["guide-public"].url` must be
-`https://public.cicada.guide/mcp`.
-- Message: `.mcp.json: endpoint is <url>; the pinned endpoint is https://public.cicada.guide/mcp (see CLAUDE.md before changing it)`
+`https://public.cicada.guide/mcp-anthropic`.
+- Message: `.mcp.json: endpoint is <url>; the pinned endpoint is https://public.cicada.guide/mcp-anthropic (see CLAUDE.md before changing it)`
 - Fix: restore the URL. The hostname is a published API surface. It moves only with a version bump
   and a transition period, and then the `ENDPOINT` constant in the script changes in the same
   commit.
@@ -167,8 +160,7 @@ checked, and links inside code blocks are checked like any other.
 - Message: `<file>:<line>: tool count "<match>" in prose goes stale; describe the tools instead`
 - Fix: describe the tools, or name them, instead of counting them.
 
-**No critique of the dataset.** Applies to runtime docs, project docs, and
-`.codex-plugin/plugin.json`. The pattern is the `CRITIQUE` constant in `scripts/check.mjs`: word
+**No critique of the dataset.** Applies to runtime docs and project docs. The pattern is the `CRITIQUE` constant in `scripts/check.mjs`: word
 stems and phrases about repeated records, reliability, gaps or variation in coverage, roll calls
 stored apart from their bill, and data said to be absent. It is case-insensitive and matches inside
 longer words. (This page is checked too, so it cannot quote them.)

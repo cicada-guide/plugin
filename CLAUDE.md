@@ -1,6 +1,6 @@
 # cicada-guide plugin
 
-A Claude Code / Codex **plugin**, not an application. Every file here is Markdown or JSON read by a
+A Claude Code **plugin**, not an application. Every file here is Markdown or JSON read by a
 plugin loader: there is no build step, no dependencies, and nothing to compile. The
 MCP server the plugin points at is a separate, private repo (`cicada-guide/mcp`) — its source is
 not in this tree and cannot be changed from here.
@@ -17,7 +17,7 @@ Run the offline checks before every commit. They need only Node 22, no install a
 node scripts/check.mjs
 ```
 
-They cover the invariants below: the four version fields, manifest names and `source`, the pinned
+They cover the invariants below: the three version fields, manifest names and `source`, the pinned
 endpoint and server key, skill and agent frontmatter, `${CLAUDE_PLUGIN_ROOT}` and Markdown links,
 tool counts in prose, the numbers in each restated dataset rule, each entry point carrying the
 rules it relies on, and phrases that critique the dataset. The project docs (`CONTRIBUTING.md`,
@@ -52,7 +52,6 @@ deployment or its private repo; treat the endpoint as a fixed external dependenc
 | --- | --- |
 | `.claude-plugin/plugin.json` | Claude manifest |
 | `.claude-plugin/marketplace.json` | Marketplace entry, `"source": "./"` — the repo root *is* the plugin |
-| `.codex-plugin/plugin.json` | Codex manifest: separate `interface` block and its own description text |
 | `.mcp.json` | The single declaration of the MCP endpoint |
 | `skills/state-legislation/` | Always-on skill, plus `references/` (tool reference, workflows, project settings) |
 | `skills/*/SKILL.md` | Other skills are slash commands, one directory each |
@@ -69,11 +68,10 @@ deployment or its private repo; treat the endpoint as a fixed external dependenc
 These break installed users silently — no error, sometimes no symptom until someone reports a
 wrong answer. `scripts/check.mjs` catches the mechanical ones; the rest need a reviewer.
 
-**Version is four fields in three files.** `.claude-plugin/plugin.json`,
-`.codex-plugin/plugin.json`, and *both* `metadata.version` and `plugins[0].version` in
-`.claude-plugin/marketplace.json`. They
+**Version is three fields in two files.** `.claude-plugin/plugin.json`, and *both*
+`metadata.version` and `plugins[0].version` in `.claude-plugin/marketplace.json`. They
 are independent fields that drift when one is missed. Grep before committing a bump:
-`grep -rn '"version"' .claude-plugin .codex-plugin`.
+`grep -rn '"version"' .claude-plugin`.
 
 **Cross-component links use `${CLAUDE_PLUGIN_ROOT}`, never relative paths.** A subagent's working
 directory is the user's project, so `../skills/...` resolves to nothing. Within
@@ -85,7 +83,9 @@ configuration can reach.
 
 **The endpoint hostname is a published API surface.** It appears in `.mcp.json` and in prose.
 Changing it breaks every installed user with no warning and no fallback; it moves only with a
-version bump and a transition period where the old hostname still resolves.
+version bump and a transition period where the old hostname still resolves. The path follows the
+same rule: 0.9.0 moved it from `/mcp` to `/mcp-anthropic`, and the server still answers `/mcp` for
+copies installed before.
 
 **Tool documentation drifts silently.** The endpoint is unversioned, so nothing signals when the
 live server gains, renames, or drops a tool. Tool lists are duplicated in `README.md`,

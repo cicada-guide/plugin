@@ -60,8 +60,8 @@ skill can produce.
 ### 2. Show the record
 
 Once one person is identified, call `show_person_record` with their `id`, without asking. In a host
-that renders cards it shows their seat, contact options, recorded votes with session, vote, and
-subject filters, and the bills they sponsored. What reaches you is identity and seat only (as text
+that renders cards it shows their seat, recorded votes with session, vote, and subject filters, and
+the bills they sponsored. It shows no contact buttons; that is `show_official`'s card. What reaches you is identity and seat only (as text
 or as `structuredContent`, depending on the host) — never the votes. Read the votes with
 `get_person_votes` below for the written report, so it stands on its own in a host with no cards.
 

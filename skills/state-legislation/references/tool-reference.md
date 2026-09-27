@@ -228,7 +228,7 @@ whose text contains "Passed", which can record one chamber's passage rather than
 each bill's `status` as recorded, and never treat a `status` filter as proof a bill became law.
 
 **Every call also renders a results card** in a host that supports MCP Apps, via
-`ui://cicada-guide/bill-results-v11.html`. It lists the results with a "Show more" button that
+`ui://cicada-guide/bill-results-v12.html`. It lists the results with a "Show more" button that
 pages with the same arguments. Tapping a result posts a user turn asking you to show that bill with
 `show_bill` (see [`show_bill`](#show_bill)); the card opens no bill itself. You still receive
 the full list as text or JSON, so read results from it as usual. Where the card renders, summarize
@@ -272,7 +272,7 @@ the object as text.
 
 Like the other display tools, it has no `response_format`.
 
-Renders a bill card via `ui://cicada-guide/bill-workspace-v12.html` in hosts that support MCP Apps.
+Renders a bill card via `ui://cicada-guide/bill-workspace-v13.html` in hosts that support MCP Apps.
 The card shows the state and session, the status, the bill number, and a title plate that shows your
 `headline` first; tapping the plate toggles to the official title and back. Then come four tabs.
 Overview holds the path to becoming law (Introduced, Engrossed, Enrolled, Enacted), the recorded
@@ -419,9 +419,9 @@ Use it when the user wants to know who someone is or how to reach them. For how 
 `get_person_votes` or `show_person_record`.
 
 In a host that supports MCP Apps it renders a contact card via
-`ui://cicada-guide/official-card-v6.html`: the photo, the seat line, party, contact menus holding
-every entry in `contact_options`, a district map when `office.outline` exists, the tally of the
-last recorded votes, and recent votes. The card asks the host for geolocation; when the viewer
+`ui://cicada-guide/official-card-v7.html`: the photo, the seat line, party, contact menus holding
+every entry in `contact_options`, a district map when `office.outline` exists, and a Recent votes
+panel. It shows no vote tally. The card asks the host for geolocation; when the viewer
 turns location on, the map places them and, below the map, reads "You're in this district." or
 "You're not in this district." until dismissed; outside, a dashed line runs to the nearest edge. The
 card and its recent-votes and map panels sit side by side at one width. The location
@@ -467,7 +467,7 @@ for the rest, and never supply one from elsewhere.
 `id` (UUID, required), from `search_people` after resolving identity. It has no `response_format`.
 
 In a host that supports MCP Apps it renders a legislator record via
-`ui://cicada-guide/legislator-record-v12.html`: the seat and contact options, the vote history
+`ui://cicada-guide/legislator-record-v13.html`: the seat (no contact buttons), the vote history
 with session, vote, and subject filters, and the bills they sponsored. The card loads the votes
 through `get_person_votes` itself; its session picker lists only sessions with the legislator's
 votes, newest first, and its tally counts only the votes loaded, so never quote it as a career
