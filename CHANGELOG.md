@@ -10,6 +10,14 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- `scripts/check-live-tools.mjs` no longer requires an `mcp-session-id` from `initialize`, and sends
+  `DELETE` only when the server issued one. The hosted server is now stateless and issues none, so
+  the nightly `live-tools` run would otherwise fail on every run.
+- `PUBLISHING.md` and `CLAUDE.md`: fetching `tools/list` by hand is one POST, with no session
+  handshake.
+
 ## [0.5.4] - 2026-09-26
 
 ### Added
