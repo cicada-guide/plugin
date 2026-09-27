@@ -69,6 +69,92 @@ Errors come back as tool results, not as a crash, in one of two shapes:
 
 An empty result is not an error. It means nothing matched; try a broader search.
 
+## `-32602` from a card tool or `get_rollcall_breakdown`
+
+`show_bill`, `show_official`, `show_person_record`, and `get_rollcall_breakdown` take no
+`response_format`. Passing one fails with `MCP error -32602: Input validation error:` naming
+`response_format`, because every schema rejects unknown keys.
+
+The usual cause is a project default. A `.claude/cicada-guide.local.md` that pins
+`response_format` applies to the other tools, and the guidance says to omit it from these four.
+If the error appears anyway, ask Claude to retry the call without `response_format`. If it keeps
+happening, update the plugin: versions before 0.8.0 predate some of these rules. The settings
+contract is in [project-settings.md](../skills/state-legislation/references/project-settings.md).
+
+## The bill card's summary is rejected
+
+`show_bill` takes an optional `summary` of 1 to 1,500 characters. The server trims it first, so a
+summary that is empty or only whitespace is rejected, and so is one longer than 1,500 characters.
+Either way the call fails with `MCP error -32602: Input validation error:` naming `summary`, and no
+card appears.
+
+Ask Claude to shorten the summary and show the bill again, or to show it without a summary. The
+card then offers a "Summarize with AI" button, which asks Claude for a summary and shows the card
+again with it.
+
+## Cards don't appear
+
+Cards render only in hosts that support MCP Apps. A text-only host, such as Claude Code in the
+terminal, shows no card. Claude receives the call's text result or its structured data, depending
+on the host: for `show_bill`, the bill's number, title, status and synopsis, but not the floor votes
+or sponsors the card would fetch for itself. That is expected, not a fault. The plugin writes every answer from the data
+tools so that it stands on its own without a card.
+
+If you expected a card in a host that does render them:
+
+- **Check that the call ran.** A card appears only when Claude calls `show_bill`, `show_official`,
+  `show_person_record`, or `search_bills`. A topic search that lists several bills doesn't end with
+  a bill card until you pick one.
+- **Check for an error.** A card call that failed, for example with
+  [`-32602`](#-32602-from-a-card-tool-or-get_rollcall_breakdown), puts nothing on screen.
+- **Subagent results name a card rather than showing one.** A subagent's own calls are never shown
+  to you, so the main conversation shows the card from the subagent's report. If it didn't, ask
+  Claude to show it.
+
+Why the plugin works this way is in [why the plugin is card-first](explanation-cards.md).
+
+## A card shows something the answer doesn't mention
+
+That is by design. A card fetches its own data, such as floor votes, sponsors, and a legislator's
+vote history, and the written answer leaves out what the card already shows on screen. The answer
+covers the question, the context, and the caveats instead.
+
+To ask about something on the card, select it and ask. Selecting a floor vote, a document, or a
+vote filter tells Claude what you are viewing, and Claude can look up the details with the data
+tools. Claude doesn't see what the card fetched, so it answers from its own tool calls, not from
+the card.
+
+The summary on a bill card is labelled as written by the AI assistant. It is Claude's plain-language
+reading of the bill text or synopsis, not an official summary, and it never predicts passage. The
+vote tallies on the legislator cards cover only the votes they name; the plugin never uses them to
+grade or rank a legislator.
+
+## Contact details, chamber, or district are "not on record"
+
+The plugin reports only what the tools return. Most officials have no contact details on record,
+and some have no recorded seat. In both cases Claude says so rather than guessing:
+
+- **Contact details** come from `show_official`. When none are recorded, it reports `No email,
+  website or phone number is on record.` Claude never builds an email address or phone number
+  from a pattern, and doesn't search the web for one unless you ask.
+- **Chamber and district** come only from `show_official` and `show_person_record`, which return
+  the recorded seat. When no seat is recorded, Claude says the chamber and district are not on
+  record. It never infers them from a bill the legislator voted on, or from a name search, which
+  returns a name and party only.
+
+The state legislature's own website is another place to look.
+
+## `/contact-legislator` asks for a name
+
+`/cicada-guide:contact-legislator <name> [state]` looks a legislator up by name. With no argument,
+it asks which legislator and which state. Asking for "my representative" or "my senator" also gets
+a question back, because no tool maps an address, ZIP code or district to a legislator. Give the
+legislator's name and state.
+
+When several legislators share the name, Claude lists them with party, state and the dates of their
+recorded votes, and asks which one you mean. Naming the state or party up front usually settles
+it. See [the answer names the wrong legislator](#the-answer-names-the-wrong-legislator).
+
 ## The answer names the wrong legislator
 
 Legislators with the same name are different people. Name the state, the party, or a session
