@@ -44,7 +44,8 @@ Claude to load the tool and retry.
 Anonymous callers are rate limited to 60 a minute, counted per IP address. Past that a call fails
 with `Rate limit exceeded. Retry in 60 seconds.` and the response carries `Retry-After: 60`.
 
-- Wait a full minute before the next call. Retrying straight away uses up the next window too.
+- Claude tells you when the limit is hit and resumes after a minute. Retrying straight away uses
+  up the next window too.
 - Large sweeps, such as a topic across many states, run faster as a few narrower requests.
 - Callers behind one shared IP address (an office NAT, a CI runner, a VPN) share one limit.
 
@@ -71,6 +72,16 @@ Legislators with the same name are different people. Name the state, the party, 
 or bill the person voted on, and Claude can tell them apart. The records confirm a legislator's
 state, not their chamber or district, so a chamber or district you give is reported as unverified.
 When the records can't settle it, the plugin lists the candidates rather than guessing.
+
+No tool maps an address or district to a legislator. Asking about "my senator" or "my
+representative" without a name gets a question back: give the legislator's name and state.
+
+## Claude says the server isn't connected
+
+If no cicada-guide tools are available in the session, Claude says the `guide-public` server isn't
+connected rather than answering from general knowledge. See
+[the server doesn't show up](#the-server-doesnt-show-up-or-shows-as-disconnected) above: run
+`/mcp`, then start a new session.
 
 ## Using a host other than Claude Code
 

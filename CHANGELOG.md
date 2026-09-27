@@ -10,6 +10,18 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Added
+
+- `voting-record` Path C and a matching workflow for one legislator's vote on one bill:
+  `get_votes` with `bill_id` and `people_id` together, matched to `get_rollcalls` by roll call.
+- `bill-research` answers a topic with a list of matching bills and offers a brief on one.
+- Skills and agents say what to do when no cicada-guide tools are available: report that
+  `guide-public` isn't connected and point to `/mcp` and a new session.
+- A request about "my senator" or "my representative" with no name gets a question back for the
+  legislator's name and state. No tool maps an address or district to a legislator.
+- README: a `/mcp` verify step, a new-session hint, a note on tool approval prompts, and examples
+  that name a state and session.
+
 ### Changed
 
 - `scripts/check-live-tools.mjs` no longer requires an `mcp-session-id` from `initialize`, and sends
@@ -17,6 +29,30 @@ plugin's guidance, including updates made to match what the server returns.
   the nightly `live-tools` run would otherwise fail on every run.
 - `PUBLISHING.md` and `CLAUDE.md`: fetching `tools/list` by hand is one POST, with no session
   handshake.
+- `voting-record` argument hint is `<legislator name> [state] [bill] [session or date range]`.
+  README and the `state-legislation` skill quote both commands' hints exactly.
+- Both slash commands ask which bill or legislator, and which state, when given no argument.
+- `search_bills` guidance: each `query` word is matched separately and ORed, so one distinctive
+  word beats a phrase; the document full-text cap applies before `division_id` and other filters;
+  `status` is a partial match on recorded status text and is not proof of enactment.
+- After a truncated response, re-request the same `offset` or `cursor` with a smaller `limit`:
+  `next_offset` and `next_cursor` point past the items cut from the text. Example limits lowered.
+- On a rate-limit error, Claude tells the user and resumes after a minute.
+- Answers keep UUIDs out unless asked, and say "did not vote" for `NV`.
+- The settings template leaves `default_session` commented out, so a copied file pins no session.
+  README links the template on GitHub for marketplace installs.
+
+### Fixed
+
+- `read_pdf_bytes` is no longer suggested for reading bill text; it returns PDF bytes. Older
+  versions are cited by their `get_documents` URL.
+- Offset-past-end guidance quotes the messages the tools return now.
+- `get_person_votes` is listed among the tools without `total`.
+- `get_rollcall_breakdown` output for a roll call with no vote rows is reported as not recorded,
+  not as a 0-0 vote.
+- Tool reference: `show_bill` and `open_research_desk` declare `llm_model` as well as `context`;
+  `get_rollcalls` points to `get_rollcall_breakdown`; `search_people` `party` matching is stated
+  exactly.
 
 ## [0.5.4] - 2026-09-26
 

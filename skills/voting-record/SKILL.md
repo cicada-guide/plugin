@@ -1,14 +1,21 @@
 ---
 name: voting-record
-description: Produces a sourced voting-record summary for one U.S. state legislator, or a party breakdown of a single roll call. This skill should be used when the user asks how a named state legislator voted ("how did Senator Reynolds vote on HB 314", "what was her latest vote") or how one roll call split by party ("break down the final passage vote by party").
-argument-hint: "<legislator name> [state] [session or date range]"
+description: Produces a sourced voting-record summary for one U.S. state legislator, or a party breakdown of a single roll call. This skill should be used when the user asks how a named state legislator voted, overall or on one bill ("how did Senator Reynolds vote on HB 314", "what was her latest vote") or how one roll call split by party ("break down the final passage vote by party").
+argument-hint: "<legislator name> [state] [bill] [session or date range]"
 disable-model-invocation: false
 ---
 
 # Summarize a legislator's voting record
 
-Two shapes of request land here: one legislator's votes over time, and one roll call's breakdown
-across a chamber. Identify which is being asked before calling anything.
+Three shapes of request land here: one legislator's votes over time (Path A), one roll call's
+breakdown across a chamber (Path B), and one legislator's vote on one bill (Path C). Identify which
+is being asked before calling anything. With no argument, ask which legislator and which state.
+
+When the user says "my senator" or "my representative" without a name, ask for the legislator's
+name and state. No tool maps an address or district to a legislator.
+
+If no cicada-guide tools are available, say the `guide-public` server isn't connected, suggest
+checking `/mcp` and starting a new session, and don't answer from general knowledge.
 
 Supply the `context` string (15-25 words, third person) on each tool call, prefixed with
 `context_prefix` when the project sets one. Never put credentials, personal data, or first-person
@@ -79,7 +86,11 @@ the roll-call description or bill status says so — the tools return no pass/fa
 
 For a pattern question ("does she usually vote with her party"), state the sample size and the
 window covered before drawing any characterization, and keep it descriptive. `ABSENT` and `NV` are
-not positions — count them separately and do not fold them into a yes/no tally.
+not positions — count them separately and do not fold them into a yes/no tally. Say "did not vote"
+for `NV` and "absent" for `ABSENT`.
+
+Keep UUIDs out of the report unless the user asks for them; name bills by number, state, and
+session.
 
 ## Path B — one roll call across the chamber
 
@@ -95,16 +106,41 @@ not positions — count them separately and do not fold them into a yes/no tally
    returned; say so.
 
 A roll call with `counts: null` has no recorded member votes. Say the member-by-member breakdown
-is unavailable in this dataset. Do not present it as nobody having voted.
+is unavailable in this dataset. Do not present it as nobody having voted. `get_rollcall_breakdown`
+on such a roll call prints `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No individual votes
+are recorded for this roll call.` That is not a 0-0 vote: report the counts as not recorded.
 
 Report each roll call's own `counts`; never add counts across roll calls.
 
-Markdown output truncates at 25,000 characters with a pagination hint appended. A truncated page
-is not a complete page — keep paging rather than tallying what arrived, and prefer
-`response_format: "json"` so the structured envelope carries the full page.
+## Path C — one legislator's vote on one bill
+
+1. Resolve the bill: `list_states` → `division_id`, then `search_bills` with `bill` plus
+   `division_id`, adding `session_id` (from `list_sessions`) or `session_name` with the year when
+   one is given. The same number repeats across sessions; when several bills remain plausible, list
+   them with number, title, and session and ask.
+2. Resolve the person as in Path A step 1, including the jurisdiction check. Never pick one
+   same-name candidate silently.
+3. `get_votes` with both `bill_id` and `people_id`. The filters combine, so each row is that
+   legislator's vote on one roll call on that bill. Page with `cursor` while `has_more` is true.
+4. `get_rollcalls` with the `bill_id`, paging with `next_offset` while `has_more` is true. Match
+   each vote's `rollcall_id` to an item's `id` for the date, description, and `counts`. When a
+   `rollcall_id` matches no item, call `get_rollcall_breakdown` with it: its `rollcall` object
+   carries the date and description.
+5. Report each vote in date order: date, roll-call description, the legislator's category, and that
+   roll call's own `counts`. When `get_votes` returns no rows, say the data holds no recorded vote
+   by that legislator on that bill — not that they abstained.
+
+## Paging and limits
+
+Output truncates at 25,000 characters with a pagination hint appended, and `response_format:
+"json"` text is capped the same way. A truncated page is not a complete page, and its
+`next_cursor` or `next_offset` points past every item on it, including the ones cut from the text
+— following it skips them. Re-request the same `cursor` or `offset` (none, for a first page) with
+a smaller `limit` rather than tallying what arrived.
 
 Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in 60
-seconds.` Wait a full minute before the next call rather than retrying straight away.
+seconds.` Tell the user the rate limit was hit and that you will resume after a minute. Wait a full
+minute before the next call rather than retrying straight away.
 
 ## Constraints
 

@@ -21,28 +21,40 @@ claude --plugin-dir /path/to/plugin
 ```
 
 No API key, no account, no OAuth flow. The server is open to anonymous callers, so the tools work
-as soon as the plugin is enabled.
+as soon as the plugin is enabled. If the tools don't appear, start a new session: a host reads
+plugin configuration when a session starts.
 
-To verify, inspect the connected MCP tools and confirm the `guide-public` server is connected. It
-serves the tools listed under [Tools](#tools) below; that set grows as tools are added.
+To verify, run `/mcp` and check that `guide-public` (listed under the cicada-guide plugin) shows as
+connected. If it doesn't, see [Troubleshooting](docs/troubleshooting.md). The server provides the
+tools listed under [Tools](#tools) below; that set grows as tools are added.
+
+Claude Code may ask for approval before a tool runs. The tools only read legislative data, so you
+can allow them for the session.
 
 ## What it does
 
 Ask in plain language:
 
 - "Find recent Alabama bills about school funding"
-- "What does HB 314 actually do?"
+- "What does Alabama HB 591 from the 2026 Regular Session do?"
+- "Which Alabama bills about school choice passed in 2026?"
 - "Who sponsored this bill?"
-- "How did Representative Reynolds vote most recently?"
+- "How did Alabama Representative Rex Reynolds vote most recently?"
+- "How did Alabama Representative Rex Reynolds vote on HB 591 in the 2026 Regular Session?"
 - "Show me how the chamber split on that roll call"
 - "Which states are in the data?"
+
+Name the state, and the session or year when you know it: the same bill number recurs across
+states and sessions.
 
 Two packaged skills drive longer workflows:
 
 | Command | Purpose |
 | --- | --- |
-| `/cicada-guide:bill-research <bill or topic> [state] [year]` | Sourced brief on one bill: status, sponsors, text, roll calls, votes |
-| `/cicada-guide:voting-record <legislator> [state] [session]` | One legislator's voting history, or a party breakdown of one roll call |
+| `/cicada-guide:bill-research <bill number or topic> [state] [year]` | Sourced brief on one bill: status, sponsors, text, roll calls, votes. A topic lists matching bills first |
+| `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]` | One legislator's voting history or vote on one bill, or a party breakdown of one roll call |
+
+With no argument, either command asks which bill or legislator you mean, and in which state.
 
 ## Scope
 
@@ -54,6 +66,9 @@ rather than results.
 
 **U.S. state legislatures only.** The dataset holds no federal congressional bills, no municipal
 ordinances, and no ballot measures. `list_states` reports which jurisdictions are present.
+
+**Legislators are looked up by name.** No tool maps an address or district to a legislator, so
+"my senator" or "my representative" gets a question back: give the legislator's name and state.
 
 Everything is read-only. The tools retrieve legislative records and cannot send messages, contact
 officials, file documents, or change anything.
@@ -89,13 +104,15 @@ to a Rollcall, a Bill, or a person — never surveyed in bulk.
 
 Optional. A project can pin research defaults in `.claude/cicada-guide.local.md` at its root,
 so you stop restating the same state and session in every question. Copy
-[`cicada-guide.local.md.example`](cicada-guide.local.md.example) and edit it:
+[`cicada-guide.local.md.example`](cicada-guide.local.md.example) and edit it. If you installed
+from the marketplace, the template is at
+<https://github.com/cicada-guide/plugin/blob/main/cicada-guide.local.md.example>.
 
 ```markdown
 ---
 enabled: true
 default_division: Alabama
-default_session: 2025 Regular Session
+# default_session: <session name from list_sessions>
 context_prefix: Constituent research desk
 response_format: markdown
 ---
@@ -107,7 +124,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | --- | --- |
 | `enabled` | Anything but `true` disables the file entirely |
 | `default_division` | Jurisdiction assumed when a question names no state |
-| `default_session` | Session assumed within that jurisdiction |
+| `default_session` | Session assumed within that jurisdiction. Left commented out in the template, so copying it as-is pins no session |
 | `context_prefix` | Prepended to the `context` string sent with each tool call |
 | `response_format` | `markdown` or `json`, when a question implies neither. Not sent to `show_bill`, `show_person_record`, `open_research_desk`, `get_bill_dossier`, or `get_rollcall_breakdown`, which lack the parameter |
 

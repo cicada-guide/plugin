@@ -9,8 +9,9 @@ an undocumented tool is unavailable.
 
 Re-confirmed live on 2026-09-06 against Alabama, Georgia and Texas records: `list_states` returns 51
 divisions (50 states + DC, no territories); `search_people.ids` carries `minItems: 1, maxItems: 100`;
-`show_bill` declares only `id` and `context`, with no `response_format`; `get_votes` has `cursor` and
-no `offset`, and its cursor is a UUID while `get_person_votes` takes a 512-character string.
+`show_bill` declares `id` plus the wrapper's `context` and `llm_model`, with no `response_format`;
+`get_votes` has `cursor` and no `offset`, and its cursor is a UUID while `get_person_votes` takes a
+512-character string.
 
 **Source `legiscan` objects are no longer returned.** Re-checked with live calls on 2026-09-24:
 `get_bill`, `get_person`, `get_documents`, and `get_rollcalls` carry no `legiscan` field. Roll-call
@@ -57,7 +58,10 @@ subsequent calls.
 Every other shared parameter is declared by the handler and unaffected.
 
 Every tool returns a `content` array of text blocks. List tools also return `structuredContent`
-holding the typed envelope. Text truncates at 25,000 characters with a pagination hint.
+holding the typed envelope. Text truncates at 25,000 characters with a pagination hint, in
+`response_format: "json"` as in markdown. The envelope's `next_offset` or `next_cursor` still points
+past the whole page, including items cut from the text, so following it after a truncated response
+skips them. Re-request the same `offset` or `cursor` with a smaller `limit` instead.
 
 ### Errors arrive as results, in two shapes
 
@@ -72,8 +76,9 @@ The distinction matters when recovering: a schema-level failure means the *argum
 and must change, while a handler-level failure often means a required filter is merely missing.
 
 **Calls are rate limited to 60 a minute. Past that a call fails with `Rate limit exceeded. Retry in
-60 seconds.`** The HTTP status is 429 with `Retry-After: 60`. Wait out the minute before the next
-call; an immediate retry fails the same way.
+60 seconds.`** The HTTP status is 429 with `Retry-After: 60`. Tell the user the rate limit was hit
+and that you will resume after a minute, then wait out the minute before the next call; an
+immediate retry fails the same way.
 
 ### The offset envelope
 
@@ -83,16 +88,15 @@ call; an immediate retry fails the same way.
 
 `next_offset` is omitted when `has_more` is `false`. `total` is present only where an exact count
 is cheap — `list_states`, `list_sessions`, `get_documents`, `get_rollcalls`. It is **absent** from
-`search_bills`, `search_people`, and `get_votes`. `get_latest_bill_document` is not a pagination
-envelope at all and reports `total_documents` instead.
+`search_bills`, `search_people`, `get_votes`, and `get_person_votes`. `get_latest_bill_document` is
+not a pagination envelope at all and reports `total_documents` instead.
 
-**Page only with `next_offset`; never compute an offset past it.** Verified 2026-09-24 on Alabama
-HB94 (4 roll calls): `get_rollcalls` with `offset: 4` returns an empty page whose text reads `No
-rollcalls found for bill ... This bill may not have had a recorded floor vote.` That sentence
-describes the page, not the bill. An `offset` beyond the row count fails outright in the tools that
-report `total` — `get_rollcalls`, `get_documents`, `list_sessions` — with `Error: Database error:
-Requested range not satisfiable` and `isError: true`. Both mean the list ended, and neither is
-evidence about the bill. `search_bills` and `search_people` return an empty page at any offset.
+**Page only with `next_offset` while `has_more` is true; never compute an offset past it.**
+`get_rollcalls` at an offset past its last item returns `No roll calls at offset <n>; bill <id> has
+<total>.` An `offset` beyond the row count in a tool that reports `total` — `get_rollcalls`,
+`get_documents`, `list_sessions` — can instead fail with `Error: Database error.` and
+`isError: true`. Both mean the list ended, and neither is evidence about the bill. `search_bills`
+and `search_people` return an empty page at any offset.
 
 ### The cursor envelope
 
@@ -114,9 +118,9 @@ descending, nulls last.
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `bill` | string, max 50 | Bill number, whitespace-insensitive |
-| `query` | string, max 500 | Title/synopsis substring plus full-text search over attached documents |
+| `query` | string, max 500 | Each word a separate title/synopsis substring, ORed, plus full-text search over attached documents |
 | `subject` | string | Exact match against an entry in the `subjects` array |
-| `status` | string | Partial, case-insensitive |
+| `status` | string, max 100 | Partial, case-insensitive match on the recorded status text |
 | `session_id` | UUID | From `list_sessions` |
 | `session_name` | string, max 200 | Partial, case-insensitive match on the session name, e.g. `"2025"` |
 | `division_id` | UUID | From `list_states` |
@@ -145,9 +149,19 @@ full-text search, capped at 200 document rows resolving to at most 50 distinct b
 the string is split on whitespace; `or`, `and`, `not` and single characters are dropped, and up to
 8 remaining terms become `title ILIKE` / `synopsis ILIKE` clauses.
 
-These caps bound recall, not just cost: a broad `query` can miss matching bills beyond the 50-bill
-full-text ceiling, and a long one silently ignores terms past the eighth. Narrow with
-`division_id`, `session_id`, or `subject` rather than lengthening the query string.
+The ILIKE terms are ORed, so each extra word widens the title/synopsis matches rather than
+narrowing them: `"school choice"` matches every bill with "school" in its title or synopsis. Prefer
+one distinctive word.
+
+The full-text document rows are fetched across every state before any other filter applies, so
+`division_id`, `session_id`, and the rest narrow those 50 bills but never reach past them. These
+caps bound recall, not just cost: a broad `query` can miss matching bills beyond the 50-bill
+full-text ceiling, and a long one silently ignores terms past the eighth. Try another distinctive
+word or narrow with `subject` rather than lengthening the query string, and say which query ran.
+
+**`status` matches any status containing the string.** `status: "Passed"` matches every status
+whose text contains "Passed", which can record one chamber's passage rather than enactment. Report
+each bill's `status` as recorded, and never treat a `status` filter as proof a bill became law.
 
 ### `get_bill`
 
@@ -209,7 +223,7 @@ binary content types yield `null`.
 | `ids` | UUID array, **1-100** | Resolve a batch of person ids in one call. Hard cap — split larger sets across calls |
 | `name` | string | Partial match across `full_name`, `first_name`, `last_name` |
 | `query` | string | Alias for `name`. When both are set, `name` wins |
-| `party` | string | Partial, case-insensitive: `"D"`, `"R"`, `"Democratic"` |
+| `party` | string, max 100 | Case-insensitive. Matches a party abbreviation exactly (`"D"`, `"R"`; a spelled-out name such as `"Democratic"` maps to its abbreviation) or the party name partially |
 
 Ordered by `last_name`. Returns `id`, `full_name`, `first_name`, `middle_name`, `last_name`,
 `suffix`, `party`, `nickname`.
@@ -280,7 +294,7 @@ passage from `yea > nay`: thresholds vary (supermajorities, majorities of member
 `counts` reflects only the votes the dataset recorded. Report the tallies, and state passage only
 when the `description` or the bill's `status` says it.
 
-Start here for "how was this bill voted on", then pass a rollcall `id` to `get_votes`.
+Start here for "how was this bill voted on", then pass a rollcall `id` to `get_rollcall_breakdown`.
 
 **Roll calls linked through their votes are included.** A roll call can be tied to the bill
 directly or through its recorded votes; both come back here, and `linked_via` is `"bill"` or
@@ -335,6 +349,9 @@ member-by-member breakdown as unavailable. Never present it as nobody having vot
 - The `counts` keys are upper-case here and lower-case in `get_rollcalls`.
 - The member list is capped at 500 rows. `partial: true` means the cap was reached; `by_party`
   then covers only the rows returned, so say so.
+- A roll call with no individual vote rows returns zero `counts` and empty `members`, and the text
+  reads `0 yea, 0 nay, 0 absent, 0 not voting` followed by `No individual votes are recorded for
+  this roll call.` That is not a 0-0 vote: report the counts as not recorded.
 
 ### `get_person_votes`
 
@@ -366,8 +383,8 @@ The envelope adds `retrieved_at`, `source_freshness`, `ordering`, and `active_fi
 
 - **`rollcall.outcome` is the roll call's recorded tallies, not a pass/fail result.** It is `null`
   when the roll call has no recorded individual votes. There is no chamber and no passed field.
-- **`bill` is `null` for about 8% of votes** — roll calls attached to no bill, such as procedural
-  motions. Report those by roll-call description and date; do not attach a bill to them.
+- **`bill` is `null` when the vote is attached to no bill**, such as a procedural motion. Report
+  those by roll-call description and date; do not attach a bill to them.
 - **`bill` carries ids, not names.** Resolve `division_id` through `list_states` and `session_id`
   through `list_sessions` when the answer needs the state or session name. `bill.division_id` is
   also the only jurisdiction evidence any tool returns for a legislator.
@@ -408,7 +425,9 @@ Items carry `id`, `name`, `geoidfq`. Use a returned `id` as `division_id`.
 
 ### `read_pdf_bytes`
 
-Streams a PDF in base64 chunks using HTTP Range requests.
+Streams a PDF in base64 chunks using HTTP Range requests. It returns file bytes, not readable text:
+read a bill's text with `get_latest_bill_document`, and give the user an older version's `url` from
+`get_documents` rather than reading its bytes.
 
 | Parameter | Type | Default | Constraints |
 | --- | --- | --- | --- |
@@ -447,7 +466,8 @@ Fetches run with `redirect: "manual"`, so redirects are rejected rather than fol
 
 ### `open_research_desk`
 
-Takes only the shared `context`. Opens an interactive research desk with state and session filters,
-bill search, legislator search, and links to bill and voting-record workspaces. Use it when the user
+Takes only the wrapper's `context` and `llm_model`. Opens an interactive research desk with state
+and session filters, bill search, legislator search, and links to bill and voting-record
+workspaces. Use it when the user
 wants to explore rather than retrieve a known record. Hosts without MCP Apps support receive a
 short text fallback. It has no `response_format`.

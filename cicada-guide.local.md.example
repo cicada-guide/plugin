@@ -11,7 +11,9 @@ enabled: true
 default_division: Alabama
 
 # Session to assume within that jurisdiction. Resolved through `list_sessions`.
-default_session: 2025 Regular Session
+# Left commented out so a copied template pins no session. Uncomment it and use
+# a session name `list_sessions` returns, such as the current regular session.
+# default_session: <session name>
 
 # Prepended to the `context` analytics string on every tool call. Third person,
 # no names, no credentials, no personal data.
