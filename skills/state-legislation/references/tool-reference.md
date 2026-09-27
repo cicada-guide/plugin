@@ -1,14 +1,14 @@
 # cicada-guide tool reference
 
 Verified against the live endpoint's `tools/list`, MCP protocol revision `2025-06-18`, on
-2026-09-26. The endpoint is unversioned, so re-check this document against a live `tools/list` if
+2026-09-27. The endpoint is unversioned, so re-check this document against a live `tools/list` if
 tool behavior appears to disagree with it. Older behavioral observations below retain their dates.
 
 The tools below match the live `tools/list` as of that date. Check the live list before concluding
-an undocumented tool is unavailable. Updated 2026-09-27 for a server change not yet re-checked live:
-fitted list pages, `get_latest_bill_document`'s `text_offset`, `get_bill_dossier`'s
-`response_format`, `Error: Offset past end.`, the `get_person_votes` cursor error, and scoped
-`search_bills` full-text search.
+an undocumented tool is unavailable. On 2026-09-27 live calls also confirmed fitted list pages,
+`get_latest_bill_document`'s `text_offset` paging, `get_bill_dossier`'s markdown body,
+`Error: Offset past end.`, the `get_person_votes` cursor error, and scoped `search_bills` full-text
+search.
 
 Re-confirmed live on 2026-09-06 against Alabama, Georgia and Texas records: `list_states` returns 51
 divisions (50 states + DC, no territories); `search_people.ids` carries `minItems: 1, maxItems: 100`;
@@ -247,7 +247,8 @@ is where the next part starts, or `null` once the text is complete. Until it is 
 with the same `bill_id` and `text_offset` set to it, and read every part before describing the bill.
 Markdown prints the position before the text:
 `_Characters 0–24410 of 61234. Continue with text_offset=24410._`, and on the last part
-`This is the end of the text.` A `text_offset` at or past the end returns no text and says
+`This is the end of the text.` A text that fits in one response prints no position line, and its
+`next_text_offset` is `null`. A `text_offset` at or past the end returns no text and says
 `Omit text_offset to read from the start.` The text appears once, in `text`; `item` carries the
 document's metadata, not its stored text.
 
