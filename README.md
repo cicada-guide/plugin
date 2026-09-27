@@ -170,7 +170,7 @@ change when you make one.
 | `search_people` | Find legislators by name or party, or batch-resolve up to 100 ids |
 | `get_person` | Name, party, and contact details for one legislator |
 | `show_person_record` | Show a legislator's record: seat, voting history with session, vote, and subject filters, and sponsored bills |
-| `show_official` | Show a legislator's contact card: photo, seat, contact options, district map, and a tally of recent recorded votes |
+| `show_official` | Show a legislator's contact card: photo, seat, contact options, district map, and recent votes |
 | `get_rollcalls` | Floor-vote summaries for a bill |
 | `get_rollcall_breakdown` | One roll call's counts, per-party tally, and every member's name, party, and vote |
 | `get_votes` | Individual positions on a roll call |

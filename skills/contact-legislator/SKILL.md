@@ -55,7 +55,7 @@ the wrong person send the user's message to someone else.
 
 Call `show_official` with the chosen `id`, without asking. In a host that renders cards it shows
 the photo, every contact option on record as buttons and menus, a district map when an outline
-exists, and a tally of their most recent recorded votes.
+exists, and a Recent votes panel. It shows no vote tally.
 
 Depending on the host, what reaches you is either the text fallback or the tool's
 `structuredContent`:

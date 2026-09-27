@@ -185,8 +185,8 @@ graded, scored, ranked, or predicted, and every claim comes from a tool result.
 
 - **Grading needs a judgment the tools can't supply.** A score depends on which votes count and
   which way is "right", and that choice is political. The plugin makes no such choice.
-- **Tallies cover only what they label.** The legislator cards show a tally of recent recorded
-  votes. It counts recorded votes only, so it is a view of those votes, not a record of a career.
+- **Tallies cover only what they label.** The legislator record shows a tally of the recorded
+  votes it has loaded. It counts recorded votes only, so it is a view of those votes, not a record of a career.
   One vote never characterizes a whole record.
 - **Absence isn't abstention.** A legislator with no recorded vote on a bill has no recorded vote.
   Reporting that as a position would invent one.

@@ -60,7 +60,7 @@ renders MCP Apps, the card shows:
 - every contact option on record, as buttons and menus (emails, phone numbers, websites, and
   addresses);
 - a district map, when an outline of the district is on record;
-- a tally of their most recent recorded votes, and recent votes.
+- a Recent votes panel listing their most recent recorded votes, with no tally.
 
 The card does not show the term or any other seats held, but the written answer does when they are
 recorded.

@@ -55,8 +55,11 @@ plugin's guidance, including updates made to match what the server returns.
   for a headline as well as a summary.
 - Updated to match the server: `read_pdf_bytes` reads a source that ignores Range from the start,
   for files up to 20 MB, instead of refusing it.
-- Card resource URIs: `bill-results-v11`, `bill-workspace-v12`, `legislator-record-v12`, and
-  `official-card-v6`.
+- The contact card (`show_official`) shows no vote tally; its Recent votes panel and district map
+  stay. The legislator record (`show_person_record`) shows no contact buttons; its tally stays as
+  the vote filter. Each card does one job.
+- Card resource URIs: `bill-results-v11`, `bill-workspace-v12`, `legislator-record-v13`, and
+  `official-card-v7`.
 
 ### Removed
 

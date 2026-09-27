@@ -133,8 +133,8 @@ How do I contact Alabama Representative Rex Reynolds?
 
 Claude finds the legislator by name, confirms which person you mean, and ends with their contact
 card from `show_official`. In a card-rendering host that card shows the photo, the seat, every
-contact option on record as buttons and menus, a district map when an outline exists, and a tally
-of recent recorded votes.
+contact option on record as buttons and menus, a district map when an outline exists, and a Recent
+votes panel.
 
 **Done looks like:** an answer that states the seat (office, state, chamber, district) as recorded,
 names which contact details are on record and which are not, and ends with the contact card or
