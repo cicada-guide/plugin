@@ -419,11 +419,12 @@ Use it when the user wants to know who someone is or how to reach them. For how 
 `get_person_votes` or `show_person_record`.
 
 In a host that supports MCP Apps it renders a contact card via
-`ui://cicada-guide/official-card-v4.html`: the photo, the seat line, party, contact menus holding
+`ui://cicada-guide/official-card-v5.html`: the photo, the seat line, party, contact menus holding
 every entry in `contact_options`, a district map when `office.outline` exists, the tally of the
 last recorded votes, and recent votes. The card asks the host for geolocation; when the viewer
-turns location on, the map places them and reads "You're in this district · 5.7 mi from its edge"
-or "You're 5.7 mi outside this district", with a dashed line to the nearest edge. The location
+turns location on, the map places them and, below the map, reads "You're in this district." or
+"You're not in this district." until dismissed; outside, a dashed line runs to the nearest edge. The
+card and its recent-votes and map panels sit side by side at one width. The location
 stays in the card and never reaches the server or you. The card does not show the term or other
 seats held; the text and `structuredContent` do. The tally covers only the votes it names; never
 use it to grade or rank.

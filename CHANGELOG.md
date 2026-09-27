@@ -18,8 +18,9 @@ plugin's guidance, including updates made to match what the server returns.
   agent, and updating the tool docs; references for the commands and agents, the cards, and the
   checks; and explanations of the cards and the dataset rules. `docs/README.md` indexes them.
 - The contact card's district map note, when the viewer turns location on: "You're in this
-  district · 5.7 mi from its edge" or "You're 5.7 mi outside this district", with a dashed line to
-  the nearest edge. The location stays in the card.
+  district." or "You're not in this district.", below the map and dismissible, with a dashed line
+  to the nearest edge from outside. The card and its two side panels share one width and sit side
+  by side. The location stays in the card.
 - The bill card's document viewer draws a PDF's pages inside the card, from bytes it fetches with
   `read_pdf_bytes`, and shows the latest non-PDF version as text. A document it can't show, or a
   refused "Open full screen", gets the document link with a "Copy link" button. It no longer
@@ -55,7 +56,7 @@ plugin's guidance, including updates made to match what the server returns.
 - Updated to match the server: `read_pdf_bytes` reads a source that ignores Range from the start,
   for files up to 20 MB, instead of refusing it.
 - Card resource URIs: `bill-results-v11`, `bill-workspace-v12`, `legislator-record-v12`, and
-  `official-card-v4`.
+  `official-card-v5`.
 
 ### Removed
 

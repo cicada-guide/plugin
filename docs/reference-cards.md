@@ -16,7 +16,7 @@ there rather than repeating them. Why the plugin ends answers with a card is in
 | --- | --- | --- | --- | --- |
 | `search_bills` | Bill results | `ui://cicada-guide/bill-results-v11.html` | More pages of the same search | The full result list, as text or JSON, as usual |
 | `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v12.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors. The text fallback omits the `headline` and `summary`; `structuredContent` echoes them in `_display` |
-| `show_official` | Contact card | `ui://cicada-guide/official-card-v4.html` | Recent votes and their tally (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
+| `show_official` | Contact card | `ui://cicada-guide/official-card-v5.html` | Recent votes and their tally (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
 | `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v12.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
 
 The URIs are the ones the live `tools/list` advertises in each tool's `_meta.ui.resourceUri`. The
@@ -171,9 +171,9 @@ Parameter: `id` (required), from `search_people` after identity is resolved —
 - a contact menu for every option on record: **Email**, **Call**, **Website**, and addresses,
   each opened through the host;
 - a district map when the seat has an outline. The card asks the host for geolocation; when the
-  viewer turns location on, the map places them and reads "You're in this district · 5.7 mi from
-  its edge" or "You're 5.7 mi outside this district", with a dashed line to the nearest edge. The
-  location stays in the card: it never reaches the server or the model;
+  viewer turns location on, the map places them and, below the map, reads "You're in this
+  district." or "You're not in this district." until dismissed; from outside, a dashed line runs to
+  the nearest edge. The location stays in the card: it never reaches the server or the model;
 - the tally of the last recorded votes, and those recent votes.
 
 It does not show the term or other seats held; the text and `structuredContent` do.
