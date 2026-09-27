@@ -83,14 +83,15 @@ contract is in [project-settings.md](../skills/state-legislation/references/proj
 
 ## The bill card's summary is rejected
 
-`show_bill` takes an optional `summary` of 1 to 1,500 characters. The server trims it first, so a
-summary that is empty or only whitespace is rejected, and so is one longer than 1,500 characters.
+`show_bill` requires a `summary` of 1 to 1,500 characters. The server trims it first, so a summary
+that is missing, empty, or only whitespace is rejected, and so is one longer than 1,500 characters.
 Either way the call fails with `MCP error -32602: Input validation error:` naming `summary`, and no
 card appears.
 
-Ask Claude to shorten the summary and show the bill again, or to show it without a summary. The
-card then offers a "Summarize with AI" button, which asks Claude for a summary and shows the card
-again with it.
+Ask Claude to read the bill, write a plain-language summary under 1,500 characters, and show the
+bill again with it. When the bill has no text or synopsis on record, the summary says so. If calls
+without a summary keep happening, update the plugin: versions through 0.8.0 treated `summary` as
+optional.
 
 ## Cards don't appear
 
@@ -105,6 +106,10 @@ If you expected a card in a host that does render them:
 - **Check that the call ran.** A card appears only when Claude calls `show_bill`, `show_official`,
   `show_person_record`, or `search_bills`. A topic search that lists several bills doesn't end with
   a bill card until you pick one.
+- **A tapped bill appears in the conversation, not in the card.** Tapping a bill in the search
+  results or a legislator record posts a request for Claude to show it. The bill card appears once
+  Claude has read the bill and called `show_bill`. If the host can't send the request, the card
+  says so; ask for the bill in the conversation instead.
 - **Check for an error.** A card call that failed, for example with
   [`-32602`](#-32602-from-a-card-tool-or-get_rollcall_breakdown), puts nothing on screen.
 - **Subagent results name a card rather than showing one.** A subagent's own calls are never shown
@@ -128,6 +133,14 @@ The summary on a bill card is labelled as written by the AI assistant. It is Cla
 reading of the bill text or synopsis, not an official summary, and it never predicts passage. The
 vote tallies on the legislator cards cover only the votes they name; the plugin never uses them to
 grade or rank a legislator.
+
+## A bill document shows as a link instead of a preview
+
+The bill card's "Read bill" viewer embeds a Google Docs preview only when the host allows
+`docs.google.com` inside the card. When the host blocks the preview, or refuses "Open full screen",
+the card shows the document's URL as a link with a **Copy link** button instead. That is expected
+in hosts that restrict framed content. Open the link, or copy it into a browser. Claude can also
+read the text with `get_latest_bill_document`.
 
 ## Contact details, chamber, or district are "not on record"
 

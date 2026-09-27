@@ -77,9 +77,9 @@ A subagent's output goes back to the conversation that dispatched it, not to the
 opened would render nowhere, and would spend a rate-limited call on nothing. So each agent ends its
 report with the card that fits its result, and the main conversation makes the call:
 
-- `bill-brief-researcher` ends with `show_bill {id}` and a `summary` the caller can pass, written
-  under the same rules as the skills' own, or `summary: none` when it read neither the text nor
-  the synopsis.
+- `bill-brief-researcher` ends with `show_bill {id, summary}` and a `summary` the caller must
+  pass, written under the same rules as the skills' own; when neither text nor synopsis is on
+  record, the summary says so.
 - `legislator-disambiguator` names `show_official` or `show_person_record`, and only for a
   `RESOLVED` verdict. An ambiguous result names no card, because showing one would present a
   guess as an identification.
@@ -89,9 +89,9 @@ seat, never to display it. That is the one exception, and the agent's prose says
 
 ## The assistant summary
 
-`show_bill` takes an optional `summary`: plain prose for a voter, 1 to 1,500 characters, saying
-what the bill does, who it affects, and where it stands as recorded. The card puts it in a summary
-box.
+`show_bill` requires a `summary`: plain prose for a voter, 1 to 1,500 characters, saying what the
+bill does, who it affects, and where it stands as recorded. The card puts it in a summary box, so
+a bill card never appears without one.
 
 Three rules shape it, each for a reason:
 
@@ -102,17 +102,19 @@ Three rules shape it, each for a reason:
 - **It never infers passage or an outcome.** Passage thresholds vary by chamber and question, and
   a status such as `Passed` can record one chamber or a committee. The summary states the recorded
   `status` and stops there. A prediction on a card that looks official would read as a fact.
-- **It comes from text the model read, or it is left out.** The summary is based on
-  `get_latest_bill_document` text or the synopsis. When neither was read, the call omits
-  `summary` rather than guessing.
+- **It comes from text the model read.** The model reads the bill before calling, and bases the
+  summary on `get_latest_bill_document` text or the synopsis. When neither text nor synopsis is on
+  record, the summary says so rather than guess.
 
 The server trims the value and rejects an empty one; Markdown doesn't render, because the card
 shows it as text.
 
-When no summary was passed, the card offers a "Summarize with AI" button. It posts an ordinary user
-turn asking for a plain-language summary and a second `show_bill` call with it. The skills handle
-that turn as a small workflow of its own: read the text, answer in chat, then show the card again
-with the summary.
+No card opens a bill by itself. Tapping a bill in the `search_bills` results card or in the
+legislator record posts an ordinary user turn, `Show HB 314 (bill id <uuid>) with show_bill. …`,
+asking the model to read the bill and call `show_bill` with a summary. Routing the tap through the
+conversation is what keeps the summary required: only the model can write one. The skills handle
+that turn as a small workflow of its own: read the text or synopsis, then call `show_bill` with the
+summary, with a short chat answer optional.
 
 ## Model-context updates carry names, not ids
 
@@ -143,11 +145,16 @@ Before 0.8.0 the display tools were used on request: "show me" or "pull it up" l
 and exploration went to `open_research_desk`, a separate search workspace. The server has since
 stopped serving that workspace, and 0.8.0 removed it from the README, the skills, the tool
 reference, and the project-settings template. Its job moved to the `search_bills` results card,
-which pages itself with "Show more" and opens a bill in place when the user taps it.
+which pages itself with "Show more" and, in 0.8.0, opened a bill in place when the user tapped it.
 
-The same release made the workflows card-first, added the `show_bill` summary and the "Summarize
-with AI" handling, and added the model-context update guidance. It also made subagents name the
-card that fits their result. The full list is in the [changelog](../CHANGELOG.md).
+The same release made the workflows card-first, added the `show_bill` summary and the handling
+for the card's summary request, and added the model-context update guidance. It also made subagents
+name the card that fits their result.
+
+After 0.8.0 the server made `summary` required and stopped opening bills inside the results card
+and the legislator record. A tapped bill now posts a request to show it with `show_bill`, and the
+bill card's own summary button went away with the optional summary. The full list is in the
+[changelog](../CHANGELOG.md).
 
 ## Trade-offs
 

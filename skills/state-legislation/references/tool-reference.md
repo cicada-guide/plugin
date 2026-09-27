@@ -228,8 +228,9 @@ whose text contains "Passed", which can record one chamber's passage rather than
 each bill's `status` as recorded, and never treat a `status` filter as proof a bill became law.
 
 **Every call also renders a results card** in a host that supports MCP Apps, via
-`ui://cicada-guide/bill-results-v9.html`. It lists the results with a "Show more" button that pages
-with the same arguments, and tapping a result opens that bill's card in place. You still receive
+`ui://cicada-guide/bill-results-v10.html`. It lists the results with a "Show more" button that
+pages with the same arguments. Tapping a result posts a user turn asking you to show that bill with
+`show_bill` (see [`show_bill`](#show_bill)); the card opens no bill itself. You still receive
 the full list as text or JSON, so read results from it as usual. Where the card renders, summarize
 the results rather than tabulating every row it already shows.
 
@@ -266,42 +267,46 @@ the object as text.
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `id` | UUID, required | From `search_bills` or `get_bill` |
-| `summary` | string, 1-1500 characters, optional | Your plain-language summary for a voter, shown on the card. Trimmed; an empty one is rejected |
+| `summary` | string, 1-1500 characters, required | Your plain-language summary for a voter, shown on the card. Trimmed; a missing or empty one fails with `-32602` |
 
 Like the other display tools, it has no `response_format`.
 
-Renders a bill card via `ui://cicada-guide/bill-workspace-v9.html` in hosts that support MCP Apps.
-The card shows the bill number, the headline with a toggle to the official title, the status, a
-summary box, a floor-vote timeline with party splits, and a "Read bill" document viewer. "Explore
+Renders a bill card via `ui://cicada-guide/bill-workspace-v10.html` in hosts that support MCP
+Apps. The card shows the bill number, the headline with a toggle to the official title, the status,
+your summary, a floor-vote timeline with party splits, and a "Read bill" document viewer. "Explore
 bill" opens a workspace with Overview, Sponsors, Documents, and Votes tabs. The card calls
-`get_bill_dossier` and `get_rollcall_breakdown` itself for the sponsors and votes.
+`get_bill_dossier` and `get_rollcall_breakdown` itself for the sponsors and votes. The viewer embeds
+a Google Docs preview only when the host allows `docs.google.com`; when the host blocks the preview
+or refuses "Open full screen", the card shows the document URL as a link with a "Copy link" button.
 
 **The result carries none of that.** The text fallback holds the bill number, state and session,
 title, status, type, date, synopsis (cut at 300 characters), subjects, the newest document's link,
 the document count, and the `id` — no votes, no sponsors, and no echo of your `summary`.
 `structuredContent` is the bill row plus `_display.divisionName`, `_display.sessionName`, and
-`_display.aiSummary` when a `summary` was passed. A missing id returns
+`_display.aiSummary`, your `summary`. A missing id returns
 `No bill found with id=<id>.` Read votes and sponsors from `get_bill_dossier`, `get_rollcalls`, and
 `get_rollcall_breakdown`, and the text from `get_latest_bill_document`.
 
 Use `show_bill` when the user wants to look at a bill; `get_bill` when they want its contents read
 back.
 
-**Write `summary` for a voter, or omit it.**
+**Always pass `summary`, written for a voter.** Read the bill before calling, then write it.
 
 - Say what the bill does, who it affects, and where it stands as recorded.
-- Base it on `get_latest_bill_document` text or the synopsis. When you have read neither, omit it
-  rather than guess.
+- Base it on `get_latest_bill_document` text or the synopsis. When neither text nor synopsis is on
+  record, say so in the summary rather than guess.
 - Never infer passage or an outcome; state the recorded `status`.
 - Plain prose only. The card renders it as text, so markdown does not render.
 - The card labels it "Summary · your AI assistant", with a note that it was written by the AI in
   this chat and the official text is the record.
 
-**"Summarize with AI".** Without a `summary`, the card offers a button that posts a user turn:
-`Summarize HB 314 (bill id <uuid>) in plain language for a voter: what it does, who it affects, and
-where it stands. Then show it again with show_bill, passing your summary as summary.` Handle it in
-order: read the text with `get_latest_bill_document` (or the synopsis), answer in chat, then call
-`show_bill` with the same `id` and your `summary`.
+**"Show HB 314 … with show_bill" requests.** Tapping a bill in the `search_bills` results card, a
+vote in the `show_person_record` card, or a sponsored bill's "Show in the conversation" button
+posts a user turn: `Show HB 314 (bill id <uuid>) with show_bill. First read its text with
+get_latest_bill_document, or its synopsis, and pass a plain-language summary for a voter as
+summary: what it does, who it affects, and where it stands.` Handle it in order: read the text with
+`get_latest_bill_document` (or the synopsis), then call `show_bill` with that `id` and your
+`summary`. A short chat answer is optional.
 
 ### `get_latest_bill_document`
 
@@ -404,11 +409,14 @@ Use it when the user wants to know who someone is or how to reach them. For how 
 `get_person_votes` or `show_person_record`.
 
 In a host that supports MCP Apps it renders a contact card via
-`ui://cicada-guide/official-card-v3.html`: the photo, the seat line, party, contact menus holding
+`ui://cicada-guide/official-card-v4.html`: the photo, the seat line, party, contact menus holding
 every entry in `contact_options`, a district map when `office.outline` exists, the tally of the
-last recorded votes, and recent votes. The card does not show the term or other seats held; the
-text and `structuredContent` do. The tally covers only the votes it names; never use it to grade or
-rank.
+last recorded votes, and recent votes. The card asks the host for geolocation; when the viewer
+turns location on, the map places them and reads "You're in this district · 5.7 mi from its edge"
+or "You're 5.7 mi outside this district", with a dashed line to the nearest edge. The location
+stays in the card and never reaches the server or you. The card does not show the term or other
+seats held; the text and `structuredContent` do. The tally covers only the votes it names; never
+use it to grade or rank.
 
 The text fallback:
 
@@ -448,9 +456,13 @@ for the rest, and never supply one from elsewhere.
 `id` (UUID, required), from `search_people` after resolving identity. It has no `response_format`.
 
 In a host that supports MCP Apps it renders a legislator record via
-`ui://cicada-guide/legislator-record-v10.html`: the seat and contact options, the vote history
+`ui://cicada-guide/legislator-record-v11.html`: the seat and contact options, the vote history
 with session, vote, and subject filters, and the bills they sponsored. The card loads the votes
-through `get_person_votes` itself.
+through `get_person_votes` itself; its session picker lists only sessions with the legislator's
+votes, newest first, and its tally counts only the votes loaded, so never quote it as a career
+total. Tapping a vote, or a sponsored bill's "Show in the conversation"
+button, posts the same show-bill request as the results card (see [`show_bill`](#show_bill)); the
+card opens no bill itself.
 
 The text carries identity and seat only: the name, the seat line when a seat is recorded, party,
 nickname, and `id`. It holds no votes, so call `get_person_votes` to read or summarize them.

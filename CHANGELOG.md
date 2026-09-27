@@ -14,14 +14,37 @@ plugin's guidance, including updates made to match what the server returns.
 
 - A full documentation set under `docs/`, arranged as a tutorial, how-to guides, reference, and
   explanation: getting started; researching a bill, checking a voting record, contacting a
-  legislator, comparing states, and configuring a project; verifying a change, adding a command or
+  legislator, and configuring a project; verifying a change, adding a command or
   agent, and updating the tool docs; references for the commands and agents, the cards, and the
   checks; and explanations of the cards and the dataset rules. `docs/README.md` indexes them.
+- The contact card's district map note, when the viewer turns location on: "You're in this
+  district · 5.7 mi from its edge" or "You're 5.7 mi outside this district", with a dashed line to
+  the nearest edge. The location stays in the card.
+- The bill card's document viewer fallback: where the host blocks the Google Docs preview or
+  refuses "Open full screen", the card shows the document link with a "Copy link" button.
+
+### Changed
+
+- Updated to match the server: `show_bill`'s `summary` is now required, and a call without it
+  fails with `-32602`. Every skill, agent, workflow, and example always passes one, written after
+  reading the bill's text or synopsis; when neither is on record, the summary says so. It never
+  infers passage.
+- Tapping a bill in the `search_bills` results card, a vote in the `show_person_record` card, or a
+  sponsored bill's "Show in the conversation" button posts a user turn,
+  `Show HB 314 (bill id <uuid>) with show_bill. …`. The skills handle it by reading the text or
+  synopsis and calling `show_bill` with a summary, with a short chat answer optional.
+- The legislator record's session picker lists only sessions with the legislator's votes, newest
+  first, and its header tally no longer carries an "In the N votes loaded" caption.
+- Card resource URIs: `bill-results-v10`, `bill-workspace-v10`, `legislator-record-v11`, and
+  `official-card-v4`.
 
 ### Removed
 
 - The `multi-state-bill-scanner` subagent and the "Compare states" how-to. A question across
   several states is now answered directly, with one `search_bills` call per state.
+- Handling for the bill card's "Summarize with AI" request, which the card no longer offers.
+- Opening a bill in place inside the results card and the legislator record, and the
+  `User opened HB 314 from the search results.` model-context update that went with it.
 
 ## [0.8.0] - 2026-09-27
 

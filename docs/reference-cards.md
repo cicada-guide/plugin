@@ -2,8 +2,8 @@
 
 This page is for anyone who needs the facts about the plugin's interactive cards: what each one
 shows, what it fetches for itself, and what the model actually receives when it calls a card tool.
-It covers the four tools that carry a card, the `show_bill` summary rules, the "Summarize with AI"
-turn, and the model-context updates the cards send.
+It covers the four tools that carry a card, the `show_bill` summary rules, the show-bill request a
+tapped bill posts, and the model-context updates the cards send.
 
 Parameters and response shapes are in the
 [tool reference](../skills/state-legislation/references/tool-reference.md#cards); this page links
@@ -14,10 +14,10 @@ there rather than repeating them. Why the plugin ends answers with a card is in
 
 | Tool | Card | Resource URI | The card fetches | The model receives |
 | --- | --- | --- | --- | --- |
-| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v9.html` | More pages of the same search; the bill card for a tapped result | The full result list, as text or JSON, as usual |
-| `show_bill` | Bill card and workspace | `ui://cicada-guide/bill-workspace-v9.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors, no echo of the `summary` |
-| `show_official` | Contact card | `ui://cicada-guide/official-card-v3.html` | Recent votes and their tally (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
-| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v10.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), sponsored bills (`search_bills`), and a bill card for a tapped bill | Identity and seat only, never the votes |
+| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v10.html` | More pages of the same search | The full result list, as text or JSON, as usual |
+| `show_bill` | Bill card and workspace | `ui://cicada-guide/bill-workspace-v10.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors, no echo of the `summary` |
+| `show_official` | Contact card | `ui://cicada-guide/official-card-v4.html` | Recent votes and their tally (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
+| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v11.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
 
 The URIs are the ones the live `tools/list` advertises in each tool's `_meta.ui.resourceUri`. The
 `-vN` suffix changes when the server changes a card's HTML shell, so a host that caches by URI
@@ -42,10 +42,15 @@ shows only the tool's result, so every card tool is safe to call everywhere.
 - **A subagent's card renders nowhere.** Subagents never call a card tool to display anything.
   They name the card that fits, and the main conversation calls it. See
   [Commands and agents](reference-commands-and-agents.md#agents).
-- **Two network hosts, each with a fallback.** The document viewer frames `docs.google.com`; if the
-  preview stays blank, "Open full screen" opens the original through the host. The legislator photo
-  comes from `https://public.cicada.guide/photos/<id>`; without it, a silhouette stays. The
-  district outline arrives in `show_official`'s `structuredContent`, so the map needs no host.
+- **Two network hosts, each with a fallback.** The document viewer embeds a Google Docs preview
+  only when the host allows `docs.google.com`. When the host blocks the preview, or refuses "Open
+  full screen", the card shows the document URL as a link with a **Copy link** button instead. The
+  legislator photo comes from `https://public.cicada.guide/photos/<id>`; without it, a silhouette
+  stays. The district outline arrives in `show_official`'s `structuredContent`, so the map needs no
+  host.
+- **A tapped bill goes through the conversation.** No card opens a bill itself. Tapping a bill in
+  the results card or the legislator record posts a user turn asking Claude to show it with
+  `show_bill` (see [below](#the-show-bill-request)), so every bill card carries a summary.
 
 ## `search_bills`: bill results
 
@@ -60,8 +65,8 @@ year.`
 
 - **Show more** calls `search_bills` again with the same arguments and the next offset, and
   appends the page.
-- **Tapping a result** opens that bill's card in place, loading it with `get_bill_dossier`, with a
-  way back to the list.
+- **Tapping a result** posts the [show-bill request](#the-show-bill-request) for that bill. The
+  result's footer then reads "Asked the assistant to show this bill".
 
 **The model receives** the full result list as usual — text by default, or JSON with
 `response_format: "json"`. `search_bills` does take `response_format`, unlike the display tools.
@@ -72,7 +77,7 @@ an offer to brief one, and shows no bill card until the user picks one.
 
 ## `show_bill`: bill card and workspace
 
-Parameters: `id` (required) and `summary` (optional) —
+Parameters: `id` and `summary`, both required —
 [tool reference](../skills/state-legislation/references/tool-reference.md#show_bill).
 
 **The card shows:**
@@ -80,9 +85,10 @@ Parameters: `id` (required) and `summary` (optional) —
 - the bill number, state, and session;
 - the headline, with a toggle to the official title;
 - the status;
-- a summary box (see [below](#the-summary-box));
+- the summary box (see [below](#the-summary-box));
 - a floor-vote timeline with each roll call's party split, and who voted how, filterable by party;
-- **Read bill**, a viewer for the newest document with a readable link;
+- **Read bill**, a viewer for the newest document with a readable link, or that link with **Copy
+  link** where the host blocks the preview;
 - **Explore bill**, a workspace with **Overview**, **Sponsors**, **Documents**, and **Votes** tabs,
   shown full screen where the host allows it.
 
@@ -94,55 +100,51 @@ Parameters: `id` (required) and `summary` (optional) —
 - **Text fallback:** the bill number, state and session, title, status, type, date, synopsis (cut
   at 300 characters), subjects, the newest document's link, the document count, and the `id`.
 - **`structuredContent`:** the bill row, plus `_display.divisionName`, `_display.sessionName`,
-  and `_display.aiSummary` when a `summary` was passed.
+  and `_display.aiSummary`, the `summary` passed.
 - A missing id returns `No bill found with id=<id>.`, and the card shows an unavailable state.
 
 ### The `summary` parameter
 
-The skills write `summary` for a voter, and omit it rather than guess:
+`summary` is required: a call without it fails with `-32602`. The skills always pass one, written
+for a voter after reading the bill:
 
 - **What it says:** what the bill does, who it affects, and where it stands as recorded.
-- **What it rests on:** the text from `get_latest_bill_document`, or the synopsis. When neither was
-  read, there is no summary.
+- **What it rests on:** the text from `get_latest_bill_document`, or the synopsis. When neither
+  text nor synopsis is on record, the summary says so rather than guess.
 - **What it never does:** infer passage or an outcome. It states the recorded status.
 - **Form:** plain prose, 1-1,500 characters. It is trimmed, and an empty string is rejected. The
   card renders it as text, so markdown does not render.
 
-Which entry points pass it: `state-legislation` and `bill-research` whenever they show a bill;
-`voting-record` on Paths B and C when it read the text or synopsis. `bill-brief-researcher`
-returns a suggested summary on its **Card to show** line, or `summary: none`, for the main
-conversation to pass.
+Which entry points pass it: `state-legislation`, `bill-research`, and `voting-record` whenever they
+show a bill. `bill-brief-researcher` returns a suggested summary on its **Card to show** line for
+the main conversation to pass.
 
 ### The summary box
 
-The box reads differently depending on what the card has:
+The box is labeled "Summary · your AI assistant" and shows the `summary`, with the note "Written by
+the AI in this chat. It can miss details; the official text is the record." The box has no button;
+the bill card posts no user turn.
 
-| The card has | Label | Body | Note |
-| --- | --- | --- | --- |
-| A `summary` | Summary · your AI assistant | The summary | Written by the AI in this chat. It can miss details; the official text is the record. |
-| A synopsis, no summary | Official synopsis | The synopsis, then "Summarize with AI" | The official text is the record. |
-| Neither | Summary | `No summary yet for <bill>.`, then "Summarize with AI" | The official text is the record. |
+### The show-bill request
 
-### "Summarize with AI"
-
-The button appears only when no `summary` was passed. It is the only control on any card that
-posts a user turn to the conversation. The turn reads:
+Tapping a bill in the `search_bills` results card, a vote in the legislator record, or a sponsored
+bill's **Show in the conversation** button posts a user turn. These are the only controls on any
+card that post one. The turn reads:
 
 ```text
-Summarize HB 314 (bill id <uuid>) in plain language for a voter: what it does, who it affects, and where it stands. Then show it again with show_bill, passing your summary as summary.
+Show HB 314 (bill id <uuid>) with show_bill. First read its text with get_latest_bill_document, or its synopsis, and pass a plain-language summary for a voter as summary: what it does, who it affects, and where it stands.
 ```
 
-After it is sent, the button reads "Asked…" and the box says the summary will appear in the
-conversation. If the host cannot send the turn, the card asks the user to request a summary in
-the conversation instead.
+After it is sent, the card's status line says the bill will appear in the conversation. If the host
+cannot send the turn, the card asks the user to ask for the bill in the conversation instead.
 
-**How the skills react** (`state-legislation`, `bill-research`, and the
-[workflow](../skills/state-legislation/references/workflows.md#summarize-with-ai-request)):
+**How the skills react** (`state-legislation`, `bill-research`, `voting-record`, and the
+[workflow](../skills/state-legislation/references/workflows.md#show-bill-request-from-a-card)):
 
 1. Read the text with `get_latest_bill_document`, every part, or use the synopsis when no text is
    available.
-2. Answer in chat with the plain-language summary.
-3. Call `show_bill` with the same `id` and that text as `summary`, under the rules above.
+2. Call `show_bill` with that `id` and a `summary`, under the rules above. A short chat answer
+   alongside is optional.
 
 No full brief is needed for this turn.
 
@@ -157,7 +159,10 @@ Parameter: `id` (required), from `search_people` after identity is resolved —
 - the seat line and party;
 - a contact menu for every option on record: **Email**, **Call**, **Website**, and addresses,
   each opened through the host;
-- a district map when the seat has an outline;
+- a district map when the seat has an outline. The card asks the host for geolocation; when the
+  viewer turns location on, the map places them and reads "You're in this district · 5.7 mi from
+  its edge" or "You're 5.7 mi outside this district", with a dashed line to the nearest edge. The
+  location stays in the card: it never reaches the server or the model;
 - the tally of the last recorded votes, and those recent votes.
 
 It does not show the term or other seats held; the text and `structuredContent` do.
@@ -189,11 +194,15 @@ Parameter: `id` (required), from `search_people` after identity is resolved —
 **The card shows** the seat and contact options, then two views:
 
 - **Voting history**, newest first, filterable by session, by how they voted (Yea, Nay, No vote,
-  Absent), and by subject, with older votes loaded on request.
-- **Sponsored legislation**, the bills they sponsored. Tapping one opens its bill card in place.
+  Absent), and by subject, with older votes loaded on request. The session picker lists only
+  sessions the legislator has recorded votes in, newest first; older sessions appear after a short
+  "Checking older sessions…" while the card confirms each with a one-vote lookup. The Yea / Nay /
+  No vote / Absent counts cover the votes loaded so far.
+- **Sponsored legislation**, the bills they sponsored. A bill's **Show in the conversation**
+  button, like tapping a vote, posts the [show-bill request](#the-show-bill-request).
 
 **The card fetches** the votes with `get_person_votes`, the session list with `list_sessions`,
-sponsored bills with `search_bills` and `sponsor_id`, and a tapped bill with `get_bill_dossier`.
+and sponsored bills with `search_bills` and `sponsor_id`.
 
 **The model receives** identity and seat only.
 
@@ -218,7 +227,6 @@ numbers, never ids.
 | `User is viewing HB 314 votes. Selected floor vote: <description>, <date>.` | A floor vote is selected in the workspace **Votes** tab | Bill workspace |
 | `User opened the HB 314 workspace.` | **Explore bill** is opened | Bill workspace |
 | `User is reading <document> of HB 314.` | A document is opened in the workspace | Bill workspace |
-| `User opened HB 314 from the search results.` | A result is tapped | Bill results |
 | `User is viewing the contact card for <name>.` | The contact card loads | Contact card |
 | `User is viewing the voting record of <name>.` | The record loads | Legislator record |
 | `User is viewing <name>'s votes, filtered to Yea.` | A vote-category filter is set; without the suffix when cleared | Legislator record |
