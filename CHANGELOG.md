@@ -10,6 +10,15 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- Card resource URIs, to match the server: `bill-results-v13`, `bill-workspace-v14`,
+  `legislator-record-v14`, and `official-card-v8`. Earlier URIs still resolve.
+- The card descriptions follow the server's MCP Apps design-guidelines update. Inline, a bill
+  document opens on its first page, with "Read full screen" for five pages at a time and "Open
+  original" in place of "Open full screen". Several contact options of one kind open as a list
+  under the contact row rather than a menu. The contact card offers no location toggle on mobile.
+
 ## [0.9.0] - 2026-09-27
 
 ### Added

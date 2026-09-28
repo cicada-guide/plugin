@@ -57,8 +57,8 @@ renders MCP Apps, the card shows:
 - the legislator's photo, when one is on record;
 - the seat line: office title, state and chamber, and district, each when recorded;
 - party;
-- every contact option on record, as buttons and menus (emails, phone numbers, websites, and
-  addresses);
+- every contact option on record, as buttons (emails, phone numbers, websites, and addresses);
+  several of one kind open as a list under the row;
 - a district map, when an outline of the district is on record;
 - a Recent votes panel listing their most recent recorded votes, with no tally.
 

@@ -185,8 +185,8 @@ from earlier results. Answer "which vote am I looking at" from the update, witho
 that vote's details, call `get_rollcalls` for the bill, match the description and date, then call
 `get_rollcall_breakdown` with that roll call's id.
 
-**What the legislator cards show.** `show_official` shows the photo, a contact menu for every
-contact option on record, a district map when an outline exists, and a Recent votes panel, with no
+**What the legislator cards show.** `show_official` shows the photo, a contact button for every
+kind of contact option on record, a district map when an outline exists, and a Recent votes panel, with no
 vote tally. `show_person_record` shows no contact buttons; it shows their recorded votes with session, vote, and subject filters, and the
 bills they sponsored. Card tallies label what they cover; never use them to grade or rank a
 legislator. Most officials have no contact details on record: say so, and never guess an email,

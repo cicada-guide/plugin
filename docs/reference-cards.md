@@ -14,10 +14,10 @@ there rather than repeating them. Why the plugin ends answers with a card is in
 
 | Tool | Card | Resource URI | The card fetches | The model receives |
 | --- | --- | --- | --- | --- |
-| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v12.html` | More pages of the same search | The full result list, as text or JSON, as usual |
-| `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v13.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors. The text fallback omits the `headline` and `summary`; `structuredContent` echoes them in `_display` |
-| `show_official` | Contact card | `ui://cicada-guide/official-card-v7.html` | Recent votes (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
-| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v13.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
+| `search_bills` | Bill results | `ui://cicada-guide/bill-results-v13.html` | More pages of the same search | The full result list, as text or JSON, as usual |
+| `show_bill` | Bill card | `ui://cicada-guide/bill-workspace-v14.html` | Sponsors, documents, and floor votes (`get_bill_dossier`); each vote's party split (`get_rollcall_breakdown`) | The bill row: no votes, no sponsors. The text fallback omits the `headline` and `summary`; `structuredContent` echoes them in `_display` |
+| `show_official` | Contact card | `ui://cicada-guide/official-card-v8.html` | Recent votes (`get_person_votes`) | Identity, seat, term, party, and the contact details on record |
+| `show_person_record` | Legislator record | `ui://cicada-guide/legislator-record-v14.html` | Vote history (`get_person_votes`), sessions (`list_sessions`), and sponsored bills (`search_bills`) | Identity and seat only, never the votes |
 
 The URIs are the ones the live `tools/list` advertises in each tool's `_meta.ui.resourceUri`. The
 `-vN` suffix changes when the server changes a card's HTML shell, so a host that caches by URI
@@ -45,7 +45,7 @@ shows only the tool's result, so every card tool is safe to call everywhere.
 - **One network host, with fallbacks.** Everything a card loads comes from
   `https://public.cicada.guide`. The document viewer draws a PDF's pages with pdf.js from there,
   from bytes it fetches with `read_pdf_bytes`; when the host blocks it or the document can't be
-  fetched, or "Open full screen" is refused, the card shows the document URL as a link with a
+  fetched, or "Open original" is refused, the card shows the document URL as a link with a
   **Copy link** button instead. The legislator photo comes from
   `https://public.cicada.guide/photos/<id>`; without it, a silhouette stays. The district outline arrives in `show_official`'s `structuredContent`, so the map needs no
   host.
@@ -92,7 +92,9 @@ Parameters: `id`, `headline`, and `summary`, all required —
 - **Sponsors:** the bill's sponsors.
 - **Documents:** each version, with a **Read** button that shows its pages inside the card (a
   non-PDF latest version as text), or the document's link with **Copy link** where the card can't
-  show it.
+  show it. Inline, a PDF opens on its first page; **Read full screen** asks the host for full
+  screen, which shows five pages at a time, and **Open original** opens the document through the
+  host.
 - **Votes:** the floor votes, each roll call's party split, and who voted how, filterable by party.
 
 **The card fetches** `get_bill_dossier` for sponsors, documents, and floor votes, and
@@ -168,10 +170,11 @@ Parameter: `id` (required), from `search_people` after identity is resolved —
 
 - the photo, or a silhouette when none is recorded;
 - the seat line and party;
-- a contact menu for every option on record: **Email**, **Call**, **Website**, and addresses,
-  each opened through the host;
-- a district map when the seat has an outline. The card asks the host for geolocation; when the
-  viewer turns location on, the map places them and, below the map, reads "You're in this
+- a contact button for every kind of option on record: **Email**, **Call**, **Website**, and
+  addresses, each opened through the host; several options of one kind open as a list under the
+  row, inside the card;
+- a district map when the seat has an outline. The card asks the host for geolocation, and offers no
+  location toggle on mobile, where hosts grant none; when the viewer turns location on, the map places them and, below the map, reads "You're in this
   district." or "You're not in this district." until dismissed; from outside, a dashed line runs to
   the nearest edge. The location stays in the card: it never reaches the server or the model;
 - a Recent votes panel listing the last recorded votes. The card shows no vote tally; how a

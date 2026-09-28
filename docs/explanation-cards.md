@@ -11,8 +11,8 @@ returns, see the [cards reference](reference-cards.md) and the
 The server renders four tools as MCP Apps cards: `search_bills` (a results list), `show_bill`,
 `show_official`, and `show_person_record`. In a host that supports MCP Apps, a card is the best
 view of the data it covers. A bill card has tabs for an overview, sponsors, documents with a
-viewer, and floor votes with party splits. A legislator's contact card has a photo, a menu for every
-recorded contact option and a district map. A written answer can't match that, and trying to
+viewer, and floor votes with party splits. A legislator's contact card has a photo, a button for every
+kind of recorded contact option, and a district map. A written answer can't match that, and trying to
 re-create it in prose buries the reader in rows they can already see.
 
 The cards raise three problems for guidance, though:
