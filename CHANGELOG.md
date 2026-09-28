@@ -10,6 +10,14 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- The tools now declare `readOnlyHint: true`, as the Claude directory requires. The skill, tool
+  reference and verification how-to no longer say an approval prompt is expected because of
+  `readOnlyHint: false`.
+- The state-legislation skill notes that a voting record starts from `search_people`, and that
+  `search_bills` never returns votes, matching the server's rewritten tool descriptions.
+
 ## [0.9.2] - 2026-09-28
 
 ### Changed

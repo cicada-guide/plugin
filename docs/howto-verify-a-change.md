@@ -120,8 +120,7 @@ another. These questions exercise each one:
 Also watch for:
 
 - **Tool names.** Calls go to `mcp__plugin_cicada-guide_guide-public__<tool>`. The tools carry
-  `readOnlyHint: false` because every call emits an analytics event, so an approval prompt is
-  expected.
+  `readOnlyHint: true`.
 - **Rules the change relies on.** A rate-limit error, a page with `has_more` true, or a strict
   schema rejection (`MCP error -32602`) should be handled the way the entry point says.
 - **What it does not do.** No grading or ranking of legislators, no claim the tools did not return,

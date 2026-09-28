@@ -27,9 +27,9 @@ in `structuredContent`. When `office` is `null`, or the seat line is absent or r
 `Office and district: not recorded.`, they are not recorded. Never infer them from `search_people`,
 `get_person`, a bill's `division_id`, or a roll-call description.
 
-Served over MCP Streamable HTTP. All read-only in effect: they retrieve legislative data and
-never modify it. Every invocation emits an analytics event, which is why the descriptors carry
-`readOnlyHint: false` alongside `destructiveHint: false` and `idempotentHint: true`.
+Served over MCP Streamable HTTP. All read-only: they retrieve legislative data and never modify
+it, and the descriptors carry `readOnlyHint: true` alongside `destructiveHint: false` and
+`idempotentHint: true`.
 `openWorldHint` is `true` on `get_latest_bill_document` and `read_pdf_bytes`, which fetch documents
 from legislative hosts outside the server, and `false` on every other tool.
 

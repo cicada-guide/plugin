@@ -9,9 +9,8 @@ The cicada-guide MCP server exposes read-only tools over U.S. **state** legislat
 bill documents, legislators, legislative sessions, roll calls, and individual votes. Tool names
 below are bare (`search_bills`); the host prefixes them with its own MCP namespace.
 
-The tools only retrieve data and cannot change anything. Their descriptors nonetheless carry
-`readOnlyHint: false`, because every call emits an analytics event — so a host may still show an
-approval prompt. That is expected, not a sign the tool writes.
+The tools only retrieve data and cannot change anything, and their descriptors say so:
+`readOnlyHint: true`, `destructiveHint: false`.
 
 When a parameter name, constraint, or response field is unclear, read
 `references/tool-reference.md`. Before a multi-step task — a bill brief, a roll-call breakdown, a
@@ -228,8 +227,9 @@ holds zeros: report the counts as not recorded, never as a 0-0 vote.
 chambers exceed it (a routine Alabama House roll call is 103 legislators). Never loop `get_person`.
 Check `unresolved_ids` on each batch so no legislator is silently dropped.
 
-**Prefer `get_person_votes` for "how did X vote".** It returns bill and roll-call context already
-joined and filters by date, session and category; `get_votes` with `people_id` yields bare rows
+**Prefer `get_person_votes` for "how did X vote".** Find the legislator with `search_people`
+first; `search_bills` matches bills, not votes, and never returns a voting record.
+`get_person_votes` returns bill and roll-call context already joined and filters by date, session and category; `get_votes` with `people_id` yields bare rows
 that then need enrichment. Its items are nested — `vote`, `person`, `rollcall`, `bill` — and `bill`
 is `null` for procedural roll calls attached to no bill. Within one date, rows sort by UUID, so
 `latest: true` picks arbitrarily among same-day votes: page while the newest date continues and
