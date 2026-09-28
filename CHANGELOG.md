@@ -15,6 +15,8 @@ plugin's guidance, including updates made to match what the server returns.
 - Card resource URIs, to match the server: `bill-workspace-v15`, `legislator-record-v15`, and
   `official-card-v9`, after the cards stopped breaking labels mid-word at 320px. Earlier URIs still
   resolve.
+- Card resource URIs `bill-workspace-v16`, `legislator-record-v16`, and `official-card-v10`, after
+  long names started shrinking to fit their box instead of breaking mid-word.
 
 ## [0.9.1] - 2026-09-27
 
