@@ -10,6 +10,8 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-09-27
+
 ### Changed
 
 - Card resource URIs, to match the server: `bill-results-v13`, `bill-workspace-v14`,
@@ -305,7 +307,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/cicada-guide/plugin/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/cicada-guide/plugin/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/cicada-guide/plugin/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/cicada-guide/plugin/compare/v0.6.0...v0.7.0
