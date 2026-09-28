@@ -10,6 +10,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- Card resource URIs, to match the server: `bill-workspace-v15`, `legislator-record-v15`, and
+  `official-card-v9`, after the cards stopped breaking labels mid-word at 320px. Earlier URIs still
+  resolve.
+
 ## [0.9.1] - 2026-09-27
 
 ### Changed
