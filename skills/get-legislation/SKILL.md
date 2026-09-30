@@ -36,6 +36,12 @@ one to an agent, or build one from roll calls and then report that the data was 
 what the tools do return instead: one legislator's recorded votes, a roll call's party breakdown,
 or the bills they sponsored.
 
+**Report only what these tools return.** Every claim about a bill, a legislator, or a vote comes
+from a cicada-guide tool result in this conversation. When the dataset lacks something — no bill
+text, no synopsis, a document that would not open, a vote not recorded — say what is missing and
+offer the document URL or the next tool to try. Do not fill the gap from web search, news
+coverage, or general knowledge, even labeled as such, and never put such material on a card.
+
 ## Project settings
 
 A project may pin defaults in `.claude/cicada-guide.local.md` at its root. Read it once at the
@@ -173,7 +179,10 @@ synopsis:
   stands as recorded. The card labels it as written by the AI assistant.
 
 When neither text nor synopsis is on record, say so in the summary rather than guess, and write the
-headline from the official title alone. Never infer or claim passage or an outcome in either.
+headline from the official title alone. Build the summary only from what the tools returned — the
+title, status, sponsors, and recorded votes — and point to the document URL for the text. Never fill
+it from news coverage, web search, or general knowledge, even with a note saying so: the card
+presents the summary as the bill's. Never infer or claim passage or an outcome in either.
 
 **Answer a "Show HB 314 … with show_bill" turn by reading the bill, then showing it.** Tapping a
 bill in the `search_bills` results card, a vote in the `show_person_record` card, or a sponsored

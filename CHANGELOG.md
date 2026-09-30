@@ -10,6 +10,15 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Fixed
+
+- Bill summaries, including the one passed to `show_bill`, now come only from what the tools
+  returned. When a bill had no text or synopsis on record and its document would not open, Claude
+  had written the card summary from news coverage of the session. Every entry point now says to
+  name the gap, build the summary from the title, status, sponsors, and recorded votes, and point
+  to the document URL, never to fill it from news, web search, or general knowledge. The always-on
+  skill states the rule in its scope section.
+
 ## [0.10.0] - 2026-09-30
 
 ### Added

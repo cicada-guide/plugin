@@ -216,7 +216,10 @@ for a voter, from the document text or the synopsis:
 
 The card renders both as text, so markdown does not render. When neither text nor synopsis is on
 record, say so in the summary rather than guess, and write the headline from the official title
-alone. Never infer or claim passage or an outcome in either.
+alone. Build the summary only from what the tools returned — the title, status, sponsors, and
+recorded votes — and point to the document URL for the text. Never fill it from news coverage, web
+search, or general knowledge, even with a note saying so: the card presents the summary as the
+bill's. Never infer or claim passage or an outcome in either.
 
 Depending on the host, `show_bill` hands you either its text fallback or its `structuredContent`.
 Neither carries the floor votes or sponsors the card fetches for itself, so take those claims from
