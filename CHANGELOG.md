@@ -10,6 +10,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- Card resource URI `official-card-v11`, after the official card's Recent votes panel stopped
+  scrolling: each vote title is clamped to two lines and a page holds as many whole rows as fit.
+  Earlier URIs still resolve.
+
 ### Fixed
 
 - Bill summaries, including the one passed to `show_bill`, now come only from what the tools
