@@ -15,6 +15,10 @@ plugin's guidance, including updates made to match what the server returns.
 - Two skills are renamed. The always-on `state-legislation` skill is now `get-legislation`, and
   the `bill-research` slash command is now `research-legislation`, invoked as
   `/cicada-guide:research-legislation`. `/cicada-guide:bill-research` no longer exists.
+- README's Privacy section now lists everything the plugin runs, sends, and fetches, as the
+  directory's pre-submission checklist asks: the one optional settings file the skills read, where
+  the server sends analytics and logs, the documents it fetches from legislature websites, and what
+  the cards load. It links the full policy at `https://public.cicada.guide/privacy`.
 
 ## [0.9.5] - 2026-09-30
 

@@ -214,12 +214,35 @@ Claude shows it in the conversation.
 
 ## Privacy
 
-Requests go to `https://public.cicada.guide/mcp-anthropic`. The server records anonymous usage analytics per
-tool call: the tool name and the arguments passed to it (search terms, names, ids), duration,
-result count, the calling client's name and user agent, the `context` string the model supplies
-(including any `context_prefix` set in project settings), and the `llm_model` value — the calling
-model's identifier, or `"unknown"`. Keep personal details out of your requests for that reason. It
-does not require or store an account, and anonymous callers are never challenged for credentials.
+Requests go to `https://public.cicada.guide/mcp-anthropic`. The server records anonymous usage
+analytics per tool call: the tool name and the arguments passed to it (search terms, names, ids),
+duration, result count, the calling client's name and user agent, the `context` string the model
+supplies (including any `context_prefix` set in project settings), and the `llm_model` value — the
+calling model's identifier, or `"unknown"`. Keep personal details out of your requests for that
+reason. It does not require or store an account, and anonymous callers are never challenged for
+credentials.
+
+What the plugin runs, sends, and fetches:
+
+- **Runs no code of its own.** The plugin has no hooks, no local MCP server, and no scripts that
+  Claude Code executes; `scripts/` holds contributor checks that only a maintainer runs by hand.
+  Its one component that reaches the network is the remote MCP server in `.mcp.json`. The skills
+  ask Claude to read one optional file in your project, `.claude/cicada-guide.local.md`, for
+  default settings, and values from it such as `default_division` and `context_prefix` can go into
+  tool calls.
+- **Sends** each tool call, as described above, to `public.cicada.guide` over HTTPS, and nowhere
+  else. No credential, key, or environment variable is read or sent.
+- **Where the server sends it:** analytics go to PostHog (United States). Cloudflare, which hosts
+  the server, keeps request logs that can include your IP address and applies rate limits by it.
+  Analytics are kept for up to 7 years and request logs for a few days.
+- **Fetches on your behalf:** `get_latest_bill_document` and `read_pdf_bytes` have the server
+  download a bill's public document from the state legislature's own website; `read_pdf_bytes`
+  accepts only legislature hosts on the server's allowlist.
+- **Cards** load legislator photos and the bill card's PDF viewer from `public.cicada.guide` only.
+  Any other data a card shows comes from the same server's tools, called through the host, not
+  fetched by the card itself.
+
+The full policy is at <https://public.cicada.guide/privacy>.
 
 ## Data sources
 
