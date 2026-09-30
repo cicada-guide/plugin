@@ -421,7 +421,7 @@ Use it when the user wants to know who someone is or how to reach them. For how 
 `get_person_votes` or `show_person_record`.
 
 In a host that supports MCP Apps it renders a contact card via
-`ui://cicada-guide/official-card-v11.html`: the photo, the seat line, party, contact buttons for
+`ui://cicada-guide/official-card-v12.html`: the photo, the seat line, party, contact buttons for
 every entry in `contact_options` (several of one kind open as a list under the row), a district map when `office.outline` exists, and a Recent votes
 panel. It shows no vote tally. The card asks the host for geolocation, and offers no location
 toggle on mobile, where hosts grant none; when the viewer turns location on, the map places them and, below the map, reads "You're in this district." or
@@ -643,6 +643,21 @@ Items carry `id`, `name`, `geoidfq`. Use a returned `id` as `division_id`.
 `adjourns`. Use a returned `id` as `session_id` in `search_bills`.
 
 ---
+
+## Missing capabilities
+
+### `get_more_tools`
+
+Added by the server's analytics library, not a data tool. It returns no data and never lists new
+tools: every call answers "Unfortunately, we have shown you the full tool list. We have noted your
+feedback and will work to improve the tool list in the future." The server records its `context`
+as a report of a missing capability. Call it only after the other tools cannot serve the request,
+and still tell the user the dataset does not cover it.
+
+| Parameter | Type | Default | Constraints |
+| --- | --- | --- | --- |
+| `context` | string, required | — | The goal and the kind of tool that would help, in the third person, with no names or personal details |
+| `llm_model` | string | — | Your model identifier, or `"unknown"` |
 
 ## Documents
 
