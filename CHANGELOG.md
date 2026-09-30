@@ -10,6 +10,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- Card resource URI `official-card-v12`, after the official card's contact buttons stopped
+  overlapping: four buttons now sit two by two, and a dropdown chevron sits beside its icon.
+  Earlier URIs still resolve.
+
 ## [0.10.1] - 2026-09-30
 
 ### Changed
