@@ -10,6 +10,8 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-09-30
+
 ### Changed
 
 - The bill-brief-researcher agent gives every roll call `get_rollcalls` returns its own row, even
@@ -341,7 +343,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/cicada-guide/plugin/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/cicada-guide/plugin/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/cicada-guide/plugin/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/cicada-guide/plugin/compare/v0.9.1...v0.9.2
