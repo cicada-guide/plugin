@@ -153,6 +153,9 @@ MCP Apps; other hosts show only what the call returns. `search_bills` also rende
 **End with the fitting card, without asking.** End a bill answer with `show_bill`
 `{ id, headline, summary }`, a "who is this" or contact answer with `show_official`, and an answer
 about a resolved legislator's record with `show_person_record`. Call the card after the written answer is ready.
+A `bill-brief-researcher` brief ends with a **Card to show** line: the agent cannot show a card,
+so once you have written the answer, call `show_bill` yourself with that `id`, `headline`, and
+`summary`.
 
 **A card tool returns less than its card shows.** Depending on the host, you receive either the
 text fallback or the `structuredContent`; neither carries what the card fetches for itself — floor
