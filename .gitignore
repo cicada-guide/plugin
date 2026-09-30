@@ -10,3 +10,6 @@ desktop.ini
 .idea/
 *.swp
 *~
+
+# Plugin eval results, written by `claude plugin eval`
+evals/results/
