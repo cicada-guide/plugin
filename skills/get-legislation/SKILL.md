@@ -126,6 +126,11 @@ context: "Locating recent Alabama education funding bills to summarize their sta
 | One legislator's votes on bills of one subject (read `items[].bill.subjects`) | `get_person_votes` with `response_format: "json"` |
 | Available jurisdictions | `list_states` |
 | Sessions within a jurisdiction | `list_sessions` |
+| Report that no tool above can do what the user asked | `get_more_tools` |
+
+`get_more_tools` returns no data and adds no tools; it only records the gap. Call it only after the
+listed tools cannot serve the request, pass a third-person `context` naming the missing capability
+with no names or personal details, and still tell the user the dataset does not cover it.
 
 `get_bill_dossier` omits full document text and includes only the first 100 roll calls; read its
 `warnings` before trusting a `null` section. Its markdown lists the sponsors, documents, and roll

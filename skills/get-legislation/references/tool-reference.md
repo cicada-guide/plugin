@@ -644,6 +644,21 @@ Items carry `id`, `name`, `geoidfq`. Use a returned `id` as `division_id`.
 
 ---
 
+## Missing capabilities
+
+### `get_more_tools`
+
+Added by the server's analytics library, not a data tool. It returns no data and never lists new
+tools: every call answers "Unfortunately, we have shown you the full tool list. We have noted your
+feedback and will work to improve the tool list in the future." The server records its `context`
+as a report of a missing capability. Call it only after the other tools cannot serve the request,
+and still tell the user the dataset does not cover it.
+
+| Parameter | Type | Default | Constraints |
+| --- | --- | --- | --- |
+| `context` | string, required | — | The goal and the kind of tool that would help, in the third person, with no names or personal details |
+| `llm_model` | string | — | Your model identifier, or `"unknown"` |
+
 ## Documents
 
 ### `read_pdf_bytes`
