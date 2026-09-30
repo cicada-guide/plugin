@@ -42,6 +42,11 @@ claude --plugin-dir /path/to/plugin
 `/mcp` should list `guide-public` as connected, and `/help` should show the plugin's slash
 commands. `curl https://public.cicada.guide/health` reports server health.
 
+After changing a skill or agent, also run the eval suite in `evals/` with `claude plugin eval`,
+passing `--judge-model sonnet`: the small default judge has failed correct answers. The command
+and what each case measures are in
+[How to verify a change](docs/howto-verify-a-change.md#5-run-the-eval-suite).
+
 The server is public and needs no account, so **anyone can run that check from a fork** — there is
 no privileged setup. What an outside contributor cannot verify is anything about the server's
 deployment or its private repo; treat the endpoint as a fixed external dependency.
