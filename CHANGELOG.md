@@ -24,6 +24,11 @@ plugin's guidance, including updates made to match what the server returns.
   `claude plugin eval`, two of three `contact-recorded-only` runs ended with "I can do that if you
   want" after saying none was on record. Every entry point that reports contact details now says
   not to offer one; the case passed five of five after the change.
+- A bill answer delegated to `bill-brief-researcher` now ends with the bill card. The agent's
+  brief carried the `show_bill` arguments, but a session that went straight to the agent without
+  the always-on skill never called the card. The agent's description and the brief now tell the
+  caller to show it, and the always-on skill says the same. The `bill-brief` eval now grades
+  Claude's text across the whole reply, since the final message can be a note after the card.
 - Card resource URI `bill-workspace-v17`, after the bill card's "Who voted how" stopped loading
   forever when several floor votes share the newest date. Earlier URIs still resolve.
 - Card resource URI `official-card-v12`, after the official card's contact buttons stopped
