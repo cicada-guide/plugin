@@ -10,6 +10,14 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-30
+
+### Added
+
+- An eval suite under `evals/` for `claude plugin eval`: a bill brief, a voting record, a contact
+  request with no legislator named, and a request to rank legislators, each graded with and
+  without the plugin against the live server. Results go to `evals/results/`, which is ignored.
+
 ### Fixed
 
 - A request to rank state legislators by ideology is now declined. The always-on skill's
@@ -27,6 +35,8 @@ plugin's guidance, including updates made to match what the server returns.
   directory's pre-submission checklist asks: the one optional settings file the skills read, where
   the server sends analytics and logs, the documents it fetches from legislature websites, and what
   the cards load. It links the full policy at `https://public.cicada.guide/privacy`.
+- The manifests name the author and marketplace owner `cicada.guide`, where they said
+  `Cicada Guide`.
 
 ## [0.9.5] - 2026-09-30
 
@@ -361,7 +371,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/cicada-guide/plugin/compare/v0.9.5...v0.10.0
 [0.9.5]: https://github.com/cicada-guide/plugin/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/cicada-guide/plugin/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/cicada-guide/plugin/compare/v0.9.2...v0.9.3
