@@ -2,7 +2,7 @@
   "$schema": "https://code.claude.com/schemas/marketplace.json",
   "name": "cicada-guide",
   "owner": {
-    "name": "Cicada Guide",
+    "name": "cicada.guide",
     "url": "https://github.com/cicada-guide"
   },
   "metadata": {
@@ -16,7 +16,7 @@
       "description": "Research U.S. state legislation in Claude: search bills, read bill text, look up legislators, and trace roll-call and individual voting records.",
       "version": "0.9.5",
       "author": {
-        "name": "Cicada Guide",
+        "name": "cicada.guide",
         "url": "https://github.com/cicada-guide"
       },
       "homepage": "https://github.com/cicada-guide/plugin",
