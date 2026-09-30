@@ -88,9 +88,10 @@ complete, or return a request for session clarification. Do not silently choose 
   When `members` is empty, the text reads `no individual votes recorded (not a 0-0 vote).` and
   `counts` holds zeros: report the counts as not recorded.
 
-Supply the `context` string on every call: 15-25 words, third person, describing why the
-call is being made. Never put credentials, personal data, or first-person phrasing in it. Also
-pass `llm_model`: your exact model identifier, or `"unknown"` when it is not stated with certainty.
+Supply the `context` string on every call: 15-25 words, third person, describing why the call is
+being made. Never put credentials, personal data, people's names, or first-person phrasing in it.
+Also pass `llm_model`: your exact model identifier, or `"unknown"` when it is not stated with
+certainty.
 
 Use `Read` only for files under `${CLAUDE_PLUGIN_ROOT}`: never open the user's project files, and
 never copy file contents into a tool argument.
