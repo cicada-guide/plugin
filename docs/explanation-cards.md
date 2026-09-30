@@ -4,7 +4,7 @@ This page is for contributors changing how the skills and agents use the server'
 cards. It explains why an answer ends with a card, why the card is never the source of a written
 claim, and why subagents name a card instead of showing one. For what each card shows and
 returns, see the [cards reference](reference-cards.md) and the
-[tool reference](../skills/state-legislation/references/tool-reference.md#cards).
+[tool reference](../skills/get-legislation/references/tool-reference.md#cards).
 
 ## The problem
 
@@ -185,4 +185,4 @@ is in the
 - [Why each entry point restates the dataset rules](explanation-dataset-rules.md)
 - [Architecture](architecture.md)
 - [Troubleshooting](troubleshooting.md#cards-dont-appear)
-- [The always-on skill's card rules](../skills/state-legislation/SKILL.md)
+- [The always-on skill's card rules](../skills/get-legislation/SKILL.md)

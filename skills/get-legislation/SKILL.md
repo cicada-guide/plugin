@@ -1,5 +1,5 @@
 ---
-name: state-legislation
+name: get-legislation
 description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find state representative Jane Smith", "what party is she", "how do I contact Senator X"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only.
 ---
 
@@ -328,8 +328,8 @@ Slash commands cover multi-step research. Each can be invoked by name or reached
 when a request matches one. Name the command either way — a user who does not know it exists cannot
 ask for it next time:
 
-- `/cicada-guide:bill-research <bill number or topic> [state] [year]` — a full sourced brief on
-  one bill, or a list of matching bills for a topic.
+- `/cicada-guide:research-legislation <bill number or topic> [state] [year]` — a full sourced brief
+  on one bill, or a list of matching bills for a topic.
 - `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]` — a
   legislator's history or vote on one bill, or one roll call broken down by party.
 - `/cicada-guide:contact-legislator <name> [state]` — who a legislator is, their seat, and the

@@ -128,11 +128,11 @@ The line numbers 1, 2, and 3 in these messages are fixed, whichever line the key
 
 ### Paths and links
 
-**No `../` in runtime docs.** Applies to runtime docs outside `skills/state-legislation/`. Every
+**No `../` in runtime docs.** Applies to runtime docs outside `skills/get-legislation/`. Every
 occurrence of the three characters `../` fails, in prose and code blocks alike.
 - Message: `<file>:<line>: relative ../ path — use ${CLAUDE_PLUGIN_ROOT}/...; a subagent runs in the user's project`
 - Fix: write the path from the plugin root: `${CLAUDE_PLUGIN_ROOT}/skills/...`. Files inside
-  `skills/state-legislation/` may link their sibling `references/` relatively.
+  `skills/get-legislation/` may link their sibling `references/` relatively.
 
 **`${CLAUDE_PLUGIN_ROOT}` paths exist.** Applies to runtime docs. The path runs from after
 `${CLAUDE_PLUGIN_ROOT}/` to the first whitespace, backtick, quote, or `)`.
@@ -263,7 +263,7 @@ An HTTP 403 from `initialize` is covered in the
 ### Mismatches (exit 1)
 
 **1. Every live tool is in each tool list.** Files: `README.md`,
-`skills/state-legislation/SKILL.md`, and `skills/state-legislation/references/tool-reference.md`.
+`skills/get-legislation/SKILL.md`, and `skills/get-legislation/references/tool-reference.md`.
 Each must contain every live tool's name in backticks, somewhere in the file.
 - Message: ``<file>: live tool `<tool>` is not documented here``
 - Fix: add the tool to that file's list: the Tools table, the Tool selection table, or a `###`
@@ -286,7 +286,7 @@ lacks are skipped.
   `arguments` flat: a nested object ends the match at its first `}`.
 
 **4. Parameter tables list only declared parameters.** File:
-`skills/state-legislation/references/tool-reference.md`. A table is checked when it sits under a
+`skills/get-legislation/references/tool-reference.md`. A table is checked when it sits under a
 `###` heading naming a live tool in backticks and its header row starts `| Parameter |`. Each row
 whose first cell is a backticked name is checked. Any `#`, `##`, or `###` line ends the section,
 even inside a code block, and any line not starting with `|` ends the table.

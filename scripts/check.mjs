@@ -141,8 +141,8 @@ for (const file of entryPoints) {
 
 for (const file of docFiles) {
   const text = read(file);
-  const withinStateLegislation = file.startsWith("skills/state-legislation/");
-  if (!withinStateLegislation) {
+  const withinAlwaysOnSkill = file.startsWith("skills/get-legislation/");
+  if (!withinAlwaysOnSkill) {
     for (const m of text.matchAll(/\.\.\//g)) {
       fail(file, lineOf(text, m.index), "relative ../ path — use ${CLAUDE_PLUGIN_ROOT}/...; a subagent runs in the user's project");
     }

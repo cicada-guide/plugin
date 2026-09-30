@@ -52,7 +52,7 @@ Three packaged skills drive longer workflows:
 
 | Command | Purpose |
 | --- | --- |
-| `/cicada-guide:bill-research <bill number or topic> [state] [year]` | Sourced brief on one bill: status, sponsors, text, roll calls, votes. A topic lists matching bills first |
+| `/cicada-guide:research-legislation <bill number or topic> [state] [year]` | Sourced brief on one bill: status, sponsors, text, roll calls, votes. A topic lists matching bills first |
 | `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]` | One legislator's voting history or vote on one bill, or a party breakdown of one roll call |
 | `/cicada-guide:contact-legislator <name> [state]` | One legislator's recorded seat and contact details, on a contact card |
 
@@ -143,7 +143,7 @@ Text below the frontmatter is standing project context, folded into scoping deci
 One caveat on `context_prefix`: the `context` parameter it extends is added to every tool schema
 by the server's analytics wrapper rather than by the tools themselves, so it stops working if that
 instrumentation is removed. The full contract, including how Claude recovers from that, is in
-[`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md).
+[`skills/get-legislation/references/project-settings.md`](skills/get-legislation/references/project-settings.md).
 
 Two things it deliberately cannot do. A default never overrides an explicit request — asking
 about Texas gets Texas, whatever `default_division` says — and the file cannot widen scope or
@@ -178,16 +178,16 @@ change when you make one.
 | `list_states` | Available jurisdictions |
 | `list_sessions` | Legislative sessions within a jurisdiction |
 
-Full parameter reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md).
+Full parameter reference: [`skills/get-legislation/references/tool-reference.md`](skills/get-legislation/references/tool-reference.md).
 
 ## Skills
 
-- **`state-legislation`** — loads automatically on any state-legislation question. Carries tool
+- **`get-legislation`** — loads automatically on any state-legislation question. Carries tool
   selection, the votes-table filter rule, cursor-versus-offset pagination, the silent recall caps on
   topic search, the limits of legislator search, how to turn vote records into legislator names, and
   the `.claude/cicada-guide.local.md` settings contract.
-- **`bill-research`** — the `/cicada-guide:bill-research` workflow. Invoke it by name, or let
-  Claude reach for it when a request calls for a full brief.
+- **`research-legislation`** — the `/cicada-guide:research-legislation` workflow. Invoke it by name,
+  or let Claude reach for it when a request calls for a full brief.
 - **`voting-record`** — the `/cicada-guide:voting-record` workflow. Invoke it by name, or let
   Claude reach for it when a request calls for a voting record.
 - **`contact-legislator`** — the `/cicada-guide:contact-legislator` workflow. Invoke it by name, or
@@ -205,7 +205,7 @@ report rather than its call-by-call traffic.
   is recorded. Returns `RESOLVED`, `AMBIGUOUS`, or `NOT FOUND` and never guesses, because
   attributing a vote to the wrong person is this dataset's worst failure.
 - **`bill-brief-researcher`** — assembles a full sourced brief on one bill: record, text, sponsors,
-  roll calls, and the vote breakdown. Same ground as `/cicada-guide:bill-research`, run
+  roll calls, and the vote breakdown. Same ground as `/cicada-guide:research-legislation`, run
   autonomously; it returns candidates instead of picking when the bill is ambiguous, since it cannot
   ask mid-run.
 
@@ -214,12 +214,35 @@ Claude shows it in the conversation.
 
 ## Privacy
 
-Requests go to `https://public.cicada.guide/mcp-anthropic`. The server records anonymous usage analytics per
-tool call: the tool name and the arguments passed to it (search terms, names, ids), duration,
-result count, the calling client's name and user agent, the `context` string the model supplies
-(including any `context_prefix` set in project settings), and the `llm_model` value — the calling
-model's identifier, or `"unknown"`. Keep personal details out of your requests for that reason. It
-does not require or store an account, and anonymous callers are never challenged for credentials.
+Requests go to `https://public.cicada.guide/mcp-anthropic`. The server records anonymous usage
+analytics per tool call: the tool name and the arguments passed to it (search terms, names, ids),
+duration, result count, the calling client's name and user agent, the `context` string the model
+supplies (including any `context_prefix` set in project settings), and the `llm_model` value — the
+calling model's identifier, or `"unknown"`. Keep personal details out of your requests for that
+reason. It does not require or store an account, and anonymous callers are never challenged for
+credentials.
+
+What the plugin runs, sends, and fetches:
+
+- **Runs no code of its own.** The plugin has no hooks, no local MCP server, and no scripts that
+  Claude Code executes; `scripts/` holds contributor checks that only a maintainer runs by hand.
+  Its one component that reaches the network is the remote MCP server in `.mcp.json`. The skills
+  ask Claude to read one optional file in your project, `.claude/cicada-guide.local.md`, for
+  default settings, and values from it such as `default_division` and `context_prefix` can go into
+  tool calls.
+- **Sends** each tool call, as described above, to `public.cicada.guide` over HTTPS, and nowhere
+  else. No credential, key, or environment variable is read or sent.
+- **Where the server sends it:** analytics go to PostHog (United States). Cloudflare, which hosts
+  the server, keeps request logs that can include your IP address and applies rate limits by it.
+  Analytics are kept for up to 7 years and request logs for a few days.
+- **Fetches on your behalf:** `get_latest_bill_document` and `read_pdf_bytes` have the server
+  download a bill's public document from the state legislature's own website; `read_pdf_bytes`
+  accepts only legislature hosts on the server's allowlist.
+- **Cards** load legislator photos and the bill card's PDF viewer from `public.cicada.guide` only.
+  Any other data a card shows comes from the same server's tools, called through the host, not
+  fetched by the card itself.
+
+The full policy is at <https://public.cicada.guide/privacy>.
 
 ## Data sources
 
@@ -230,9 +253,9 @@ research support, not as an authoritative legal record.
 ## Links
 
 - Issues and plugin source: <https://github.com/cicada-guide/plugin>
-- Tool reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md)
-- Call sequences for multi-step research: [`skills/state-legislation/references/workflows.md`](skills/state-legislation/references/workflows.md)
-- Project settings contract: [`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md)
+- Tool reference: [`skills/get-legislation/references/tool-reference.md`](skills/get-legislation/references/tool-reference.md)
+- Call sequences for multi-step research: [`skills/get-legislation/references/workflows.md`](skills/get-legislation/references/workflows.md)
+- Project settings contract: [`skills/get-legislation/references/project-settings.md`](skills/get-legislation/references/project-settings.md)
 - Getting started: [`docs/tutorial-getting-started.md`](docs/tutorial-getting-started.md)
 - Troubleshooting: [`docs/troubleshooting.md`](docs/troubleshooting.md)
 - Documentation index — tutorial, how-to guides, reference, and explanation: [`docs/README.md`](docs/README.md)

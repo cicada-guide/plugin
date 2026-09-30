@@ -1,6 +1,6 @@
 ---
 name: bill-brief-researcher
-description: Use this agent when one U.S. state bill needs a full sourced brief and assembling it means chaining many tool calls. Typical triggers include a request for everything known about a named bill, a request to read what a bill does alongside who sponsored it and how the chamber voted, and a follow-up asking for the complete picture on a bill already mentioned in conversation. The /cicada-guide:bill-research command covers the same ground interactively; reach for the agent when the gathering should run autonomously instead of filling the conversation with intermediate output. Do not use it for a sweep of one topic across states. See "When to invoke" in the agent body for worked scenarios.
+description: Use this agent when one U.S. state bill needs a full sourced brief and assembling it means chaining many tool calls. Typical triggers include a request for everything known about a named bill, a request to read what a bill does alongside who sponsored it and how the chamber voted, and a follow-up asking for the complete picture on a bill already mentioned in conversation. The /cicada-guide:research-legislation command covers the same ground interactively; reach for the agent when the gathering should run autonomously instead of filling the conversation with intermediate output. Do not use it for a sweep of one topic across states. See "When to invoke" in the agent body for worked scenarios.
 model: inherit
 tools: Read, mcp__plugin_cicada-guide_guide-public__*
 color: blue
@@ -112,7 +112,7 @@ never copy file contents into a tool argument.
 - When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
   before the first call; never guess its parameters.
 - Schemas are strict; an invented parameter is rejected outright. When a parameter or response field
-  is unclear, read `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
+  is unclear, read `${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/references/tool-reference.md`.
 - Separate the bill's operative text from its synopsis, headline, or `summarization`, and label
   which one you are quoting.
 - `search_bills` and `get_votes` carry no `total`. Report counts as "at least N" unless you

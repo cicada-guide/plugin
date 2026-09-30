@@ -20,7 +20,7 @@ const lineOf = (text, index) => text.slice(0, index).split("\n").length;
 const PROTOCOL_VERSION = "2025-06-18";
 
 // Documents that list every tool — reconcile each against the server, not against each other.
-const TOOL_LISTS = ["README.md", "skills/state-legislation/SKILL.md", "skills/state-legislation/references/tool-reference.md"];
+const TOOL_LISTS = ["README.md", "skills/get-legislation/SKILL.md", "skills/get-legislation/references/tool-reference.md"];
 
 function walk(dir) {
   return readdirSync(join(ROOT, dir)).flatMap((entry) => {
@@ -175,7 +175,7 @@ for (const file of docFiles) {
 
 // 4. Parameter tables under each tool's heading in the tool reference list only declared parameters.
 {
-  const file = "skills/state-legislation/references/tool-reference.md";
+  const file = "skills/get-legislation/references/tool-reference.md";
   const lines = read(file).split("\n");
   let tool = null;
   let inTable = false;

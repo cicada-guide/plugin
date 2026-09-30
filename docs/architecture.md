@@ -54,16 +54,16 @@ reaches the model differently:
 
 | Kind | Where | How it loads |
 | --- | --- | --- |
-| Always-on skill | `skills/state-legislation/` | Loads automatically on any state-legislation question. Its `references/` hold the tool reference, workflows and project-settings contract |
-| Slash-command skills | `skills/bill-research/`, `skills/voting-record/`, `skills/contact-legislator/` | Run as `/cicada-guide:<name>`, or when Claude judges a request needs the full workflow |
+| Always-on skill | `skills/get-legislation/` | Loads automatically on any state-legislation question. Its `references/` hold the tool reference, workflows and project-settings contract |
+| Slash-command skills | `skills/research-legislation/`, `skills/voting-record/`, `skills/contact-legislator/` | Run as `/cicada-guide:<name>`, or when Claude judges a request needs the full workflow |
 | Subagents | `agents/*.md`: `bill-brief-researcher`, `legislator-disambiguator` | Dispatched by Claude for long, autonomous jobs; each returns one consolidated report |
 
 The three slash commands each own one workflow and end with a card when the answer fits one:
-`bill-research` writes a sourced brief on one bill and ends with `show_bill`, or lists the bills
-that match a topic; `voting-record` covers a legislator's history, their vote on one bill, or one
-roll call by party, and ends with `show_person_record` or `show_bill`; `contact-legislator` resolves
-one legislator by name and ends with `show_official`. A request about "my senator" without a name
-gets a question back, because no tool maps an address or district to a legislator.
+`research-legislation` writes a sourced brief on one bill and ends with `show_bill`, or lists the
+bills that match a topic; `voting-record` covers a legislator's history, their vote on one bill, or
+one roll call by party, and ends with `show_person_record` or `show_bill`; `contact-legislator`
+resolves one legislator by name and ends with `show_official`. A request about "my senator" without
+a name gets a question back, because no tool maps an address or district to a legislator.
 
 Two design rules follow from how they load.
 
@@ -76,7 +76,7 @@ are in [why each entry point restates the dataset rules](explanation-dataset-rul
 
 **Cross-component links use `${CLAUDE_PLUGIN_ROOT}`.** A subagent runs with the user's project as
 its working directory, so a relative path such as `../skills/...` resolves to nothing. Only files
-inside `skills/state-legislation/` may link their sibling `references/` relatively.
+inside `skills/get-legislation/` may link their sibling `references/` relatively.
 
 Agents are also sandboxed. Their frontmatter `tools:` allowlist names only `Read` and the
 `guide-public` server's tools, so an agent that reads bill text or a PDF cannot run commands or
@@ -122,7 +122,7 @@ Users can put a `.claude/cicada-guide.local.md` in their own project, copied fro
 [`cicada-guide.local.md.example`](../cicada-guide.local.md.example). It sets a default response
 format, a `context` prefix and default jurisdictions. A pinned response format is never sent to
 the card tools or `get_rollcall_breakdown`, which take no `response_format`. The contract is in
-[project-settings.md](../skills/state-legislation/references/project-settings.md). The file is
+[project-settings.md](../skills/get-legislation/references/project-settings.md). The file is
 per-user and gitignored. Nothing user-specific belongs in this repo.
 
 ## Checks

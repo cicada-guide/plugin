@@ -1,5 +1,5 @@
 ---
-name: bill-research
+name: research-legislation
 description: Produces a sourced brief on one U.S. state bill — identification, status, sponsors, bill text, roll calls, and how members voted. This skill should be used when the user wants the full picture on one named bill ("brief me on Alabama HB 314", "what does this bill do and how did the chamber vote"), not for a topic sweep across states.
 argument-hint: "<bill number or topic> [state] [year]"
 disable-model-invocation: false
@@ -18,7 +18,7 @@ Supply the `context` string (15-25 words, third person) on each tool call, prefi
 `context_prefix` when the project sets one. Never put credentials, personal data, people's names, or
 first-person phrasing in it. Also pass `llm_model` — your exact model identifier, or `"unknown"`
 when your system prompt does not state one. When a parameter or response shape is unclear, read
-`${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
+`${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/references/tool-reference.md`.
 
 When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
 before the first call; never guess its parameters.
@@ -31,7 +31,7 @@ across states and sessions, so an unscoped search is ambiguous.
 
 When the request names no state, check `.claude/cicada-guide.local.md` for a `default_division`
 and scope to it — see **Project settings** in
-`${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/SKILL.md`. Note in the brief that the jurisdiction
+`${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/SKILL.md`. Note in the brief that the jurisdiction
 came from the project default rather than from the request.
 
 Then search:

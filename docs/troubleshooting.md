@@ -1,7 +1,7 @@
 # Troubleshooting
 
 Common problems when using the plugin, with the fix for each. For how the tools behave in normal
-use, see the [tool reference](../skills/state-legislation/references/tool-reference.md).
+use, see the [tool reference](../skills/get-legislation/references/tool-reference.md).
 
 ## The server doesn't show up, or shows as disconnected
 
@@ -28,7 +28,7 @@ a mistake; the server accepts anonymous callers.
 
 ## Slash commands are missing
 
-`/help` should list `/cicada-guide:bill-research`, `/cicada-guide:voting-record`, and
+`/help` should list `/cicada-guide:research-legislation`, `/cicada-guide:voting-record`, and
 `/cicada-guide:contact-legislator`. If they're missing, the plugin isn't enabled in this session:
 see step 2 above. The always-on skill has no command; it loads by itself when you ask about state
 legislation.
@@ -79,7 +79,7 @@ The usual cause is a project default. A `.claude/cicada-guide.local.md` that pin
 `response_format` applies to the other tools, and the guidance says to omit it from these four.
 If the error appears anyway, ask Claude to retry the call without `response_format`. If it keeps
 happening, update the plugin: versions before 0.8.0 predate some of these rules. The settings
-contract is in [project-settings.md](../skills/state-legislation/references/project-settings.md).
+contract is in [project-settings.md](../skills/get-legislation/references/project-settings.md).
 
 ## The bill card's headline or summary is rejected
 

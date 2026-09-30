@@ -39,11 +39,11 @@ Changing the plugin:
 - [Cards](reference-cards.md): the interactive cards, what each shows, and what reaches the model.
 - [Checks](reference-checks.md): every rule `scripts/check.mjs` and `scripts/check-live-tools.mjs`
   enforce, and how to fix each failure.
-- [Tool reference](../skills/state-legislation/references/tool-reference.md): every tool's
+- [Tool reference](../skills/get-legislation/references/tool-reference.md): every tool's
   parameters, pagination, and errors.
-- [Workflows](../skills/state-legislation/references/workflows.md): call sequences for multi-step
+- [Workflows](../skills/get-legislation/references/workflows.md): call sequences for multi-step
   research.
-- [Project settings](../skills/state-legislation/references/project-settings.md): the
+- [Project settings](../skills/get-legislation/references/project-settings.md): the
   `.claude/cicada-guide.local.md` contract.
   [`cicada-guide.local.md.example`](../cicada-guide.local.md.example) is the template.
 - [Troubleshooting](troubleshooting.md): connection problems, missing tools, rate limits,
