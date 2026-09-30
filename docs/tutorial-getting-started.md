@@ -55,11 +55,11 @@ Then run:
 
 The list should include the plugin's three slash commands:
 
-- `/cicada-guide:bill-research`
+- `/cicada-guide:research-legislation`
 - `/cicada-guide:voting-record`
 - `/cicada-guide:contact-legislator`
 
-The always-on `state-legislation` skill has no command of its own. It loads by itself whenever you
+The always-on `get-legislation` skill has no command of its own. It loads by itself whenever you
 ask about state legislation.
 
 **Done looks like:** `guide-public` is connected and the three commands appear in `/help`.

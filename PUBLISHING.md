@@ -14,7 +14,7 @@ every release.
 | MCP endpoint | `https://public.cicada.guide/mcp-anthropic` | Cloudflare Custom Domain on the Worker, rather than the `workers.dev` hostname. The path was `/mcp` until 0.9.0; the server still answers it for earlier installs. |
 | MCP server key | `guide-public` | Tools surface as `mcp__plugin_cicada-guide_guide-public__search_bills`. The `<server>` segment is mandatory — `mcp__plugin_cicada-guide__search_bills` is not reachable by any configuration. |
 | Contact email | None | The manifests' `author` and `owner` carry a name and URL only, and issues route through the repo. |
-| Always-on skill name | `state-legislation` | Renamed from `cicada-guide` in 0.2.0, which had produced `/cicada-guide:cicada-guide`. Done in the same pass that converted cross-component links to `${CLAUDE_PLUGIN_ROOT}`, since both touch the same sites. |
+| Always-on skill name | `get-legislation` | Named `state-legislation` in 0.2.0, renamed from `cicada-guide`, which had produced `/cicada-guide:cicada-guide`; that pass also converted cross-component links to `${CLAUDE_PLUGIN_ROOT}`, since both touch the same sites. Renamed `get-legislation` after 0.9.5, when the `bill-research` command became `research-legislation`. |
 | Cross-component links | `${CLAUDE_PLUGIN_ROOT}/skills/...` | Skills and agents reference shared files by plugin root, never by a relative path. A subagent's working directory is the user's project, so `../skills/...` resolves to nothing. |
 | Hosts | Claude only | The Codex manifest (`.codex-plugin/plugin.json`) was removed in 0.9.0, along with ChatGPT and Codex support. |
 
@@ -22,11 +22,11 @@ every release.
 
 - **Reconcile the tool reference against the live server.** Run `tools/list` against
   `https://public.cicada.guide/mcp-anthropic` and diff it against
-  `skills/state-legislation/references/tool-reference.md`, which records the server version it was
+  `skills/get-legislation/references/tool-reference.md`, which records the server version it was
   verified against. The endpoint is unversioned, so nothing else signals drift. The server is
   stateless: it issues no `mcp-session-id`, and a bare `tools/list` POST is answered directly, with
   no `initialize` first. Reconcile against the server, never against the other copies: the tool
-  names are repeated in `README.md` and `skills/state-legislation/SKILL.md`, and those three
+  names are repeated in `README.md` and `skills/get-legislation/SKILL.md`, and those three
   agreeing with each other is exactly the state drift leaves behind.
   `node scripts/check-live-tools.mjs` does the fetch and the reconciliation in one step, and the
   `live-tools` workflow runs it nightly. To inspect the raw list by hand, this writes it to
@@ -65,7 +65,7 @@ claude --plugin-dir /path/to/plugin
 ```
 
 Then `/mcp` should list `guide-public` as connected, and `/help` should show
-`/cicada-guide:bill-research`, `/cicada-guide:voting-record`, and
+`/cicada-guide:research-legislation`, `/cicada-guide:voting-record`, and
 `/cicada-guide:contact-legislator`.
 
 End to end, the way a stranger gets it:

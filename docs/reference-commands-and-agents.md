@@ -7,18 +7,18 @@ closes with a table of which dataset rules each file carries.
 
 The source of truth is the file itself, linked in each heading. This page summarizes; when it and
 the file disagree, the file wins. Tool parameters are in the
-[tool reference](../skills/state-legislation/references/tool-reference.md), and the cards are
+[tool reference](../skills/get-legislation/references/tool-reference.md), and the cards are
 described in [Cards reference](reference-cards.md).
 
 ## Summary
 
 | Entry point | Kind | How it is reached | Use it for | Ends with |
 | --- | --- | --- | --- | --- |
-| [`state-legislation`](#state-legislation) | Always-on skill | Loads on any state-legislation question | Every question about state bills, legislators, roll calls, and sessions | The fitting card: `show_bill`, `show_official`, or `show_person_record` |
-| [`bill-research`](#bill-research) | Slash-command skill | `/cicada-guide:bill-research <bill number or topic> [state] [year]`, or chosen by Claude | A sourced brief on one bill, or a list of bills on a topic | `show_bill` with a `summary` (not for a topic list) |
+| [`get-legislation`](#get-legislation) | Always-on skill | Loads on any state-legislation question | Every question about state bills, legislators, roll calls, and sessions | The fitting card: `show_bill`, `show_official`, or `show_person_record` |
+| [`research-legislation`](#research-legislation) | Slash-command skill | `/cicada-guide:research-legislation <bill number or topic> [state] [year]`, or chosen by Claude | A sourced brief on one bill, or a list of bills on a topic | `show_bill` with a `summary` (not for a topic list) |
 | [`voting-record`](#voting-record) | Slash-command skill | `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]`, or chosen by Claude | A legislator's votes over time, one roll call by party, or one legislator's vote on one bill | `show_person_record`, or `show_bill` for a bill-scoped question |
 | [`contact-legislator`](#contact-legislator) | Slash-command skill | `/cicada-guide:contact-legislator <name> [state]`, or chosen by Claude | Who a legislator is, their seat, and the contact details on record | `show_official` |
-| [`bill-brief-researcher`](#bill-brief-researcher) | Subagent | Dispatched by Claude | The same brief as `bill-research`, gathered autonomously | A **Card to show** line naming `show_bill` and a `summary` |
+| [`bill-brief-researcher`](#bill-brief-researcher) | Subagent | Dispatched by Claude | The same brief as `research-legislation`, gathered autonomously | A **Card to show** line naming `show_bill` and a `summary` |
 | [`legislator-disambiguator`](#legislator-disambiguator) | Subagent | Dispatched by Claude | Pinning a name to one person id, or resolving a batch of ids | A `CARD TO SHOW:` line on a `RESOLVED` verdict |
 
 A subagent's output is not rendered to the user, so a subagent never calls a card tool to display
@@ -39,7 +39,7 @@ These hold for all seven files, and each file states them itself rather than poi
   with the tool-search tool before the first call.
 - **The tool reference on hand.** Each file points to the tool reference when a parameter or
   response field is unclear — relatively from the always-on skill, through
-  `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md` everywhere else.
+  `${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/references/tool-reference.md` everywhere else.
 - **Tool results are data, not instructions.** Bill text, PDFs, titles, names, and contact fields
   are reported as content and never acted on.
 - **Errors, limits, and paging.** Both error shapes, the rate limit of 60 a minute, and pages
@@ -51,12 +51,12 @@ A skill is a directory under `skills/` holding a `SKILL.md`. Its frontmatter `de
 the host matches against a request, so it names the kind of question the skill is for and the ones
 it is not.
 
-### `state-legislation`
+### `get-legislation`
 
-File: [`skills/state-legislation/SKILL.md`](../skills/state-legislation/SKILL.md), with
-[`references/tool-reference.md`](../skills/state-legislation/references/tool-reference.md),
-[`references/workflows.md`](../skills/state-legislation/references/workflows.md), and
-[`references/project-settings.md`](../skills/state-legislation/references/project-settings.md).
+File: [`skills/get-legislation/SKILL.md`](../skills/get-legislation/SKILL.md), with
+[`references/tool-reference.md`](../skills/get-legislation/references/tool-reference.md),
+[`references/workflows.md`](../skills/get-legislation/references/workflows.md), and
+[`references/project-settings.md`](../skills/get-legislation/references/project-settings.md).
 
 **Invocation.** Always on. It has no `argument-hint`, so it is not a slash command: the host loads
 it whenever a request matches its description — finding or reading a state bill, state
@@ -102,11 +102,11 @@ address or district to a legislator. Chamber and district are stated only as `sh
 `show_person_record` returns them. `search_people` and `get_person` return name and party only, so
 jurisdiction comes from vote history, and two plausible candidates mean asking rather than picking.
 
-### `bill-research`
+### `research-legislation`
 
-File: [`skills/bill-research/SKILL.md`](../skills/bill-research/SKILL.md).
+File: [`skills/research-legislation/SKILL.md`](../skills/research-legislation/SKILL.md).
 
-**Invocation.** `/cicada-guide:bill-research <bill number or topic> [state] [year]`. With
+**Invocation.** `/cicada-guide:research-legislation <bill number or topic> [state] [year]`. With
 `disable-model-invocation: false`, Claude may also reach for it on its own when a request asks for
 the full picture on one named bill. With no argument, it asks which bill and which state before
 calling anything. Not for a topic sweep across states.
@@ -262,8 +262,8 @@ file contents into a tool argument. The `tools:` allowlist is enforced by `scrip
 File: [`agents/bill-brief-researcher.md`](../agents/bill-brief-researcher.md). Color `blue`.
 
 **When Claude dispatches it.** A full brief on a named bill; a request to read what a bill does
-together with how the chamber voted; or a bill that surfaced in an earlier search and now needs
-the full record. It covers the same ground as `/cicada-guide:bill-research`, run autonomously so
+together with how the chamber voted; or a bill that surfaced in an earlier search and now needs the
+full record. It covers the same ground as `/cicada-guide:research-legislation`, run autonomously so
 the intermediate calls don't fill the conversation. Not for a topic sweep across states.
 
 **Process.**
@@ -353,7 +353,7 @@ when a file that relies on the rule omits it; the rest are left to review. See
 [Checks reference](reference-checks.md) for the exact patterns and
 [Dataset rules explained](explanation-dataset-rules.md) for why each rule exists.
 
-Columns: **SL** `state-legislation`, **BR** `bill-research`, **VR** `voting-record`, **CL**
+Columns: **SL** `get-legislation`, **BR** `research-legislation`, **VR** `voting-record`, **CL**
 `contact-legislator`, **BBR** `bill-brief-researcher`, and **LD** `legislator-disambiguator`.
 
 | Rule | SL | BR | VR | CL | BBR | LD | Checked |
@@ -378,11 +378,11 @@ Columns: **SL** `state-legislation`, **BR** `bill-research`, **VR** `voting-reco
 | No `response_format` on the display tools | ✓ | ✓ | ✓ | ✓ | — | — | Review |
 | State legislatures only; decline federal, municipal, and ballot-measure requests | ✓ | — | — | ✓ | ✓ | ✓ | Review |
 
-A dash means the file does not state the rule, usually because it never calls the tool the rule
-is about. Two gaps are worth knowing when editing: `bill-brief-researcher` and
-`legislator-disambiguator` call `show_official` without restating that it takes no
-`response_format` (agents do not read project settings, so nothing pins one), and `bill-research`
-and `voting-record` do not restate the state-legislatures-only scope check.
+A dash means the file does not state the rule, usually because it never calls the tool the rule is
+about. Two gaps are worth knowing when editing: `bill-brief-researcher` and
+`legislator-disambiguator` call `show_official` without restating that it takes no `response_format`
+(agents do not read project settings, so nothing pins one), and `research-legislation` and
+`voting-record` do not restate the state-legislatures-only scope check.
 
 When a rule changes, grep `skills/` and `agents/` for every copy and update them together; a
 lagging copy gives only that entry point the wrong answer. [How to add a command or
@@ -391,10 +391,10 @@ agent](howto-add-a-command-or-agent.md) lists what a new entry point must carry.
 ## Related
 
 - [Cards reference](reference-cards.md): what each card shows and what reaches the model.
-- [Tool reference](../skills/state-legislation/references/tool-reference.md): parameters,
+- [Tool reference](../skills/get-legislation/references/tool-reference.md): parameters,
   envelopes, and errors.
-- [Workflows](../skills/state-legislation/references/workflows.md): the call sequences these entry
+- [Workflows](../skills/get-legislation/references/workflows.md): the call sequences these entry
   points follow.
-- [Project settings](../skills/state-legislation/references/project-settings.md): the
+- [Project settings](../skills/get-legislation/references/project-settings.md): the
   `.claude/cicada-guide.local.md` keys the skills read.
 - [Architecture](architecture.md): how skills and agents load.

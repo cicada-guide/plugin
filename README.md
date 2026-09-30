@@ -52,7 +52,7 @@ Three packaged skills drive longer workflows:
 
 | Command | Purpose |
 | --- | --- |
-| `/cicada-guide:bill-research <bill number or topic> [state] [year]` | Sourced brief on one bill: status, sponsors, text, roll calls, votes. A topic lists matching bills first |
+| `/cicada-guide:research-legislation <bill number or topic> [state] [year]` | Sourced brief on one bill: status, sponsors, text, roll calls, votes. A topic lists matching bills first |
 | `/cicada-guide:voting-record <legislator name> [state] [bill] [session or date range]` | One legislator's voting history or vote on one bill, or a party breakdown of one roll call |
 | `/cicada-guide:contact-legislator <name> [state]` | One legislator's recorded seat and contact details, on a contact card |
 
@@ -143,7 +143,7 @@ Text below the frontmatter is standing project context, folded into scoping deci
 One caveat on `context_prefix`: the `context` parameter it extends is added to every tool schema
 by the server's analytics wrapper rather than by the tools themselves, so it stops working if that
 instrumentation is removed. The full contract, including how Claude recovers from that, is in
-[`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md).
+[`skills/get-legislation/references/project-settings.md`](skills/get-legislation/references/project-settings.md).
 
 Two things it deliberately cannot do. A default never overrides an explicit request — asking
 about Texas gets Texas, whatever `default_division` says — and the file cannot widen scope or
@@ -178,16 +178,16 @@ change when you make one.
 | `list_states` | Available jurisdictions |
 | `list_sessions` | Legislative sessions within a jurisdiction |
 
-Full parameter reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md).
+Full parameter reference: [`skills/get-legislation/references/tool-reference.md`](skills/get-legislation/references/tool-reference.md).
 
 ## Skills
 
-- **`state-legislation`** — loads automatically on any state-legislation question. Carries tool
+- **`get-legislation`** — loads automatically on any state-legislation question. Carries tool
   selection, the votes-table filter rule, cursor-versus-offset pagination, the silent recall caps on
   topic search, the limits of legislator search, how to turn vote records into legislator names, and
   the `.claude/cicada-guide.local.md` settings contract.
-- **`bill-research`** — the `/cicada-guide:bill-research` workflow. Invoke it by name, or let
-  Claude reach for it when a request calls for a full brief.
+- **`research-legislation`** — the `/cicada-guide:research-legislation` workflow. Invoke it by name,
+  or let Claude reach for it when a request calls for a full brief.
 - **`voting-record`** — the `/cicada-guide:voting-record` workflow. Invoke it by name, or let
   Claude reach for it when a request calls for a voting record.
 - **`contact-legislator`** — the `/cicada-guide:contact-legislator` workflow. Invoke it by name, or
@@ -205,7 +205,7 @@ report rather than its call-by-call traffic.
   is recorded. Returns `RESOLVED`, `AMBIGUOUS`, or `NOT FOUND` and never guesses, because
   attributing a vote to the wrong person is this dataset's worst failure.
 - **`bill-brief-researcher`** — assembles a full sourced brief on one bill: record, text, sponsors,
-  roll calls, and the vote breakdown. Same ground as `/cicada-guide:bill-research`, run
+  roll calls, and the vote breakdown. Same ground as `/cicada-guide:research-legislation`, run
   autonomously; it returns candidates instead of picking when the bill is ambiguous, since it cannot
   ask mid-run.
 
@@ -230,9 +230,9 @@ research support, not as an authoritative legal record.
 ## Links
 
 - Issues and plugin source: <https://github.com/cicada-guide/plugin>
-- Tool reference: [`skills/state-legislation/references/tool-reference.md`](skills/state-legislation/references/tool-reference.md)
-- Call sequences for multi-step research: [`skills/state-legislation/references/workflows.md`](skills/state-legislation/references/workflows.md)
-- Project settings contract: [`skills/state-legislation/references/project-settings.md`](skills/state-legislation/references/project-settings.md)
+- Tool reference: [`skills/get-legislation/references/tool-reference.md`](skills/get-legislation/references/tool-reference.md)
+- Call sequences for multi-step research: [`skills/get-legislation/references/workflows.md`](skills/get-legislation/references/workflows.md)
+- Project settings contract: [`skills/get-legislation/references/project-settings.md`](skills/get-legislation/references/project-settings.md)
 - Getting started: [`docs/tutorial-getting-started.md`](docs/tutorial-getting-started.md)
 - Troubleshooting: [`docs/troubleshooting.md`](docs/troubleshooting.md)
 - Documentation index — tutorial, how-to guides, reference, and explanation: [`docs/README.md`](docs/README.md)

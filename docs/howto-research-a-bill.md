@@ -71,10 +71,10 @@ So:
 
 ## Get a sourced brief
 
-For the full picture on one bill, use the bill-research command:
+For the full picture on one bill, use the research-legislation command:
 
 ```text
-/cicada-guide:bill-research HB 591 Alabama 2026
+/cicada-guide:research-legislation HB 591 Alabama 2026
 ```
 
 The argument is `<bill number or topic> [state] [year]`. With no argument, it asks which bill and

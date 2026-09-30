@@ -5,7 +5,7 @@ project. It shows how to set up `.claude/cicada-guide.local.md` from the templat
 does with an example, and what the file cannot do.
 
 The authoritative contract, the one Claude follows, is
-[`skills/state-legislation/references/project-settings.md`](../skills/state-legislation/references/project-settings.md).
+[`skills/get-legislation/references/project-settings.md`](../skills/get-legislation/references/project-settings.md).
 This page is the how-to; where the two differ, the contract wins.
 
 The file is optional. Without it the plugin behaves exactly as it does out of the box.
@@ -169,7 +169,7 @@ when you make one.
 
 ## See also
 
-- [Project settings contract](../skills/state-legislation/references/project-settings.md): the
+- [Project settings contract](../skills/get-legislation/references/project-settings.md): the
   rules Claude follows, including the `response_format` and `context_prefix` details.
 - [`cicada-guide.local.md.example`](../cicada-guide.local.md.example): the template, with comments.
 - [Research a bill](howto-research-a-bill.md) and

@@ -21,7 +21,7 @@ Supply the `context` string (15-25 words, third person) on each tool call, prefi
 `context_prefix` when the project sets one. Never put credentials, personal data, people's names, or
 first-person phrasing in it. Also pass `llm_model` — your exact model identifier, or `"unknown"`
 when your system prompt does not state one. When a parameter or response shape is unclear, read
-`${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
+`${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/references/tool-reference.md`.
 
 When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
 before the first call; never guess its parameters.
@@ -47,7 +47,7 @@ recorded.` or `office` is `null`, they are not recorded. Never infer them from `
 
 A `default_division` in `.claude/cicada-guide.local.md` is the jurisdiction to test candidates
 against when the request names none — see **Project settings** in
-`${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/SKILL.md`. It narrows the candidate list; it does
+`${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/SKILL.md`. It narrows the candidate list; it does
 not on its own confirm an identification.
 
 **Same-name rows are different people.** Matching name, party, and state fits two legislators in

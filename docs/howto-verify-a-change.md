@@ -49,8 +49,8 @@ node scripts/check-live-tools.mjs
 ```
 
 It reads the endpoint from `.mcp.json`, fetches the live `tools/list`, and checks the docs against
-it: every live tool is named in `README.md`, `skills/state-legislation/SKILL.md`, and
-`skills/state-legislation/references/tool-reference.md`; no skill, agent, or README names a tool
+it: every live tool is named in `README.md`, `skills/get-legislation/SKILL.md`, and
+`skills/get-legislation/references/tool-reference.md`; no skill, agent, or README names a tool
 the server lacks; and no example or parameter table passes a parameter the tool's schema does not
 declare. It prints `Documentation matches the live tools/list (N tools).` on success, exits 1 on a
 mismatch, and exits 2 when it could not get a tool list at all.
@@ -103,7 +103,7 @@ Then confirm the plugin loaded:
 
 - **`/mcp`** lists `guide-public` as connected. If it does not, see
   [Troubleshooting](troubleshooting.md#the-server-doesnt-show-up-or-shows-as-disconnected).
-- **`/help`** lists `/cicada-guide:bill-research`, `/cicada-guide:voting-record`, and
+- **`/help`** lists `/cicada-guide:research-legislation`, `/cicada-guide:voting-record`, and
   `/cicada-guide:contact-legislator`, plus any command you added.
 
 Try the entry point you changed, then one you didn't, to catch a rule you moved from one file to
@@ -111,8 +111,8 @@ another. These questions exercise each one:
 
 | Entry point | Try | Look for |
 | --- | --- | --- |
-| `state-legislation` (always on) | "Which states are in the data?" | The skill loads with no command, and `list_states` answers |
-| `/cicada-guide:bill-research` | `/cicada-guide:bill-research HB 591 Alabama 2026` | The bill is scoped to one state and session, the brief cites its sources, and it ends with a `show_bill` call carrying a `headline` and a `summary` |
+| `get-legislation` (always on) | "Which states are in the data?" | The skill loads with no command, and `list_states` answers |
+| `/cicada-guide:research-legislation` | `/cicada-guide:research-legislation HB 591 Alabama 2026` | The bill is scoped to one state and session, the brief cites its sources, and it ends with a `show_bill` call carrying a `headline` and a `summary` |
 | `/cicada-guide:voting-record` | `/cicada-guide:voting-record Rex Reynolds Alabama` | Identity is resolved before votes are reported, and the answer ends with `show_person_record` |
 | `/cicada-guide:contact-legislator` | `/cicada-guide:contact-legislator Rex Reynolds Alabama` | A `show_official` call without asking, and only the seat and contact details it returned |
 | Any command, no argument | `/cicada-guide:contact-legislator` | A question back asking which legislator and which state, before any tool call |

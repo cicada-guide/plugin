@@ -6,7 +6,7 @@ It covers the four tools that carry a card, the `show_bill` headline and summary
 show-bill request a tapped bill posts, and the model-context updates the cards send.
 
 Parameters and response shapes are in the
-[tool reference](../skills/state-legislation/references/tool-reference.md#cards); this page links
+[tool reference](../skills/get-legislation/references/tool-reference.md#cards); this page links
 there rather than repeating them. Why the plugin ends answers with a card is in
 [Cards explained](explanation-cards.md).
 
@@ -73,14 +73,14 @@ year.`
 **The model receives** the full result list as usual — text by default, or JSON with
 `response_format: "json"`. `search_bills` does take `response_format`, unlike the display tools.
 
-**How the skills react.** They summarize what matched and name the bills the answer rests on,
-rather than tabulating every row the card shows. `bill-research` answers a topic with a list and
-an offer to brief one, and shows no bill card until the user picks one.
+**How the skills react.** They summarize what matched and name the bills the answer rests on, rather
+than tabulating every row the card shows. `research-legislation` answers a topic with a list and an
+offer to brief one, and shows no bill card until the user picks one.
 
 ## `show_bill`: bill card
 
 Parameters: `id`, `headline`, and `summary`, all required —
-[tool reference](../skills/state-legislation/references/tool-reference.md#show_bill).
+[tool reference](../skills/get-legislation/references/tool-reference.md#show_bill).
 
 **The card shows** a header, then four tabs. It always opens on this layout, inline.
 
@@ -124,9 +124,9 @@ for a voter after reading the bill.
   summary is 1-1,500 characters of prose. Both are trimmed, and an empty string is rejected. The
   card renders both as text, so markdown does not render.
 
-Which entry points pass them: `state-legislation`, `bill-research`, and `voting-record` whenever
-they show a bill. `bill-brief-researcher` returns a suggested headline and summary on its **Card to
-show** line for the main conversation to pass.
+Which entry points pass them: `get-legislation`, `research-legislation`, and `voting-record`
+whenever they show a bill. `bill-brief-researcher` returns a suggested headline and summary on its
+**Card to show** line for the main conversation to pass.
 
 ### The title plate
 
@@ -151,8 +151,8 @@ Show HB 314 (bill id <uuid>) with show_bill. First read its text with get_latest
 After it is sent, the card's status line says the bill will appear in the conversation. If the host
 cannot send the turn, the card asks the user to ask for the bill in the conversation instead.
 
-**How the skills react** (`state-legislation`, `bill-research`, `voting-record`, and the
-[workflow](../skills/state-legislation/references/workflows.md#show-bill-request-from-a-card)):
+**How the skills react** (`get-legislation`, `research-legislation`, `voting-record`, and the
+[workflow](../skills/get-legislation/references/workflows.md#show-bill-request-from-a-card)):
 
 1. Read the text with `get_latest_bill_document`, every part, or use the synopsis when no text is
    available.
@@ -164,7 +164,7 @@ No full brief is needed for this turn.
 ## `show_official`: contact card
 
 Parameter: `id` (required), from `search_people` after identity is resolved —
-[tool reference](../skills/state-legislation/references/tool-reference.md#show_official).
+[tool reference](../skills/get-legislation/references/tool-reference.md#show_official).
 
 **The card shows:**
 
@@ -204,7 +204,7 @@ score, or rank a legislator. `legislator-disambiguator` calls
 ## `show_person_record`: legislator record
 
 Parameter: `id` (required), from `search_people` after identity is resolved —
-[tool reference](../skills/state-legislation/references/tool-reference.md#show_person_record).
+[tool reference](../skills/get-legislation/references/tool-reference.md#show_person_record).
 
 **The card shows** the seat, with no contact buttons (those are on the contact card), then two
 views:
@@ -250,8 +250,8 @@ The skill guidance quotes the vote-selection update, the document update, the Ye
 voting-record update, and the contact-card update; the others were read from the server's card
 source on 2026-09-27 and follow the same pattern.
 
-**How the skills react** (`state-legislation`, `bill-research`, `voting-record`, and the
-[workflow](../skills/state-legislation/references/workflows.md#react-to-what-the-user-selected-on-a-card)):
+**How the skills react** (`get-legislation`, `research-legislation`, `voting-record`, and the
+[workflow](../skills/get-legislation/references/workflows.md#react-to-what-the-user-selected-on-a-card)):
 
 - **Map names to ids** from earlier results in the conversation. An update never carries an id.
 - **"Which vote am I looking at"** is answered from the update, without a tool call.
@@ -269,16 +269,16 @@ tools; `get_rollcall_breakdown` is a data tool that returns one fixed shape.
 
 This matters when a project pins `response_format` in `.claude/cicada-guide.local.md`: the skills
 omit it from these four tools and pass it to everything else. See
-[project settings](../skills/state-legislation/references/project-settings.md#response_format-must-not-reach-the-tools-without-it).
+[project settings](../skills/get-legislation/references/project-settings.md#response_format-must-not-reach-the-tools-without-it).
 `search_bills`, the fourth card-bearing tool, does accept `response_format`.
 
 ## Related
 
-- [Tool reference: Cards](../skills/state-legislation/references/tool-reference.md#cards): the
+- [Tool reference: Cards](../skills/get-legislation/references/tool-reference.md#cards): the
   guidance Claude reads, with each tool's parameters.
 - [Commands and agents](reference-commands-and-agents.md): which card each entry point ends with.
 - [Cards explained](explanation-cards.md): why answers are card-first, and why the written answer
   still comes from the data tools.
-- [Workflows](../skills/state-legislation/references/workflows.md#show-a-bill-with-a-summary): the
+- [Workflows](../skills/get-legislation/references/workflows.md#show-a-bill-with-a-summary): the
   call sequences that end with a card.
 - [Troubleshooting](troubleshooting.md): what to check when a card does not appear.

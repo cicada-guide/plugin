@@ -10,16 +10,16 @@ checks that enforce them are described in the [checks reference](reference-check
 
 The plugin has several entry points, and they don't share what they load:
 
-- **The always-on skill**, `skills/state-legislation/`, loads when a question is about state
+- **The always-on skill**, `skills/get-legislation/`, loads when a question is about state
   legislation. It carries the full set of rules.
-- **Slash commands**, `bill-research`, `voting-record`, and `contact-legislator`, can run without
-  the always-on skill ever loading. A user who types `/cicada-guide:voting-record` gets that
+- **Slash commands**, `research-legislation`, `voting-record`, and `contact-legislator`, can run
+  without the always-on skill ever loading. A user who types `/cicada-guide:voting-record` gets that
   file's guidance, and possibly nothing else.
 - **Subagents**, `agents/*.md`, never load the always-on skill. A subagent starts with its own
   file as its only guidance, in a fresh context, with the user's project as its working
   directory.
 
-A link such as "see the rules in the state-legislation skill" is only a suggestion to the model. A
+A link such as "see the rules in the get-legislation skill" is only a suggestion to the model. A
 subagent may not follow it, and an agent that skips it still works: it just gives a wrong answer.
 Nothing errors, and the other entry points keep answering correctly, so the fault shows up only
 when someone reports a bad answer from that one path.
@@ -45,8 +45,8 @@ See [reference-checks.md](reference-checks.md) for the exact patterns.
 ## The rules and the failures they prevent
 
 Each rule below is stated in full in the
-[always-on skill](../skills/state-legislation/SKILL.md) and the
-[tool reference](../skills/state-legislation/references/tool-reference.md). This section gives
+[always-on skill](../skills/get-legislation/SKILL.md) and the
+[tool reference](../skills/get-legislation/references/tool-reference.md). This section gives
 the reason for each, not the full wording.
 
 ### Bill numbers match exactly, but repeat

@@ -53,7 +53,7 @@ deployment or its private repo; treat the endpoint as a fixed external dependenc
 | `.claude-plugin/plugin.json` | Claude manifest |
 | `.claude-plugin/marketplace.json` | Marketplace entry, `"source": "./"` — the repo root *is* the plugin |
 | `.mcp.json` | The single declaration of the MCP endpoint |
-| `skills/state-legislation/` | Always-on skill, plus `references/` (tool reference, workflows, project settings) |
+| `skills/get-legislation/` | Always-on skill, plus `references/` (tool reference, workflows, project settings) |
 | `skills/*/SKILL.md` | Other skills are slash commands, one directory each |
 | `agents/` | Subagents, one Markdown file each |
 | `cicada-guide.local.md.example` | Template users copy to `.claude/cicada-guide.local.md` |
@@ -75,7 +75,7 @@ are independent fields that drift when one is missed. Grep before committing a b
 
 **Cross-component links use `${CLAUDE_PLUGIN_ROOT}`, never relative paths.** A subagent's working
 directory is the user's project, so `../skills/...` resolves to nothing. Within
-`skills/state-legislation/`, sibling `references/*.md` may be referenced relatively.
+`skills/get-legislation/`, sibling `references/*.md` may be referenced relatively.
 
 **The MCP `<server>` path segment is mandatory.** Tools reach the model as
 `mcp__plugin_cicada-guide_guide-public__<tool>`. Dropping `guide-public` produces a name no
@@ -89,7 +89,7 @@ copies installed before.
 
 **Tool documentation drifts silently.** The endpoint is unversioned, so nothing signals when the
 live server gains, renames, or drops a tool. Tool lists are duplicated in `README.md`,
-`skills/state-legislation/SKILL.md`, and `references/tool-reference.md`. Before editing any of
+`skills/get-legislation/SKILL.md`, and `references/tool-reference.md`. Before editing any of
 them, run `tools/list` against the live endpoint (the server is stateless, so it is one POST; the
 command is in PUBLISHING.md) and reconcile all three against the server — not against each other.
 Avoid writing a tool *count* into prose; it is the first thing to go stale.
@@ -99,7 +99,7 @@ reject unknown keys outright rather than ignoring them, so a plausible invented 
 harmless doc error — it is a runtime failure for every user who follows it.
 
 **Dataset rules are restated in every entry point, not referenced.** Subagents never load the
-`state-legislation` skill, and a slash command can run without it, so each skill and agent carries
+`get-legislation` skill, and a slash command can run without it, so each skill and agent carries
 its own copy of whichever of these rules it relies on: `search_bills`' exact bill-number matching
 and query caps, `get_rollcalls` including vote-linked roll calls, never adding counts across roll
 calls, the 100-id `search_people` batch cap, the two error shapes, the 60-a-minute rate limit,

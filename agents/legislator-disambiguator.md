@@ -112,7 +112,7 @@ never copy file contents into a tool argument.
 - When a cicada-guide tool is listed by name only, load its definition with the tool-search tool
   before the first call; never guess its parameters.
 - When a parameter, constraint, or response field is unclear, read
-  `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`.
+  `${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/references/tool-reference.md`.
 
 ## Output format
 

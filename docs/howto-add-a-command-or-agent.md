@@ -18,7 +18,7 @@ The worked example is `/cicada-guide:contact-legislator`, added in 0.8.0. Read
   whose intermediate tool calls would bury the conversation; it cannot ask mid-run and returns one
   report. If an existing entry point nearly covers the request, extending it is usually better.
 - **Know the tools it will call.** Every tool and parameter it names must be one the live server
-  returns. The [tool reference](../skills/state-legislation/references/tool-reference.md) is the
+  returns. The [tool reference](../skills/get-legislation/references/tool-reference.md) is the
   source; run `node scripts/check-live-tools.mjs` if in doubt.
 
 ## Add a slash-command skill
@@ -54,7 +54,7 @@ disable-model-invocation: false
 The file must start with `---` on its first line and use LF line endings; `check.mjs` reads the
 frontmatter with a pattern that expects both. It recognizes lowercase, hyphenated keys only.
 
-The always-on `state-legislation` skill has only `name` and `description`. It is not a command.
+The always-on `get-legislation` skill has only `name` and `description`. It is not a command.
 
 ### 3. Write the body
 
@@ -113,11 +113,11 @@ the reasons.
 Point at shared files by plugin root, never by a relative path:
 
 ```text
-read `${CLAUDE_PLUGIN_ROOT}/skills/state-legislation/references/tool-reference.md`
+read `${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/references/tool-reference.md`
 ```
 
 A subagent's working directory is the user's project, so `../skills/...` resolves to nothing.
-`check.mjs` fails on any `../` outside `skills/state-legislation/`, and on a
+`check.mjs` fails on any `../` outside `skills/get-legislation/`, and on a
 `${CLAUDE_PLUGIN_ROOT}/` path that does not exist. Keep the path in backticks: the check reads the
 path up to whitespace, a backtick, a quote, or `)`, so a bare path followed by a full stop is read
 with the full stop and fails.
@@ -157,7 +157,7 @@ words ("Three packaged skills"). For `contact-legislator` 0.8.0 updated:
 
 - **`README.md`**: the command table under "What it does" (with the exact argument hint), the
   sentence counting the packaged skills above it, a bullet under "Skills", and an example question.
-- **`skills/state-legislation/SKILL.md`**: the list under "Longer workflows have dedicated entry
+- **`skills/get-legislation/SKILL.md`**: the list under "Longer workflows have dedicated entry
   points", quoting the argument hint exactly. This is how Claude learns the command exists.
 - **Sibling skills** that should hand off to it. `voting-record` points contact requests to
   `/contact-legislator`.
@@ -255,7 +255,7 @@ The one exception is reading data a card tool returns: `legislator-disambiguator
 ### 5. Update the files that list agents
 
 - **`README.md`**: a bullet under "Agents", and the sentence counting the subagents.
-- **`skills/state-legislation/SKILL.md`**: the sentence naming the subagents, under "Longer
+- **`skills/get-legislation/SKILL.md`**: the sentence naming the subagents, under "Longer
   workflows have dedicated entry points", with when to dispatch the new one.
 - **`docs/`**: the Subagents row in [architecture.md](architecture.md) and
   [the commands and agents reference](reference-commands-and-agents.md).

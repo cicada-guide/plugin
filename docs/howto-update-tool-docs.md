@@ -13,7 +13,7 @@ the state drift leaves behind.
 
 - The nightly `live-tools` workflow failed with a mismatch (exit 1), not a fetch error (exit 2).
 - A tool behaves differently from what the
-  [tool reference](../skills/state-legislation/references/tool-reference.md) says.
+  [tool reference](../skills/get-legislation/references/tool-reference.md) says.
 - You are about to edit a tool list, a parameter table, or a call example for any other reason.
 - Before each release, per [PUBLISHING.md](../PUBLISHING.md).
 
@@ -69,8 +69,8 @@ Edit each against `tools-list.json`:
 | File | What to update |
 | --- | --- |
 | `README.md` | The table under `## Tools`: one row per live tool, with the name in backticks and a short purpose |
-| `skills/state-legislation/SKILL.md` | The table under `## Tool selection` (`Goal` → `Tool`; a tool can have several rows), and any prose around it that names the tool |
-| `skills/state-legislation/references/tool-reference.md` | The tool's `###` section, the "Shared parameters" rows that list which tools take `limit`, `offset`, and `response_format`, and the verification line at the top |
+| `skills/get-legislation/SKILL.md` | The table under `## Tool selection` (`Goal` → `Tool`; a tool can have several rows), and any prose around it that names the tool |
+| `skills/get-legislation/references/tool-reference.md` | The tool's `###` section, the "Shared parameters" rows that list which tools take `limit`, `offset`, and `response_format`, and the verification line at the top |
 
 Update the tool reference's opening line to the date you checked, for example "Verified against
 the live endpoint's `tools/list`, MCP protocol revision `2025-06-18`, on <date>." Record anything
@@ -120,7 +120,7 @@ one in project settings must never have it sent to those tools, so the list is s
 settings docs, in three places:
 
 - `README.md`, the `response_format` row of the project-settings table.
-- `skills/state-legislation/references/project-settings.md`, under "`response_format` must not
+- `skills/get-legislation/references/project-settings.md`, under "`response_format` must not
   reach the tools without it".
 - `cicada-guide.local.md.example`, the comment above `response_format:`.
 
@@ -183,9 +183,9 @@ skills or README as "not a tool on the live server". The 0.8.0 change removed it
 | File | What was removed |
 | --- | --- |
 | `README.md` | Its row in the Tools table, and its name in the `response_format` settings row |
-| `skills/state-legislation/SKILL.md` | The "Open an exploratory research workspace" row in Tool selection, and the sentence sending exploration requests to it |
-| `skills/state-legislation/references/tool-reference.md` | Its `###` section, and its name in the Shared parameters `response_format` row |
-| `skills/state-legislation/references/project-settings.md` | Its name in the list of tools without `response_format` |
+| `skills/get-legislation/SKILL.md` | The "Open an exploratory research workspace" row in Tool selection, and the sentence sending exploration requests to it |
+| `skills/get-legislation/references/tool-reference.md` | Its `###` section, and its name in the Shared parameters `response_format` row |
+| `skills/get-legislation/references/project-settings.md` | Its name in the list of tools without `response_format` |
 | `cicada-guide.local.md.example` | Its name in the comment above `response_format:` |
 
 What replaced it came from the server, not from the other docs: `search_bills` now renders a
@@ -197,5 +197,5 @@ reference, and the project-settings template."
 
 - [Checks reference](reference-checks.md)
 - [How to verify a change](howto-verify-a-change.md)
-- [Tool reference](../skills/state-legislation/references/tool-reference.md)
+- [Tool reference](../skills/get-legislation/references/tool-reference.md)
 - [PUBLISHING.md](../PUBLISHING.md): reconciling before a release.

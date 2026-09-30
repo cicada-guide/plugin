@@ -10,6 +10,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- Two skills are renamed. The always-on `state-legislation` skill is now `get-legislation`, and
+  the `bill-research` slash command is now `research-legislation`, invoked as
+  `/cicada-guide:research-legislation`. `/cicada-guide:bill-research` no longer exists.
+
 ## [0.9.5] - 2026-09-30
 
 ### Changed
