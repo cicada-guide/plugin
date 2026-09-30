@@ -10,6 +10,8 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-09-30
+
 ### Changed
 
 - Card resource URI `official-card-v11`, after the official card's Recent votes panel stopped
@@ -392,7 +394,8 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/cicada-guide/plugin/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/cicada-guide/plugin/compare/v0.9.5...v0.10.0
 [0.9.5]: https://github.com/cicada-guide/plugin/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/cicada-guide/plugin/compare/v0.9.3...v0.9.4
