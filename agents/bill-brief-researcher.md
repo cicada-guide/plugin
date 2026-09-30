@@ -139,8 +139,9 @@ Return one brief:
    the text was unavailable, say so and give the document URL instead of substituting the synopsis
    without a label.
 3. **Sponsors** — names and parties, resolved.
-4. **Roll calls** — one row per floor vote: date, description, yea / nay / absent / NV. Add an
-   outcome only where the description or bill status states one.
+4. **Roll calls** — one row per floor vote: date, description, yea / nay / absent / NV. Give every
+   roll call `get_rollcalls` returns its own row, even when two share a date or identical counts;
+   never merge them. Add an outcome only where the description or bill status states one.
 5. **Vote breakdown** — for the roll call the request names; otherwise the most recent one whose
    description names final passage or a third reading. If none does, say which roll call you broke
    down and why, and do not call it decisive — no tool reports which vote carried the bill. Give the

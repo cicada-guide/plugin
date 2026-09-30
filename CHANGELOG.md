@@ -10,6 +10,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- The bill-brief-researcher agent gives every roll call `get_rollcalls` returns its own row, even
+  when two share a date or identical counts. A live run had merged two such rows and then reported
+  one roll call as missing.
+
 ## [0.9.4] - 2026-09-30
 
 ### Changed
