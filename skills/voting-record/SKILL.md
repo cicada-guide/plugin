@@ -97,9 +97,9 @@ the tied records rather than claiming one occurred last. Call it the latest reco
 available data, and state any session, date, or category filter that limits that claim.
 
 When the request also asks for contact details, call `show_official` with the `id` and report only
-what it returned — every value in `contact_options` when that came back, otherwise the email,
-phone, and website lines. Contact details are absent for most officials: say none are on record
-rather than guess, and do not search the web for them unless the user asks. Pass each value on as
+what it returned — every value in `contact_options` when that came back, otherwise the email, phone,
+and website lines. Contact details are absent for most officials: say none are on record rather than
+guess, and do not search the web for them unless the user asks, or offer to. Pass each value on as
 recorded: never judge from its domain or form whether it is official, personal, or current, never
 say what another site lists, and add no role, party office, or news about the person from outside
 the tools. `/contact-legislator` covers this on its own.
