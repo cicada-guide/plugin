@@ -34,6 +34,10 @@ plugin's guidance, including updates made to match what the server returns.
 - Card resource URI `official-card-v12`, after the official card's contact buttons stopped
   overlapping: four buttons now sit two by two, and a dropdown chevron sits beside its icon.
   Earlier URIs still resolve.
+- Card resource URIs `bill-workspace-v18`, `official-card-v13` and `legislator-record-v17`,
+  after each card section whose first load fails (the bill's floor votes and party split, the
+  official's recent votes, the record's votes and sponsored bills) gained a **Try again** button.
+  Before, the card said to try again but offered no way to. Earlier URIs still resolve.
 
 ## [0.10.1] - 2026-09-30
 
