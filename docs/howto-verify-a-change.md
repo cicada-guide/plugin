@@ -126,7 +126,33 @@ Also watch for:
 - **What it does not do.** No grading or ranking of legislators, no claim the tools did not return,
   nothing outside U.S. state legislatures.
 
-### 5. Check the cards in a host that renders them
+### 5. Run the eval suite
+
+A real session shows one answer. The eval suite in `evals/` runs fixed prompts several times, with
+and without the plugin, and grades each answer, so it catches a rule that holds in one session and
+breaks in the next. Run it after changing a skill or agent:
+
+```bash
+claude plugin eval . --trust-plugin --allow-real-servers \
+  --allow-tools "mcp__plugin_cicada-guide_guide-public__*" ToolSearch \
+  --judge-model sonnet --threshold 0.8
+```
+
+- **`--judge-model sonnet`** grades the `llm` rubrics with a stronger model than the small default.
+  The default judge has failed correct `bill-brief` replies because their tallies sat in a table
+  rather than prose; the free `regex` checks in the same case passed.
+- **`--allow-real-servers`** runs the cases against the live public server, since there are no
+  mocks. Nothing in them writes, but they count toward the 60-a-minute rate limit.
+- **Cost.** Every run and every `llm` grader is a model call on your account. The full suite is 24
+  runs; `--ablation none` skips the no-plugin baseline and halves that.
+
+Read the `WITH` column against `--threshold`. Without the plugin there are no cicada-guide tools,
+so the baseline mostly measures data access on the bill and voting-record cases; `no-ranking` and
+`contact-without-name` show what the guidance itself adds. Results go to `evals/results/`, which
+is ignored. The [plugin eval docs](https://code.claude.com/docs/en/plugin-evals) cover the case
+and grader format.
+
+### 6. Check the cards in a host that renders them
 
 A terminal renders no cards. There, a card tool call shows up as a call with its text fallback, so
 confirm the call happened, at the end, with the right arguments, and that the written answer stands
@@ -145,8 +171,8 @@ Both workflows are in `.github/workflows/` and run on `ubuntu-latest` with Node 
 | `check.yml` | `node scripts/check.mjs` | Every pull request, and every push to `main` | Yes, when it fails |
 | `live-tools.yml` | `node scripts/check-live-tools.mjs` | Nightly at 07:17 UTC, and on demand from the Actions tab (`workflow_dispatch`) | No. It never runs on a pull request, so a server outage cannot block a merge |
 
-Nothing in CI loads the plugin into a session. Step 4 is yours to do. A failed nightly
-`live-tools` run usually means the server changed; start at
+Nothing in CI loads the plugin into a session or runs the eval suite; steps 4 and 5 are yours to
+do. A failed nightly `live-tools` run usually means the server changed; start at
 [How to update the tool docs](howto-update-tool-docs.md). If the failure reads
 `initialize returned HTTP 403`, see the
 [write-up on Cloudflare WAF 403s](solutions/integration-issues/cloudflare-waf-403-live-tools-diagnostics.md).
