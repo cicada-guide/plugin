@@ -143,12 +143,14 @@ claude plugin eval . --trust-plugin --allow-real-servers \
   rather than prose; the free `regex` checks in the same case passed.
 - **`--allow-real-servers`** runs the cases against the live public server, since there are no
   mocks. Nothing in them writes, but they count toward the 60-a-minute rate limit.
-- **Cost.** Every run and every `llm` grader is a model call on your account. The full suite is 24
+- **Cost.** Every run and every `llm` grader is a model call on your account. The full suite is 30
   runs; `--ablation none` skips the no-plugin baseline and halves that.
 
 Read the `WITH` column against `--threshold`. Without the plugin there are no cicada-guide tools,
-so the baseline mostly measures data access on the bill and voting-record cases; `no-ranking` and
-`contact-without-name` show what the guidance itself adds. Results go to `evals/results/`, which
+so the baseline mostly measures data access on the bill, voting-record, and contact cases;
+`no-ranking` and `contact-without-name` show what the guidance itself adds. `contact-recorded-only`
+fails a reply that doubts a recorded address, says what another site lists, or adds a role the
+tools did not return. Results go to `evals/results/`, which
 is ignored. The [plugin eval docs](https://code.claude.com/docs/en/plugin-evals) cover the case
 and grader format.
 

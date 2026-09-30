@@ -286,7 +286,9 @@ recorded), term, party, and the contact details on record. Depending on the host
 fallback, with one email, phone, and website each, or the `structuredContent`, whose
 `contact_options` lists every email, phone, website, and address. When the text reads `No email,
 website or phone number is on record.`, or every `contact_options` list is empty, say the contact
-details are not on record and never guess one. When the seat line has no chamber or district, or
+details are not on record and never guess one. Pass each value on as recorded: never judge from
+its domain or form whether it is official, personal, or current, never say what another site lists,
+and add no role, party office, or news about the person from outside the tools. When the seat line has no chamber or district, or
 `office` is `null`, say they are not recorded. In a card host the contact buttons are on screen: don't re-list them. For how the
 legislator voted, point to `show_person_record` and read votes through `get_person_votes`.
 

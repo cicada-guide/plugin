@@ -18,6 +18,12 @@ plugin's guidance, including updates made to match what the server returns.
   name the gap, build the summary from the title, status, sponsors, and recorded votes, and point
   to the document URL, never to fill it from news, web search, or general knowledge. The always-on
   skill states the rule in its scope section.
+- Contact details are now passed on as recorded. Asked how to reach a state senator, Claude had
+  called the recorded email a Gmail address that might not be official, said a phone number should
+  be on the legislature's page, added a party office no tool returned, and offered to look up the
+  party's contact page. `/contact-legislator` now states that every claim comes from a tool result,
+  and every entry point that reports contact details says not to judge a value from its domain or
+  say what another site lists. A new eval case, `contact-recorded-only`, checks it.
 
 ## [0.10.0] - 2026-09-30
 
