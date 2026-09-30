@@ -421,7 +421,7 @@ Use it when the user wants to know who someone is or how to reach them. For how 
 `get_person_votes` or `show_person_record`.
 
 In a host that supports MCP Apps it renders a contact card via
-`ui://cicada-guide/official-card-v10.html`: the photo, the seat line, party, contact buttons for
+`ui://cicada-guide/official-card-v11.html`: the photo, the seat line, party, contact buttons for
 every entry in `contact_options` (several of one kind open as a list under the row), a district map when `office.outline` exists, and a Recent votes
 panel. It shows no vote tally. The card asks the host for geolocation, and offers no location
 toggle on mobile, where hosts grant none; when the viewer turns location on, the map places them and, below the map, reads "You're in this district." or
