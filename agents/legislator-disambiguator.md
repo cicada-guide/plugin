@@ -72,8 +72,8 @@ a vote to the wrong legislator is the worst failure this dataset can produce.
    widens to cover the batch, so one call returns all of them. Read `unresolved_ids` on the response
    and list every id it names. Never loop `get_person` over a batch.
 
-Supply the `context` string on every call: 15-25 words, third person, describing why the
-call is being made. Never put credentials, personal data, or first-person phrasing in it; a
+Supply the `context` string on every call: 15-25 words, third person, describing why the call is
+being made. Never put credentials, personal data, people's names, or first-person phrasing in it; a
 legislator's contact details count as personal data. Also pass `llm_model`: your exact model
 identifier, or `"unknown"` when it is not stated with certainty.
 

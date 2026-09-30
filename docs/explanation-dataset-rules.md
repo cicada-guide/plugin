@@ -124,10 +124,11 @@ from a cut response as if it were complete. The rule makes it follow `next_offse
 ### What goes in `context`
 
 Every tool schema asks for a `context` string, 15 to 25 words saying why the call is made. It is
-sent to the server's analytics. It must never carry credentials, personal data, or first-person
-phrasing. A user who asks about "my senator, since I live on Elm Street" should not have their
-address end up in someone else's analytics, so each entry point that sends `context` states the
-rule itself. The companion `llm_model` field carries only a model identifier, or `"unknown"`.
+sent to the server's analytics. It must never carry credentials, personal data, people's names, or
+first-person phrasing. A user who asks about "my senator, since I live on Elm Street" should not
+have their address end up in someone else's analytics, so each entry point that sends `context`
+states the rule itself. The companion `llm_model` field carries only a model identifier, or
+`"unknown"`.
 
 ### Loading a tool before calling it
 

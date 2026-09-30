@@ -10,6 +10,12 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Changed
+
+- Every skill and agent now keeps people's names out of the `context` analytics string, alongside
+  credentials, personal data and first-person phrasing. A live run had sent "a state senator named
+  Orr".
+
 ## [0.9.3] - 2026-09-28
 
 ### Changed

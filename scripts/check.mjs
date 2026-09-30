@@ -263,9 +263,9 @@ const REQUIRED = [
     needs: [/25,000/],
   },
   {
-    rule: "keep credentials and personal data out of `context`",
+    rule: "keep credentials, personal data and names out of `context`",
     when: (t) => t.includes("`context`"),
-    needs: [/never put credentials, personal data, or first-person phrasing in it/i],
+    needs: [/never put credentials, personal data, people's names, or first-person phrasing in it/i],
   },
   {
     rule: "load a deferred tool before calling it",

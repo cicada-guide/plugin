@@ -22,7 +22,7 @@ Focus on K-12 education funding. Bills before 2023 are out of scope for this pro
 | `enabled` | Anything other than `true` — ignore the entire file, frontmatter and body alike. |
 | `default_division` | Jurisdiction assumed when the request names none. Resolve through `list_states` to a `division_id`; never guess the UUID. |
 | `default_session` | Session to assume within that jurisdiction. Resolve through `list_sessions`. |
-| `context_prefix` | Prepended to the `context` string on each call. Keep the combined string third person and free of personal data. |
+| `context_prefix` | Prepended to the `context` string on each call. Keep the combined string third person and free of personal data and people's names. |
 | `response_format` | The `response_format` argument to use when the request implies neither. **Never send it to a tool without the parameter** — see below. |
 
 Every key is optional. A missing key means no default, not a fallback to some other value.
