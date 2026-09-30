@@ -205,7 +205,9 @@ kind of contact option on record, a district map when an outline exists, and a R
 vote tally. `show_person_record` shows no contact buttons; it shows their recorded votes with session, vote, and subject filters, and the
 bills they sponsored. Card tallies label what they cover; never use them to grade or rank a
 legislator. Most officials have no contact details on record: say so, and never guess an email,
-phone, or address.
+phone, or address. Pass each value on as recorded: never judge from its domain or form whether it is
+official, personal, or current, never say what another site lists, and add no role, party office,
+or news about the person from outside the tools.
 
 **`show_bill`, `show_official`, and `show_person_record` take no `response_format`.** Passing it
 returns `MCP error -32602`; omit it even when a project default pins one.
