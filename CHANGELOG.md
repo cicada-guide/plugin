@@ -10,6 +10,14 @@ plugin's guidance, including updates made to match what the server returns.
 
 ## [Unreleased]
 
+### Fixed
+
+- A request to rank state legislators by ideology is declined again. The always-on skill's
+  description now names ranking, grading, scoring, and vote prediction as declined, and its scope
+  section states the rule before any tool call. In `claude plugin eval`, Claude with the plugin had
+  built or delegated a conservative-to-liberal ranking in two of three runs while Claude without it
+  declined; after the change it declined in three of three.
+
 ### Changed
 
 - Two skills are renamed. The always-on `state-legislation` skill is now `get-legislation`, and

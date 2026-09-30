@@ -1,6 +1,6 @@
 ---
 name: get-legislation
-description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find state representative Jane Smith", "what party is she", "how do I contact Senator X"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only.
+description: This skill should be used for questions about U.S. STATE legislation — finding or reading a state bill ("look up HB 314", "what bills mention school funding", "what does this bill do", "what's the status of this bill"), state legislators ("who sponsored this bill", "find state representative Jane Smith", "what party is she", "how do I contact Senator X"), or roll calls and voting records ("how did Senator X vote", "show me the roll call", "how did the chamber split", "list Alabama's legislative sessions"). Not for the U.S. Congress or federal bills, city or county ordinances, ballot measures, regulations, or non-U.S. legislatures — the dataset covers state legislatures only. Also use it before acting on any request to rank, grade, score, or rate state legislators (for example by ideology) or to predict how they will vote: those are declined, and only recorded votes are reported.
 ---
 
 # Researching U.S. state legislation with cicada-guide
@@ -28,6 +28,13 @@ if it were an answer.
 
 Call `list_states` to see which jurisdictions are present before asserting that a state has no
 matching bills.
+
+**Legislators are never ranked, graded, scored, or rated, and their votes are never predicted.**
+Decline a request to order legislators by ideology ("most conservative to most liberal"), to score
+their records, or to forecast a vote before calling any tool — do not compute a ranking, delegate
+one to an agent, or build one from roll calls and then report that the data was too thin. Offer
+what the tools do return instead: one legislator's recorded votes, a roll call's party breakdown,
+or the bills they sponsored.
 
 ## Project settings
 
