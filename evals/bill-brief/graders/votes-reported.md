@@ -1,6 +1,11 @@
 ---
 type: llm
+focus: trace
 ---
+
+Judge only the assistant's own text messages, read together as the reply. The answer may come
+before a bill card call and end with a short note after it. Tool calls and tool results are not
+part of the reply.
 
 The bill is Alabama HB1 (2025 Regular Session), a seafood dealer license fee bill. Its recorded
 roll calls include a House third-reading vote of 95 yeas and 0 nays and a House-of-origin vote of

@@ -141,6 +141,10 @@ claude plugin eval . --trust-plugin --allow-real-servers \
 - **`--judge-model sonnet`** grades the `llm` rubrics with a stronger model than the small default.
   The default judge has failed correct `bill-brief` replies because their tallies sat in a table
   rather than prose; the free `regex` checks in the same case passed.
+- **Bill answers end with the card.** Claude writes the answer, calls `show_bill`, and may add a
+  one-line note after it, so `bill-brief` grades Claude's own text across the whole reply
+  (`target: trace`, matching only assistant text lines) rather than `last_message`, which can be
+  that note alone.
 - **`--allow-real-servers`** runs the cases against the live public server, since there are no
   mocks. Nothing in them writes, but they count toward the 60-a-minute rate limit.
 - **Cost.** Every run and every `llm` grader is a model call on your account. The full suite is 30

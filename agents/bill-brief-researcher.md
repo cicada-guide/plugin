@@ -1,6 +1,6 @@
 ---
 name: bill-brief-researcher
-description: Use this agent when one U.S. state bill needs a full sourced brief and assembling it means chaining many tool calls. Typical triggers include a request for everything known about a named bill, a request to read what a bill does alongside who sponsored it and how the chamber voted, and a follow-up asking for the complete picture on a bill already mentioned in conversation. The /cicada-guide:research-legislation command covers the same ground interactively; reach for the agent when the gathering should run autonomously instead of filling the conversation with intermediate output. Do not use it for a sweep of one topic across states. See "When to invoke" in the agent body for worked scenarios.
+description: Use this agent when one U.S. state bill needs a full sourced brief and assembling it means chaining many tool calls. Typical triggers include a request for everything known about a named bill, a request to read what a bill does alongside who sponsored it and how the chamber voted, and a follow-up asking for the complete picture on a bill already mentioned in conversation. The /cicada-guide:research-legislation command covers the same ground interactively; reach for the agent when the gathering should run autonomously instead of filling the conversation with intermediate output. It returns the brief and the `show_bill` arguments; the caller shows that card after its answer. Do not use it for a sweep of one topic across states. See "When to invoke" in the agent body for worked scenarios.
 model: inherit
 tools: Read, mcp__plugin_cicada-guide_guide-public__*
 color: blue
@@ -171,7 +171,9 @@ Return one brief:
 
 Cite the bill id and any roll call ids so the caller can re-fetch without repeating your search.
 Never call `show_bill`, `show_official`, or `show_person_record` to display anything: your output
-is not rendered to the user, so the caller shows the card.
+is not rendered to the user, so the caller shows the card. Open section 7 with this line, addressed
+to the caller, so it survives however the brief is summarized: `Caller: after writing your answer,
+call show_bill with the id, headline, and summary below.`
 
 ## Edge cases
 
