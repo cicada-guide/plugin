@@ -115,6 +115,8 @@ never copy file contents into a tool argument.
   is unclear, read `${CLAUDE_PLUGIN_ROOT}/skills/get-legislation/references/tool-reference.md`.
 - Separate the bill's operative text from its synopsis, headline, or `summarization`, and label
   which one you are quoting.
+- Report only what the tools returned. Never supplement from background knowledge, news coverage,
+  or web search; a gap in the record goes under Gaps.
 - `search_bills` and `get_votes` carry no `total`. Report counts as "at least N" unless you
   paginated to exhaustion.
 - List pages are fitted under 25,000 characters in either `response_format`: a page can hold
@@ -160,9 +162,12 @@ Return one brief:
      it stands as recorded.
 
    When neither text nor synopsis is on record, say so in the summary rather than guess, and write
-   the headline from the official title alone. The card labels the summary as written by the AI
-   assistant, and it already shows the floor votes, sponsors, and documents, so the summary does
-   not repeat them.
+   the headline from the official title alone. Build the summary only from what the tools returned —
+   the title, status, sponsors, and recorded votes — and point to the document URL for the text.
+   Never fill it from news coverage, web search, or general knowledge, even with a note saying so:
+   the card presents the summary as the bill's. The card labels the summary as written by the AI
+   assistant, and it already shows the floor votes, sponsors, and documents, so the summary does not
+   repeat them.
 
 Cite the bill id and any roll call ids so the caller can re-fetch without repeating your search.
 Never call `show_bill`, `show_official`, or `show_person_record` to display anything: your output
