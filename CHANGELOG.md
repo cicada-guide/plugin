@@ -24,6 +24,8 @@ plugin's guidance, including updates made to match what the server returns.
   `claude plugin eval`, two of three `contact-recorded-only` runs ended with "I can do that if you
   want" after saying none was on record. Every entry point that reports contact details now says
   not to offer one; the case passed five of five after the change.
+- Card resource URI `bill-workspace-v17`, after the bill card's "Who voted how" stopped loading
+  forever when several floor votes share the newest date. Earlier URIs still resolve.
 - Card resource URI `official-card-v12`, after the official card's contact buttons stopped
   overlapping: four buttons now sit two by two, and a dropdown chevron sits beside its icon.
   Earlier URIs still resolve.
