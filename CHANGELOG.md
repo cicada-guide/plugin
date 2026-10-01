@@ -17,6 +17,8 @@ plugin's guidance, including updates made to match what the server returns.
   to call it only after the other tools cannot serve a request, and to keep names out of its
   `context`. The README's privacy section describes it, and the generic `context` note the
   server records when a model omits one.
+- A `displayName`, "cicada.guide", in the plugin manifest and its marketplace entry, so plugin
+  lists show the product name rather than the `cicada-guide` id. Commands still use the id.
 
 ### Changed
 

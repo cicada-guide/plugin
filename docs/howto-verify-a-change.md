@@ -40,6 +40,20 @@ phrases that critique the dataset. Every check, its message, and its fix are in 
 Run it before every commit. When you change a rule on purpose, change `scripts/check.mjs` in the
 same commit.
 
+If Claude Code is installed, also run its own validator, which knows the current manifest, skill
+and agent schemas:
+
+```bash
+claude plugin validate --strict .claude-plugin/marketplace.json
+claude plugin validate --strict skills
+claude plugin validate --strict agents
+claude plugin validate .claude-plugin/plugin.json
+```
+
+The plugin manifest runs without `--strict` because the CLI warns that a root `CLAUDE.md` is not
+shipped to users. That file is the contributor guide, so the warning is expected. CI runs the same
+four commands.
+
 ### 2. Reconcile the tool docs against the live server
 
 Run this whenever you touch a tool name, a parameter, a parameter table, or a call example:
@@ -174,7 +188,7 @@ The workflows are in `.github/workflows/` and run on `ubuntu-latest`; the two ch
 
 | Workflow | Runs | When | Blocks a merge |
 | --- | --- | --- | --- |
-| `check.yml` | `node scripts/check.mjs` | Every pull request, and every push to `main` | Yes, when it fails |
+| `check.yml` | `node scripts/check.mjs`, then `claude plugin validate` (pinned Claude Code version, from npm) | Every pull request, and every push to `main` | Yes, when it fails |
 | `live-tools.yml` | `node scripts/check-live-tools.mjs` | Nightly at 07:17 UTC, and on demand from the Actions tab (`workflow_dispatch`) | No. It never runs on a pull request, so a server outage cannot block a merge |
 | `tag-release.yml` | Tags a new version `v<version>` | Every push to `main` that changes `.claude-plugin/plugin.json`, and on demand | No. It runs only after the merge |
 
