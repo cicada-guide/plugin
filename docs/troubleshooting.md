@@ -14,7 +14,7 @@ Run `/mcp` in Claude Code. The plugin's server is listed as `guide-public`.
    reinstall:
 
    ```text
-   /plugin marketplace add cicada-guide/plugin
+   /plugin marketplace add cicada-guide/plugin-anthropic
    /plugin install cicada-guide@cicada-guide
    ```
 
@@ -199,6 +199,6 @@ plugin, though, the host doesn't get the skills and agents, only the raw tools.
 
 ## Still stuck
 
-Open an issue at <https://github.com/cicada-guide/plugin/issues>. Include the question you asked,
+Open an issue at <https://github.com/cicada-guide/plugin-anthropic/issues>. Include the question you asked,
 what happened, and the error text if there was one. Keep personal details out of it. Security
 issues go through [SECURITY.md](../SECURITY.md) instead.

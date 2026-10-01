@@ -22,6 +22,9 @@ plugin's guidance, including updates made to match what the server returns.
 
 ### Changed
 
+- The install command is now `/plugin marketplace add cicada-guide/plugin-anthropic`, the
+  repository's current name. The manifests' `homepage` and `repository`, the README and the docs
+  name it the same way.
 - Contact replies no longer offer a web search for a missing phone number or address. In
   `claude plugin eval`, two of three `contact-recorded-only` runs ended with "I can do that if you
   want" after saying none was on record. Every entry point that reports contact details now says
@@ -425,24 +428,24 @@ plugin's guidance, including updates made to match what the server returns.
 - First public release: the `state-legislation`, `bill-research` and `voting-record` skills, the
   subagents, and the `guide-public` MCP server declaration.
 
-[Unreleased]: https://github.com/cicada-guide/plugin/compare/v0.10.1...HEAD
-[0.10.1]: https://github.com/cicada-guide/plugin/compare/v0.10.0...v0.10.1
-[0.10.0]: https://github.com/cicada-guide/plugin/compare/v0.9.5...v0.10.0
-[0.9.5]: https://github.com/cicada-guide/plugin/compare/v0.9.4...v0.9.5
-[0.9.4]: https://github.com/cicada-guide/plugin/compare/v0.9.3...v0.9.4
-[0.9.3]: https://github.com/cicada-guide/plugin/compare/v0.9.2...v0.9.3
-[0.9.2]: https://github.com/cicada-guide/plugin/compare/v0.9.1...v0.9.2
-[0.9.1]: https://github.com/cicada-guide/plugin/compare/v0.9.0...v0.9.1
-[0.9.0]: https://github.com/cicada-guide/plugin/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/cicada-guide/plugin/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/cicada-guide/plugin/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/cicada-guide/plugin/compare/v0.5.4...v0.6.0
-[0.5.4]: https://github.com/cicada-guide/plugin/compare/v0.5.3...v0.5.4
-[0.5.3]: https://github.com/cicada-guide/plugin/compare/v0.5.2...v0.5.3
-[0.5.2]: https://github.com/cicada-guide/plugin/compare/v0.5.1...v0.5.2
-[0.5.1]: https://github.com/cicada-guide/plugin/compare/v0.5.0...v0.5.1
-[0.5.0]: https://github.com/cicada-guide/plugin/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/cicada-guide/plugin/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/cicada-guide/plugin/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/cicada-guide/plugin/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/cicada-guide/plugin/releases/tag/v0.1.0
+[Unreleased]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.9.5...v0.10.0
+[0.9.5]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.9.4...v0.9.5
+[0.9.4]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.9.3...v0.9.4
+[0.9.3]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.9.2...v0.9.3
+[0.9.2]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.9.1...v0.9.2
+[0.9.1]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.9.0...v0.9.1
+[0.9.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.5.4...v0.6.0
+[0.5.4]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/cicada-guide/plugin-anthropic/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/cicada-guide/plugin-anthropic/releases/tag/v0.1.0

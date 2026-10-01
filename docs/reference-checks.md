@@ -5,7 +5,7 @@ rule in `scripts/check.mjs` and `scripts/check-live-tools.mjs`: what it checks, 
 exact failure message, and how to fix it. It ends with the workflows that run them.
 
 For when to run each script, see [How to verify a change](howto-verify-a-change.md). The
-invariants the checks enforce, and why, are in [CLAUDE.md](../CLAUDE.md#invariants).
+invariants the checks enforce, and why, are in [CLAUDE.md](../.claude/CLAUDE.md#invariants).
 
 ## Output and exit codes
 
@@ -29,7 +29,7 @@ Below, `<...>` marks a part of the message that varies.
 | Entry points | `skills/<dir>/SKILL.md` for every directory under `skills/`, and every `.md` file under `agents/` |
 | Runtime docs | Every `.md` file under `skills/` (the `references/` included) and `agents/`, and `README.md` |
 | Project docs | `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, and every `.md` file under `docs/` |
-| All Markdown | Runtime docs, project docs, `CLAUDE.md`, `PUBLISHING.md`, and `cicada-guide.local.md.example` |
+| All Markdown | Runtime docs, project docs, `.claude/CLAUDE.md`, `PUBLISHING.md`, and `cicada-guide.local.md.example` |
 
 Runtime docs can reach a Claude session, so they get the runtime-path rules. Project docs never
 load into a session; they may link with `../` and skip those rules, but get the link, tool-count,
@@ -317,7 +317,7 @@ in a list but described wrongly, or prose that names a parameter outside a table
 
 | Workflow | Runs | Triggers | Setup |
 | --- | --- | --- | --- |
-| `.github/workflows/check.yml` | `node scripts/check.mjs`, then `claude plugin validate` from `@anthropic-ai/claude-code@2.1.286`: `--strict` on the marketplace manifest, `skills` and `agents`; without it on the plugin manifest, whose only warning is the root `CLAUDE.md` | Every pull request; every push to `main` | `ubuntu-latest`, Node 22, 10-minute timeout, read-only `contents` permission |
+| `.github/workflows/check.yml` | `node scripts/check.mjs`, then `claude plugin validate` from `@anthropic-ai/claude-code@2.1.286`: `--strict` on both manifests, `skills` and `agents` | Every pull request; every push to `main` | `ubuntu-latest`, Node 22, 10-minute timeout, read-only `contents` permission |
 | `.github/workflows/live-tools.yml` | `node scripts/check-live-tools.mjs` | Daily at 07:17 UTC (`cron: "17 7 * * *"`); on demand via `workflow_dispatch` | Same. Never on a pull request, so a server outage cannot block a merge |
 | `.github/workflows/tag-release.yml` | Pushes an annotated `v<version>` tag on the `main` commit that brought in the version in `.claude-plugin/plugin.json`, unless the tag exists | Every push to `main` that changes `.claude-plugin/plugin.json`; on demand via `workflow_dispatch` | `ubuntu-latest`, 5-minute timeout, full history, `contents: write`, the only workflow that writes |
 

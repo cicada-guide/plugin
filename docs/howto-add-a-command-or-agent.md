@@ -9,7 +9,7 @@ The worked example is `/cicada-guide:contact-legislator`, added in 0.8.0. Read
 
 ## Before you start
 
-- **Check the product constraints in [CLAUDE.md](../CLAUDE.md#product-constraints).** A new entry
+- **Check the product constraints in [CLAUDE.md](../.claude/CLAUDE.md#product-constraints).** A new entry
   point stays inside them: U.S. state legislatures only, read-only, legislators never graded,
   scored, ranked, or predicted, and claims only from what a tool returned. `contact-legislator`
   shows contact details; it never contacts anyone.
@@ -270,4 +270,4 @@ agent should take.
 - [How to verify a change](howto-verify-a-change.md)
 - [Why each entry point restates the dataset rules](explanation-dataset-rules.md)
 - [Why the plugin is card-first](explanation-cards.md)
-- [CLAUDE.md](../CLAUDE.md): the invariants and conventions these steps come from.
+- [CLAUDE.md](../.claude/CLAUDE.md): the invariants and conventions these steps come from.

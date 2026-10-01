@@ -9,7 +9,7 @@ every release.
 | Decision | Choice | Why |
 | --- | --- | --- |
 | License | Apache-2.0 | Permissive with an explicit patent grant. `LICENSE` at the repo root, `"license": "Apache-2.0"` in the plugin manifest. |
-| Repository | `cicada-guide/plugin`, public | The plugin lives here; the Worker source stays private in `cicada-guide/mcp`. |
+| Repository | `cicada-guide/plugin-anthropic`, public | The plugin lives here; the Worker source stays private in `cicada-guide/mcp-anthropic`. |
 | Layout | Repo root is the plugin | `.claude-plugin/` holds both `marketplace.json` (`"source": "./"`) and `plugin.json`. |
 | MCP endpoint | `https://public.cicada.guide/mcp-anthropic` | Cloudflare Custom Domain on the Worker, rather than the `workers.dev` hostname. The path was `/mcp` until 0.9.0; the server still answers it for earlier installs. |
 | MCP server key | `guide-public` | Tools surface as `mcp__plugin_cicada-guide_guide-public__search_bills`. The `<server>` segment is mandatory — `mcp__plugin_cicada-guide__search_bills` is not reachable by any configuration. |
@@ -73,7 +73,7 @@ Then `/mcp` should list `guide-public` as connected, and `/help` should show
 End to end, the way a stranger gets it:
 
 ```text
-/plugin marketplace add cicada-guide/plugin
+/plugin marketplace add cicada-guide/plugin-anthropic
 /plugin install cicada-guide@cicada-guide
 ```
 
@@ -83,8 +83,8 @@ the repo is reachable — everything else passes just as well while the repo is 
 ## Infrastructure dependency
 
 The plugin points at `public.cicada.guide`, a Cloudflare Custom Domain routed to the
-`cicada-guide-mcp-server` Worker. That route is configured in the private `cicada-guide/mcp` repo's
-`wrangler.jsonc` and activated by `wrangler deploy`.
+`cicada-guide-mcp-server` Worker. That route is configured in the private
+`cicada-guide/mcp-anthropic` repo's `wrangler.jsonc` and activated by `wrangler deploy`.
 
 If that domain is ever retired or re-pointed, this plugin breaks for every installed user with no
 warning and no fallback. Treat the hostname as a published API surface: change it only with a

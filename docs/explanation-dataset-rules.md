@@ -3,7 +3,7 @@
 This page is for contributors editing a skill or an agent. It explains why the same rules about the
 server's data appear in several files instead of one, what goes wrong when each rule is missing,
 and why two product constraints, no critique of the dataset and no grading of legislators, shape
-how every rule is worded. The authoritative list of invariants is [CLAUDE.md](../CLAUDE.md); the
+how every rule is worded. The authoritative list of invariants is [CLAUDE.md](../.claude/CLAUDE.md); the
 checks that enforce them are described in the [checks reference](reference-checks.md).
 
 ## The problem
@@ -209,7 +209,7 @@ The same reasoning keeps predictions out of the `show_bill` headline and summary
 
 ## Related
 
-- [CLAUDE.md](../CLAUDE.md): the invariants and product constraints
+- [CLAUDE.md](../.claude/CLAUDE.md): the invariants and product constraints
 - [Checks reference](reference-checks.md)
 - [Architecture](architecture.md)
 - [Why the plugin is card-first](explanation-cards.md)

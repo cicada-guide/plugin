@@ -203,7 +203,7 @@ for (const file of [...docFiles, ...walk("docs")]) {
 
 // 6. Live runs only: every card resource reads, and so does the version before it. A host that
 // fetched tools/list before a release still asks for the older URI, and a "not found" leaves the
-// card blank (cicada-guide/mcp#60).
+// card blank (cicada-guide/mcp-anthropic#60).
 if (fileArg < 0) {
   for (const uri of cardUris) {
     const version = Number(uri.match(/-v(\d+)\.html$/)?.[1]);

@@ -19,14 +19,12 @@ jobs:
           node-version: 22
       - run: node scripts/check.mjs
       # Claude Code's own validator, pinned so a new release cannot fail a pull request
-      # unannounced. --strict fails on warnings too. The plugin manifest runs without it only
-      # because the CLI warns that a root CLAUDE.md is not shipped to users; here that file is
-      # the contributor guide, and nothing in a session relies on it.
+      # unannounced. --strict fails on warnings too.
       - name: claude plugin validate
         env:
           CLAUDE_CODE: "@anthropic-ai/claude-code@2.1.286"
         run: |
           npx --yes "$CLAUDE_CODE" plugin validate --strict .claude-plugin/marketplace.json
+          npx --yes "$CLAUDE_CODE" plugin validate --strict .claude-plugin/plugin.json
           npx --yes "$CLAUDE_CODE" plugin validate --strict skills
           npx --yes "$CLAUDE_CODE" plugin validate --strict agents
-          npx --yes "$CLAUDE_CODE" plugin validate .claude-plugin/plugin.json

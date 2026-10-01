@@ -20,7 +20,7 @@ The file is optional. Without it the plugin behaves exactly as it does out of th
    ```
 
    If you installed from the marketplace and have no checkout, the template is at
-   <https://github.com/cicada-guide/plugin/blob/main/cicada-guide.local.md.example>. The file must
+   <https://github.com/cicada-guide/plugin-anthropic/blob/main/cicada-guide.local.md.example>. The file must
    be named `.claude/cicada-guide.local.md`, at your project's root.
 
 2. Keep it out of version control. It is per-project and per-user:
