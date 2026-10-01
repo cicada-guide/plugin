@@ -317,7 +317,7 @@ in a list but described wrongly, or prose that names a parameter outside a table
 
 | Workflow | Runs | Triggers | Setup |
 | --- | --- | --- | --- |
-| `.github/workflows/check.yml` | `node scripts/check.mjs` | Every pull request; every push to `main` | `ubuntu-latest`, Node 22, 10-minute timeout, read-only `contents` permission |
+| `.github/workflows/check.yml` | `node scripts/check.mjs`, then `claude plugin validate` from `@anthropic-ai/claude-code@2.1.286`: `--strict` on the marketplace manifest, `skills` and `agents`; without it on the plugin manifest, whose only warning is the root `CLAUDE.md` | Every pull request; every push to `main` | `ubuntu-latest`, Node 22, 10-minute timeout, read-only `contents` permission |
 | `.github/workflows/live-tools.yml` | `node scripts/check-live-tools.mjs` | Daily at 07:17 UTC (`cron: "17 7 * * *"`); on demand via `workflow_dispatch` | Same. Never on a pull request, so a server outage cannot block a merge |
 | `.github/workflows/tag-release.yml` | Pushes an annotated `v<version>` tag on the `main` commit that brought in the version in `.claude-plugin/plugin.json`, unless the tag exists | Every push to `main` that changes `.claude-plugin/plugin.json`; on demand via `workflow_dispatch` | `ubuntu-latest`, 5-minute timeout, full history, `contents: write`, the only workflow that writes |
 

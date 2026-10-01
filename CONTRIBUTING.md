@@ -57,8 +57,8 @@ see [Add a command or agent](docs/howto-add-a-command-or-agent.md). Every check 
    `/mcp` should list `guide-public` as connected, and `/help` should show the plugin's slash
    commands. The server is public and needs no account, so this works from any fork.
 6. Add a line under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) if the change is user-visible.
-7. Open a pull request against `main`. `.github/workflows/check.yml` runs `scripts/check.mjs` on
-   it.
+7. Open a pull request against `main`. `.github/workflows/check.yml` runs `scripts/check.mjs` and
+   `claude plugin validate` on it.
 
 Commit subjects are plain sentence case with no prefix or tag, for example "Restate the rate limit
 in the voting-record skill".
