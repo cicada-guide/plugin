@@ -22,7 +22,7 @@ is read-only: it looks things up and never contacts anyone or changes anything.
 In Claude Code, add the marketplace and install the plugin from it:
 
 ```text
-/plugin marketplace add cicada-guide/plugin
+/plugin marketplace add cicada-guide/plugin-anthropic
 /plugin install cicada-guide@cicada-guide
 ```
 

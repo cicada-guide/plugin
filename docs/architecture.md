@@ -18,13 +18,13 @@ beside it.
    ▼                          ▼
  guidance loaded into    Streamable HTTP ──► https://public.cicada.guide/mcp-anthropic
  the model's context                          (Cloudflare Worker, private repo
-                                               cicada-guide/mcp, read-only data)
+                                               cicada-guide/mcp-anthropic, read-only data)
 ```
 
 ## Manifests
 
 - **`.claude-plugin/plugin.json`** is the Claude manifest.
-- **`.claude-plugin/marketplace.json`** lets `/plugin marketplace add cicada-guide/plugin` work.
+- **`.claude-plugin/marketplace.json`** lets `/plugin marketplace add cicada-guide/plugin-anthropic` work.
   Its single entry has `"source": "./"`: the repo root *is* the plugin, so there is no
   sub-directory to package.
 The two files carry three independent `version` fields. They must match, or hosts see different

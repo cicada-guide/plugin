@@ -2,11 +2,11 @@
 
 A Claude Code **plugin**, not an application. Every file here is Markdown or JSON read by a
 plugin loader: there is no build step, no dependencies, and nothing to compile. The
-MCP server the plugin points at is a separate, private repo (`cicada-guide/mcp`) — its source is
-not in this tree and cannot be changed from here.
+MCP server the plugin points at is a separate, private repo (`cicada-guide/mcp-anthropic`) — its
+source is not in this tree and cannot be changed from here.
 
-This file covers working *on* the repo. User-facing behavior is [README.md](README.md); release
-process and already-settled decisions are [PUBLISHING.md](PUBLISHING.md). Neither is duplicated
+This file covers working *on* the repo. User-facing behavior is [README.md](../README.md); release
+process and already-settled decisions are [PUBLISHING.md](../PUBLISHING.md). Neither is duplicated
 here — prefer fixing those files over growing this one.
 
 ## Verifying a change
@@ -22,8 +22,9 @@ endpoint and server key, skill and agent frontmatter, `${CLAUDE_PLUGIN_ROOT}` an
 tool counts in prose, the numbers in each restated dataset rule, each entry point carrying the
 rules it relies on, and phrases that critique the dataset. The project docs (`CONTRIBUTING.md`,
 `CHANGELOG.md`, `SECURITY.md`, `docs/`) get the link, tool-count, number and critique checks too.
-`.github/workflows/check.yml` runs them on every pull request. When a rule changes on purpose,
-change `scripts/check.mjs` in the same commit.
+`.github/workflows/check.yml` runs them on every pull request, then Claude Code's own
+`claude plugin validate --strict` on both manifests, `skills` and `agents`. When a rule changes on
+purpose, change `scripts/check.mjs` in the same commit.
 
 `node scripts/check-live-tools.mjs` reconciles the tool documentation against the live
 `tools/list`: every live tool documented in the three tool lists, no documented tool the server
@@ -45,7 +46,7 @@ commands. `curl https://public.cicada.guide/health` reports server health.
 After changing a skill or agent, also run the eval suite in `evals/` with `claude plugin eval`,
 passing `--judge-model sonnet`: the small default judge has failed correct answers. The command
 and what each case measures are in
-[How to verify a change](docs/howto-verify-a-change.md#5-run-the-eval-suite).
+[How to verify a change](../docs/howto-verify-a-change.md#5-run-the-eval-suite).
 
 The server is public and needs no account, so **anyone can run that check from a fork** — there is
 no privileged setup. What an outside contributor cannot verify is anything about the server's

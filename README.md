@@ -10,7 +10,7 @@ legislators, sessions, roll calls, and ~5.6M individual vote records.
 ## Installation
 
 ```text
-/plugin marketplace add cicada-guide/plugin
+/plugin marketplace add cicada-guide/plugin-anthropic
 /plugin install cicada-guide@cicada-guide
 ```
 
@@ -115,7 +115,7 @@ Optional. A project can pin research defaults in `.claude/cicada-guide.local.md`
 so you stop restating the same state and session in every question. Copy
 [`cicada-guide.local.md.example`](cicada-guide.local.md.example) and edit it. If you installed
 from the marketplace, the template is at
-<https://github.com/cicada-guide/plugin/blob/main/cicada-guide.local.md.example>.
+<https://github.com/cicada-guide/plugin-anthropic/blob/main/cicada-guide.local.md.example>.
 
 ```markdown
 ---
@@ -255,7 +255,7 @@ research support, not as an authoritative legal record.
 
 ## Links
 
-- Issues and plugin source: <https://github.com/cicada-guide/plugin>
+- Issues and plugin source: <https://github.com/cicada-guide/plugin-anthropic>
 - Tool reference: [`skills/get-legislation/references/tool-reference.md`](skills/get-legislation/references/tool-reference.md)
 - Call sequences for multi-step research: [`skills/get-legislation/references/workflows.md`](skills/get-legislation/references/workflows.md)
 - Project settings contract: [`skills/get-legislation/references/project-settings.md`](skills/get-legislation/references/project-settings.md)

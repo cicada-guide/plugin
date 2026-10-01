@@ -60,7 +60,7 @@ const projectDocs = [
 const allMarkdown = [
   ...docFiles,
   ...projectDocs,
-  ...["CLAUDE.md", "PUBLISHING.md", "cicada-guide.local.md.example"].filter((f) => existsSync(join(ROOT, f))),
+  ...[".claude/CLAUDE.md", "PUBLISHING.md", "cicada-guide.local.md.example"].filter((f) => existsSync(join(ROOT, f))),
 ];
 
 // ── Manifests ────────────────────────────────────────────────────────────────────────────────────

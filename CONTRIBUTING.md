@@ -23,8 +23,8 @@ see [Add a command or agent](docs/howto-add-a-command-or-agent.md). Every check 
 ## Making a change
 
 1. Fork the repo and branch from `main`.
-2. Make the change. [CLAUDE.md](CLAUDE.md) is the working guide for this repo, for people and for
-   Claude alike. Read these three sections before editing:
+2. Make the change. [.claude/CLAUDE.md](.claude/CLAUDE.md) is the working guide for this repo,
+   for people and for Claude alike. Read these three sections before editing:
    - **Invariants.** These break installed users silently: the three version fields, the
      `${CLAUDE_PLUGIN_ROOT}` links, the mandatory `guide-public` segment in tool names, the pinned
      endpoint, the three tool lists, and the dataset rules restated in every entry point.

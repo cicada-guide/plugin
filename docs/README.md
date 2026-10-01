@@ -62,7 +62,7 @@ Changing the plugin:
 
 - [README](../README.md): installation, example questions, scope, tools, privacy, and data sources.
 - [CONTRIBUTING.md](../CONTRIBUTING.md): how to propose a change.
-- [CLAUDE.md](../CLAUDE.md): the invariants, product constraints, and conventions. It is the
+- [CLAUDE.md](../.claude/CLAUDE.md): the invariants, product constraints, and conventions. It is the
   authoritative list, for people and for Claude alike.
 - [PUBLISHING.md](../PUBLISHING.md): the release checklist, and the decisions that are settled.
 - [CHANGELOG.md](../CHANGELOG.md): what changed in each version.

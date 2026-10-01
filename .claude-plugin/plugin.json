@@ -7,8 +7,8 @@
     "name": "cicada.guide",
     "url": "https://github.com/cicada-guide"
   },
-  "homepage": "https://github.com/cicada-guide/plugin",
-  "repository": "https://github.com/cicada-guide/plugin",
+  "homepage": "https://github.com/cicada-guide/plugin-anthropic",
+  "repository": "https://github.com/cicada-guide/plugin-anthropic",
   "license": "Apache-2.0",
   "keywords": [
     "legislation",

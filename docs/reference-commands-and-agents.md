@@ -346,7 +346,7 @@ A failed call is retried once, then the candidate is reported as unverified.
 
 ## Dataset rules by entry point
 
-[CLAUDE.md](../CLAUDE.md#invariants) requires every entry point to restate the dataset rules it
+[CLAUDE.md](../.claude/CLAUDE.md#invariants) requires every entry point to restate the dataset rules it
 relies on, because a subagent never loads the always-on skill and a slash command can run without
 it. The table shows which file carries which rule today. "Checked" means `scripts/check.mjs` fails
 when a file that relies on the rule omits it; the rest are left to review. See

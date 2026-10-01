@@ -45,14 +45,12 @@ and agent schemas:
 
 ```bash
 claude plugin validate --strict .claude-plugin/marketplace.json
+claude plugin validate --strict .claude-plugin/plugin.json
 claude plugin validate --strict skills
 claude plugin validate --strict agents
-claude plugin validate .claude-plugin/plugin.json
 ```
 
-The plugin manifest runs without `--strict` because the CLI warns that a root `CLAUDE.md` is not
-shipped to users. That file is the contributor guide, so the warning is expected. CI runs the same
-four commands.
+`--strict` fails on warnings as well as errors. CI runs the same four commands.
 
 ### 2. Reconcile the tool docs against the live server
 
