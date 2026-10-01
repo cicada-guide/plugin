@@ -52,9 +52,11 @@ every release.
 - **Land on `main` before announcing.** The marketplace resolver reads the default branch, not a
   feature branch. An install command shared against unmerged work resolves a stale manifest, or
   none at all.
-- **Tag the release.** Once the bump is on `main`, tag the commit that bumped the version with an
-  annotated `v<version>` tag and push it: `git tag -a v0.5.5 <bump-commit> -m "cicada-guide plugin
-  0.5.5"`, then `git push origin v0.5.5`. The changelog's links resolve only once the tag exists.
+- **The release tags itself.** When a change to `.claude-plugin/plugin.json` lands on `main`,
+  `.github/workflows/tag-release.yml` reads the version and, if `v<version>` does not exist yet,
+  pushes an annotated tag on the `main` commit that brought the bump in (for a merged pull request,
+  its merge commit, where every earlier tag points). Check the Actions tab for the run; it can also
+  be started by hand there. The changelog's links resolve only once the tag exists.
 
 ## Verifying an install
 
