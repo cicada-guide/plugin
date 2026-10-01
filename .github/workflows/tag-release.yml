@@ -1,0 +1,51 @@
+name: tag-release
+
+# Tags the main commit that brought in the version bump. A Claude Code on the web session can
+# push only its own branch, so the release tag is pushed here rather than from a checkout.
+
+on:
+  push:
+    branches: [main]
+    paths: [.claude-plugin/plugin.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag-release
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Tag the version bump
+        run: |
+          version=$(jq -r .version .claude-plugin/plugin.json)
+          tag="v$version"
+          git fetch --tags --force
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists at $(git rev-list -n 1 "$tag")"
+            exit 0
+          fi
+          # Walk main's own commits, newest first, that changed plugin.json: the release is the
+          # oldest one in the run that still carries this version. For a merged pull request that
+          # is its merge commit, which is where every earlier tag points.
+          bump=""
+          for commit in $(git log --first-parent --format=%H -- .claude-plugin/plugin.json); do
+            [ "$(git show "$commit:.claude-plugin/plugin.json" | jq -r .version)" = "$version" ] || break
+            bump=$commit
+          done
+          if [ -z "$bump" ]; then
+            echo "::error::No commit sets version $version in .claude-plugin/plugin.json"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" "$bump" -m "cicada-guide plugin $version"
+          git push origin "refs/tags/$tag"
+          echo "Tagged $tag at $(git log -1 --format='%h %s' "$bump")"

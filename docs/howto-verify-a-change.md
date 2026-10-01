@@ -170,12 +170,13 @@ not by this repo; see [Cards](reference-cards.md) for what each one shows.
 
 ## What CI runs
 
-Both workflows are in `.github/workflows/` and run on `ubuntu-latest` with Node 22.
+The workflows are in `.github/workflows/` and run on `ubuntu-latest`; the two checks use Node 22.
 
 | Workflow | Runs | When | Blocks a merge |
 | --- | --- | --- | --- |
 | `check.yml` | `node scripts/check.mjs` | Every pull request, and every push to `main` | Yes, when it fails |
 | `live-tools.yml` | `node scripts/check-live-tools.mjs` | Nightly at 07:17 UTC, and on demand from the Actions tab (`workflow_dispatch`) | No. It never runs on a pull request, so a server outage cannot block a merge |
+| `tag-release.yml` | Tags a new version `v<version>` | Every push to `main` that changes `.claude-plugin/plugin.json`, and on demand | No. It runs only after the merge |
 
 Nothing in CI loads the plugin into a session or runs the eval suite; steps 4 and 5 are yours to
 do. A failed nightly `live-tools` run usually means the server changed; start at
